@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { apiGet, apiPost } from '../../lib/api';
+import toast from 'react-hot-toast';
+import { apiGet, apiPost, API_BASE_URL } from '../../lib/api';
 import { formatCurrency, formatDateForInput } from '../../lib/utils';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
@@ -12,6 +13,7 @@ import { Button } from '../../components/ui/Button';
 import { Input, Textarea } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Spinner } from '../../components/ui/Common';
+import { FileUpload } from '../../components/common/FileUpload';
 import { ArrowLeft, Save, Upload } from 'lucide-react';
 import type { Vendor, Account, Expense } from '../../types';
 
@@ -31,6 +33,8 @@ type ExpenseFormData = z.infer<typeof expenseSchema>;
 export const NewExpensePage: React.FC = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
     const { data: vendors, isLoading: loadingVendors } = useQuery({
         queryKey: ['vendors'],
@@ -46,9 +50,47 @@ export const NewExpensePage: React.FC = () => {
         mutationFn: (data: ExpenseFormData) => apiPost<Expense>('/expenses', data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expenses'] });
+            toast.success('Expense created successfully!');
             navigate('/expenses');
         },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to create expense');
+        },
     });
+
+    const onSubmit = async (data: ExpenseFormData) => {
+        // Upload receipt if provided
+        if (receiptFile) {
+            setUploadingReceipt(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', receiptFile);
+                formData.append('type', 'receipt');
+
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to upload receipt');
+                }
+
+                const uploadResult = await response.json();
+                toast.success('Receipt uploaded successfully!');
+            } catch (error) {
+                toast.error('Failed to upload receipt');
+                setUploadingReceipt(false);
+                return;
+            }
+            setUploadingReceipt(false);
+        }
+
+        createMutation.mutate(data);
+    };
 
     const {
         register,
@@ -92,7 +134,7 @@ export const NewExpensePage: React.FC = () => {
                 }
             />
 
-            <form onSubmit={handleSubmit((data) => createMutation.mutate(data as ExpenseFormData))}>
+            <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
                         <Card>
@@ -174,15 +216,13 @@ export const NewExpensePage: React.FC = () => {
                         <Card>
                             <CardHeader title="Receipt" />
                             <CardBody>
-                                <div className="border-2 border-dashed border-[var(--color-neutral-300)] rounded-lg p-8 text-center">
-                                    <Upload className="w-10 h-10 mx-auto text-[var(--color-neutral-400)]" />
-                                    <p className="mt-2 text-sm text-[var(--color-neutral-600)]">
-                                        Drag and drop a receipt image, or click to browse
-                                    </p>
-                                    <Button type="button" variant="outline" size="sm" className="mt-4">
-                                        Upload Receipt
-                                    </Button>
-                                </div>
+                                <FileUpload
+                                    accept="image/*,application/pdf"
+                                    maxSize={5}
+                                    onFileSelect={setReceiptFile}
+                                    uploadType="receipt"
+                                    disabled={uploadingReceipt}
+                                />
                             </CardBody>
                         </Card>
                     </div>

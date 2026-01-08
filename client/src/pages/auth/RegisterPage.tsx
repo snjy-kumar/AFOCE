@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -44,9 +45,10 @@ export const RegisterPage: React.FC = () => {
                 panNumber: data.panNumber,
                 vatNumber: data.vatNumber,
             });
+            toast.success('Account created successfully!');
             navigate('/dashboard');
-        } catch {
-            // Error is handled in store
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Registration failed');
         }
     };
 

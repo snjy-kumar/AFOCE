@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal, ModalBody, ModalFooter } from '../../components/ui/Modal';
 import { Spinner, EmptyState, Badge } from '../../components/ui/Common';
+import { Pagination } from '../../components/common/Pagination';
 import {
     Plus,
     Search,
@@ -21,11 +22,14 @@ import {
 } from 'lucide-react';
 import type { Expense } from '../../types';
 
+const ITEMS_PER_PAGE = 10;
+
 export const ExpensesPage: React.FC = () => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const { data: expenses, isLoading } = useQuery({
         queryKey: ['expenses'],
@@ -46,6 +50,17 @@ export const ExpensesPage: React.FC = () => {
             expense.vendor?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             expense.expenseNumber.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedExpenses = filteredExpenses.slice(startIndex, endIndex);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     if (isLoading) {
         return (
@@ -80,46 +95,56 @@ export const ExpensesPage: React.FC = () => {
 
             {/* Expenses Table */}
             {filteredExpenses.length > 0 ? (
-                <Card>
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-[var(--color-neutral-200)] bg-[var(--color-neutral-50)]">
-                                    <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
-                                        Expense
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
-                                        Date
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
-                                        Vendor
-                                    </th>
-                                    <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
-                                        Category
-                                    </th>
-                                    <th className="text-right p-4 text-sm font-medium text-[var(--color-neutral-600)]">
-                                        Amount
-                                    </th>
-                                    <th className="text-center p-4 text-sm font-medium text-[var(--color-neutral-600)]">
-                                        Receipt
-                                    </th>
-                                    <th className="text-right p-4 text-sm font-medium text-[var(--color-neutral-600)]">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredExpenses.map((expense) => (
-                                    <ExpenseRow
-                                        key={expense.id}
-                                        expense={expense}
-                                        onDelete={() => setDeletingId(expense.id)}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
+                <>
+                    <Card>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-[var(--color-neutral-200)] bg-[var(--color-neutral-50)]">
+                                        <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Expense
+                                        </th>
+                                        <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Date
+                                        </th>
+                                        <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Vendor
+                                        </th>
+                                        <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Category
+                                        </th>
+                                        <th className="text-right p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Amount
+                                        </th>
+                                        <th className="text-center p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Receipt
+                                        </th>
+                                        <th className="text-right p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedExpenses.map((expense) => (
+                                        <ExpenseRow
+                                            key={expense.id}
+                                            expense={expense}
+                                            onDelete={() => setDeletingId(expense.id)}
+                                        />
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        totalItems={filteredExpenses.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                    />
+                </>
             ) : (
                 <Card>
                     <EmptyState
