@@ -1,0 +1,52 @@
+import { Router } from 'express';
+import { authController } from '../controllers/auth.controller.js';
+import { authenticate } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import {
+    registerSchema,
+    loginSchema,
+    updateProfileSchema,
+    changePasswordSchema,
+} from '../schemas/auth.schema.js';
+
+/**
+ * Authentication routes
+ */
+
+const router = Router();
+
+// Public routes
+router.post(
+    '/register',
+    validate({ body: registerSchema }),
+    authController.register
+);
+
+router.post(
+    '/login',
+    validate({ body: loginSchema }),
+    authController.login
+);
+
+// Protected routes (require authentication)
+router.get(
+    '/profile',
+    authenticate,
+    authController.getProfile
+);
+
+router.patch(
+    '/profile',
+    authenticate,
+    validate({ body: updateProfileSchema }),
+    authController.updateProfile
+);
+
+router.post(
+    '/change-password',
+    authenticate,
+    validate({ body: changePasswordSchema }),
+    authController.changePassword
+);
+
+export default router;

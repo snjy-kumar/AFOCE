@@ -1,0 +1,313 @@
+// Nepal Accounting Software - Database Schema
+// Using PostgreSQL with Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & BUSINESS PROFILE
+// ============================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String   // bcrypt hashed
+  businessName String
+  panNumber    String?  // Permanent Account Number
+  vatNumber    String?  // VAT Registration Number
+  address      String?
+  phone        String?
+  logoUrl      String?
+  settings     Json     @default("{}")
+  language     String   @default("en") // "en" | "ne"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  invoices     Invoice[]
+  expenses     Expense[]
+  customers    Customer[]
+  vendors      Vendor[]
+  accounts     Account[]
+  bankAccounts BankAccount[]
+  vatRecords   VatRecord[]
+}
+
+// ============================================
+// CHART OF ACCOUNTS
+// ============================================
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+model Account {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code        String      // Account code e.g., "1000", "2000"
+  name        String      // English name
+  nameNe      String?     // Nepali name (Devanagari)
+  type        AccountType
+  description String?
+  parentId    String?
+  parent      Account?    @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children    Account[]   @relation("AccountHierarchy")
+  isSystem    Boolean     @default(false) // System accounts can't be deleted
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  invoiceItems InvoiceItem[]
+  expenses     Expense[]
+
+  @@unique([userId, code])
+  @@index([userId, type])
+}
+
+// ============================================
+// CUSTOMERS & VENDORS
+// ============================================
+
+model Customer {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  phone     String?
+  panNumber String?   // Customer's PAN for VAT invoices
+  address   String?
+  notes     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  invoices Invoice[]
+
+  @@index([userId])
+}
+
+model Vendor {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  phone     String?
+  panNumber String?   // Vendor's PAN for VAT claims
+  address   String?
+  notes     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  expenses Expense[]
+
+  @@index([userId])
+}
+
+// ============================================
+// INVOICING & SALES
+// ============================================
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  PARTIALLY_PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceNumber  String        // Sequential: INV-2080-0001
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  issueDate      DateTime
+  dueDate        DateTime
+  status         InvoiceStatus @default(DRAFT)
+  subtotal       Decimal       @db.Decimal(15, 2) // Before VAT
+  vatRate        Decimal       @db.Decimal(5, 2) @default(13.00) // Nepal VAT rate
+  vatAmount      Decimal       @db.Decimal(15, 2)
+  discountAmount Decimal       @db.Decimal(15, 2) @default(0)
+  total          Decimal       @db.Decimal(15, 2) // Final amount
+  paidAmount     Decimal       @db.Decimal(15, 2) @default(0)
+  notes          String?
+  terms          String?
+  pdfUrl         String?
+  syncStatus     String        @default("synced") // "synced" | "pending" | "error"
+  localId        String?       // For offline-first sync
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  items        InvoiceItem[]
+  transactions BankTransaction[]
+
+  @@unique([userId, invoiceNumber])
+  @@index([userId, status])
+  @@index([userId, issueDate])
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     Account @relation(fields: [accountId], references: [id])
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  rate        Decimal @db.Decimal(15, 2)
+  amount      Decimal @db.Decimal(15, 2) // quantity * rate
+  sortOrder   Int     @default(0)
+
+  @@index([invoiceId])
+}
+
+// ============================================
+// EXPENSE TRACKING
+// ============================================
+
+model Expense {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenseNumber String   // Sequential: EXP-2080-0001
+  vendorId      String?
+  vendor        Vendor?  @relation(fields: [vendorId], references: [id])
+  accountId     String
+  account       Account  @relation(fields: [accountId], references: [id])
+  date          DateTime
+  description   String
+  amount        Decimal  @db.Decimal(15, 2)
+  vatRate       Decimal  @db.Decimal(5, 2) @default(13.00)
+  vatAmount     Decimal  @db.Decimal(15, 2) @default(0)
+  totalAmount   Decimal  @db.Decimal(15, 2)
+  receiptUrl    String?  // Uploaded receipt image
+  notes         String?
+  isPaid        Boolean  @default(true)
+  syncStatus    String   @default("synced")
+  localId       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  transactions BankTransaction[]
+
+  @@unique([userId, expenseNumber])
+  @@index([userId, date])
+  @@index([userId, accountId])
+}
+
+// ============================================
+// VAT MANAGEMENT
+// ============================================
+
+enum VatRecordStatus {
+  PENDING
+  FILED
+  PAID
+}
+
+model VatRecord {
+  id              String          @id @default(uuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodStart     DateTime        // Fiscal month start
+  periodEnd       DateTime        // Fiscal month end
+  periodLabel     String          // "2080-01" (BS format)
+  salesVat        Decimal         @db.Decimal(15, 2) // VAT collected from sales
+  purchaseVat     Decimal         @db.Decimal(15, 2) // VAT paid on purchases
+  netVat          Decimal         @db.Decimal(15, 2) // salesVat - purchaseVat
+  status          VatRecordStatus @default(PENDING)
+  filedDate       DateTime?
+  notes           String?
+  irdReportJson   Json?           // IRD-format export data
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([userId, periodLabel])
+  @@index([userId, status])
+}
+
+// ============================================
+// BANK RECONCILIATION
+// ============================================
+
+model BankAccount {
+  id            String            @id @default(uuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String            // e.g., "Main Business Account"
+  bankName      String?
+  accountNumber String?
+  openingBalance Decimal          @db.Decimal(15, 2) @default(0)
+  currentBalance Decimal          @db.Decimal(15, 2) @default(0)
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  transactions BankTransaction[]
+
+  @@index([userId])
+}
+
+model BankTransaction {
+  id            String      @id @default(uuid())
+  bankAccountId String
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  date          DateTime
+  description   String
+  amount        Decimal     @db.Decimal(15, 2)
+  type          String      // "debit" | "credit"
+  reconciled    Boolean     @default(false)
+  reconciledAt  DateTime?
+  invoiceId     String?     // Matched invoice
+  invoice       Invoice?    @relation(fields: [invoiceId], references: [id])
+  expenseId     String?     // Matched expense
+  expense       Expense?    @relation(fields: [expenseId], references: [id])
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([bankAccountId, reconciled])
+  @@index([bankAccountId, date])
+}
+
+// ============================================
+// OFFLINE SYNC QUEUE
+// ============================================
+
+model SyncQueue {
+  id         String   @id @default(uuid())
+  userId     String
+  entityType String   // "invoice" | "expense" | "customer" | "vendor"
+  entityId   String   // Local ID
+  action     String   // "create" | "update" | "delete"
+  payload    Json     // Entity data
+  attempts   Int      @default(0)
+  lastError  String?
+  status     String   @default("pending") // "pending" | "processing" | "completed" | "failed"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, status])
+}
