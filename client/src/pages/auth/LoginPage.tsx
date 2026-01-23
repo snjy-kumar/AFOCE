@@ -46,7 +46,7 @@ export const LoginPage: React.FC = () => {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm mb-4">
                     <Calculator className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold text-white">Nepal Accounting</h1>
+                <h1 className="text-2xl font-bold text-white">AFOCE</h1>
                 <p className="text-white/70 mt-1">Sign in to your account</p>
             </div>
 

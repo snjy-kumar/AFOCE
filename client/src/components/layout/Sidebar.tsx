@@ -18,6 +18,7 @@ import {
     Menu,
     X,
     ChevronDown,
+    Search,
 } from 'lucide-react';
 
 const navigation = [
@@ -35,9 +36,10 @@ const navigation = [
 interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
+    onSearchClick?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick }) => {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
     const [showUserMenu, setShowUserMenu] = useState(false);
@@ -60,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {/* Sidebar */}
             <aside
                 className={cn(
-                    'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-[var(--color-neutral-200)] transform transition-transform duration-300 lg:transform-none flex flex-col',
+                    'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-[var(--color-neutral-200)] shadow-lg lg:shadow-none transform transition-transform duration-300 flex flex-col',
                     isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
                 )}
             >
@@ -85,6 +87,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
                 {/* Navigation */}
                 <nav className="flex-1 px-3 py-4 overflow-y-auto">
+                    {/* Search button */}
+                    {onSearchClick && (
+                        <button
+                            onClick={() => {
+                                onSearchClick();
+                                onClose();
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 rounded-lg text-sm font-medium text-[var(--color-neutral-600)] hover:bg-[var(--color-neutral-100)] hover:text-[var(--color-neutral-900)] transition-all duration-200"
+                        >
+                            <Search className="w-5 h-5" />
+                            <span>Search</span>
+                            <span className="ml-auto text-xs text-[var(--color-neutral-400)]">Ctrl+K</span>
+                        </button>
+                    )}
+
                     <ul className="space-y-1">
                         {navigation.map((item) => (
                             <li key={item.name}>
@@ -165,9 +182,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 // Header for mobile
 interface HeaderProps {
     onMenuClick: () => void;
+    onSearchClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSearchClick }) => {
     return (
         <header className="h-16 bg-white border-b border-[var(--color-neutral-200)] flex items-center px-4 lg:hidden">
             <button
@@ -178,10 +196,18 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </button>
             <div className="flex-1 flex justify-center">
                 <span className="text-lg font-semibold text-[var(--color-neutral-900)]">
-                    Nepal Accounting
+                    AFOCE
                 </span>
             </div>
-            <div className="w-10" /> {/* Spacer for centering */}
+            {onSearchClick && (
+                <button
+                    onClick={onSearchClick}
+                    className="p-2 rounded-lg hover:bg-[var(--color-neutral-100)]"
+                    title="Search (Ctrl+K)"
+                >
+                    <Search className="w-5 h-5" />
+                </button>
+            )}
         </header>
     );
 };

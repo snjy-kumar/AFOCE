@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* ============================================
-   DESIGN TOKENS - Nepal Accounting Software
+   DESIGN TOKENS - AFOCE
+   Adaptive Financial Operations & Compliance Engine
    ============================================ */
 
 :root {
@@ -285,6 +286,15 @@ button {
   to { transform: rotate(360deg); }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn var(--transition-normal) ease-out;
 }
@@ -303,6 +313,17 @@ button {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg, 
+    var(--color-neutral-200) 0%,
+    var(--color-neutral-100) 50%,
+    var(--color-neutral-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }
 
 /* ============================================

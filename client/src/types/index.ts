@@ -1,5 +1,6 @@
 // ============================================
-// Common Types for Nepal Accounting Software
+// Common Types for AFOCE
+// Adaptive Financial Operations & Compliance Engine
 // ============================================
 
 // User & Authentication

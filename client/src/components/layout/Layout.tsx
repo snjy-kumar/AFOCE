@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { Sidebar, Header } from './Sidebar';
+import { GlobalSearch } from '../common/GlobalSearch';
 
 export const DashboardLayout: React.FC = () => {
     const { isAuthenticated, token } = useAuthStore();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+
+    // Global keyboard shortcuts
+    useKeyboardShortcuts([
+        {
+            key: 'k',
+            ctrlKey: true,
+            action: () => setSearchOpen(true),
+            description: 'Open global search',
+        },
+    ]);
 
     // Redirect to login if not authenticated
     if (!isAuthenticated || !token) {
@@ -13,20 +26,32 @@ export const DashboardLayout: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--color-neutral-50)] flex">
-            {/* Sidebar */}
-            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="min-h-screen bg-[var(--color-neutral-50)]">
+            {/* Sidebar - Fixed on desktop */}
+            <Sidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                onSearchClick={() => setSearchOpen(true)}
+            />
 
-            {/* Main content */}
-            <div className="flex-1 flex flex-col min-w-0">
+            {/* Main content - with left margin for fixed sidebar on desktop */}
+            <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
                 {/* Mobile header */}
-                <Header onMenuClick={() => setSidebarOpen(true)} />
+                <Header
+                    onMenuClick={() => setSidebarOpen(true)}
+                    onSearchClick={() => setSearchOpen(true)}
+                />
 
                 {/* Page content */}
-                <main className="flex-1 p-4 lg:p-6 overflow-auto">
-                    <Outlet />
+                <main className="flex-1 p-4 lg:p-6">
+                    <div className="max-w-[1600px] mx-auto">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
+
+            {/* Global Search */}
+            <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         </div>
     );
 };

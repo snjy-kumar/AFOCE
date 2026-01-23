@@ -22,8 +22,8 @@ const expenseSchema = z.object({
     accountId: z.string().min(1, 'Category is required'),
     date: z.string().min(1, 'Date is required'),
     description: z.string().min(1, 'Description is required'),
-    amount: z.number().min(0.01, 'Amount must be greater than 0'),
-    vatRate: z.number().min(0).max(100).default(13),
+    amount: z.coerce.number().min(0.01, 'Amount must be greater than 0'),
+    vatRate: z.coerce.number().min(0).max(100).default(13),
     notes: z.string().optional(),
     isPaid: z.boolean().default(true),
 });
@@ -70,7 +70,7 @@ export const NewExpensePage: React.FC = () => {
                 const response = await fetch(`${API_BASE_URL}/upload`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
                     },
                     body: formData,
                 });
@@ -79,7 +79,7 @@ export const NewExpensePage: React.FC = () => {
                     throw new Error('Failed to upload receipt');
                 }
 
-                const uploadResult = await response.json();
+                await response.json();
                 toast.success('Receipt uploaded successfully!');
             } catch (error) {
                 toast.error('Failed to upload receipt');

@@ -78,6 +78,14 @@ export async function apiPut<T, D = unknown>(url: string, data?: D): Promise<T> 
     return response.data.data as T;
 }
 
+export async function apiPatch<T, D = unknown>(url: string, data?: D): Promise<T> {
+    const response = await api.patch<ApiResponse<T>>(url, data);
+    if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Request failed');
+    }
+    return response.data.data as T;
+}
+
 export async function apiDelete<T>(url: string): Promise<T> {
     const response = await api.delete<ApiResponse<T>>(url);
     if (!response.data.success) {

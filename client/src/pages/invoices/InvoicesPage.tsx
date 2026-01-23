@@ -3,13 +3,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiGet, apiDelete } from '../../lib/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
+import { exportToCSV, exportToExcel } from '../../lib/export';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useBulkSelection } from '../../hooks/useBulkSelection';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal, ModalBody, ModalFooter } from '../../components/ui/Modal';
-import { Spinner, EmptyState, StatusBadge } from '../../components/ui/Common';
+import { StatusBadge } from '../../components/ui/Common';
+import { TableSkeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Tooltip } from '../../components/ui/Tooltip';
+import { Badge } from '../../components/ui/Badge';
+import { Alert } from '../../components/ui/Alert';
 import { Pagination } from '../../components/common/Pagination';
 import {
     Plus,
@@ -21,6 +30,10 @@ import {
     Trash2,
     Download,
     Send,
+    FileSpreadsheet,
+    CheckSquare,
+    Square,
+    X,
 } from 'lucide-react';
 import type { Invoice } from '../../types';
 
@@ -30,6 +43,7 @@ export const InvoicesPage: React.FC = () => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 300);
     const [statusFilter, setStatusFilter] = useState('all');
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -49,11 +63,14 @@ export const InvoicesPage: React.FC = () => {
 
     const filteredInvoices = (invoices || []).filter((invoice) => {
         const matchesSearch =
-            invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            invoice.customer?.name.toLowerCase().includes(searchQuery.toLowerCase());
+            invoice.invoiceNumber.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            invoice.customer?.name.toLowerCase().includes(debouncedSearch.toLowerCase());
         const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
+
+    // Bulk selection
+    const bulkSelection = useBulkSelection(filteredInvoices);
 
     // Pagination logic
     const totalPages = Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE);
@@ -64,6 +81,65 @@ export const InvoicesPage: React.FC = () => {
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Keyboard shortcuts
+    useKeyboardShortcuts([
+        {
+            key: 'n',
+            ctrlKey: true,
+            action: () => navigate('/invoices/new'),
+            description: 'Create new invoice',
+        },
+    ]);
+
+    // Export handlers
+    const handleExportCSV = () => {
+        exportToCSV(
+            filteredInvoices,
+            [
+                { key: 'invoiceNumber', label: 'Invoice Number' },
+                { key: 'customer.name', label: 'Customer' },
+                { key: 'issueDate', label: 'Issue Date', format: (val) => formatDate(val) },
+                { key: 'dueDate', label: 'Due Date', format: (val) => formatDate(val) },
+                { key: 'status', label: 'Status' },
+                { key: 'subtotal', label: 'Subtotal', format: (val) => formatCurrency(val) },
+                { key: 'vatAmount', label: 'VAT', format: (val) => formatCurrency(val) },
+                { key: 'total', label: 'Total', format: (val) => formatCurrency(val) },
+                { key: 'paidAmount', label: 'Paid', format: (val) => formatCurrency(val) },
+            ],
+            'invoices'
+        );
+    };
+
+    const handleExportExcel = () => {
+        exportToExcel(
+            filteredInvoices,
+            [
+                { key: 'invoiceNumber', label: 'Invoice Number' },
+                { key: 'customer.name', label: 'Customer' },
+                { key: 'issueDate', label: 'Issue Date', format: (val) => formatDate(val) },
+                { key: 'dueDate', label: 'Due Date', format: (val) => formatDate(val) },
+                { key: 'status', label: 'Status' },
+                { key: 'subtotal', label: 'Subtotal', format: (val) => formatCurrency(val) },
+                { key: 'vatAmount', label: 'VAT', format: (val) => formatCurrency(val) },
+                { key: 'total', label: 'Total', format: (val) => formatCurrency(val) },
+                { key: 'paidAmount', label: 'Paid', format: (val) => formatCurrency(val) },
+            ],
+            'invoices'
+        );
+    };
+
+    // Bulk delete handler
+    const handleBulkDelete = async () => {
+        if (!window.confirm(`Delete ${bulkSelection.selectedCount} selected invoices?`)) {
+            return;
+        }
+
+        const selectedItems = bulkSelection.getSelectedItems();
+        await Promise.all(selectedItems.map(item => deleteMutation.mutateAsync(item.id)));
+        bulkSelection.clearSelection();
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
     };
 
     const statusOptions = [
@@ -78,8 +154,17 @@ export const InvoicesPage: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <Spinner size="lg" />
+            <div className="animate-fade-in">
+                <PageHeader title="Invoices" />
+                <div className="mb-6">
+                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                        <div className="h-10 w-full sm:max-w-xs bg-[var(--color-neutral-200)] rounded-lg animate-pulse" />
+                        <div className="h-10 w-full sm:max-w-xs bg-[var(--color-neutral-200)] rounded-lg animate-pulse" />
+                    </div>
+                    <Card>
+                        <TableSkeleton rows={10} columns={6} />
+                    </Card>
+                </div>
             </div>
         );
     }
@@ -90,11 +175,51 @@ export const InvoicesPage: React.FC = () => {
                 title="Invoices"
                 subtitle={`${invoices?.length || 0} total invoices`}
                 action={
-                    <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => navigate('/invoices/new')}>
-                        New Invoice
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            leftIcon={<FileSpreadsheet className="w-4 h-4" />}
+                            onClick={handleExportExcel}
+                            disabled={filteredInvoices.length === 0}
+                        >
+                            Export
+                        </Button>
+                        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => navigate('/invoices/new')}>
+                            New Invoice
+                        </Button>
+                    </div>
                 }
             />
+
+            {/* Bulk Actions Bar */}
+            {bulkSelection.selectedCount > 0 && (
+                <div className="mb-4 p-4 bg-[var(--color-primary-50)] border border-[var(--color-primary-200)] rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <CheckSquare className="w-5 h-5 text-[var(--color-primary-600)]" />
+                        <span className="font-medium text-[var(--color-primary-900)]">
+                            {bulkSelection.selectedCount} invoice{bulkSelection.selectedCount > 1 ? 's' : ''} selected
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<Trash2 className="w-4 h-4" />}
+                            onClick={handleBulkDelete}
+                        >
+                            Delete Selected
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<X className="w-4 h-4" />}
+                            onClick={bulkSelection.clearSelection}
+                        >
+                            Clear
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -121,6 +246,21 @@ export const InvoicesPage: React.FC = () => {
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[var(--color-neutral-200)] bg-[var(--color-neutral-50)]">
+                                        <th className="w-12 p-4">
+                                            <button
+                                                onClick={bulkSelection.toggleAll}
+                                                className="w-5 h-5 flex items-center justify-center text-[var(--color-neutral-600)] hover:text-[var(--color-primary-600)]"
+                                                aria-label={bulkSelection.isAllSelected ? 'Deselect all' : 'Select all'}
+                                            >
+                                                {bulkSelection.isAllSelected ? (
+                                                    <CheckSquare className="w-5 h-5" />
+                                                ) : bulkSelection.isSomeSelected ? (
+                                                    <Square className="w-5 h-5" strokeWidth={3} />
+                                                ) : (
+                                                    <Square className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                        </th>
                                         <th className="text-left p-4 text-sm font-medium text-[var(--color-neutral-600)]">
                                             Invoice
                                         </th>
@@ -150,6 +290,8 @@ export const InvoicesPage: React.FC = () => {
                                             key={invoice.id}
                                             invoice={invoice}
                                             onDelete={() => setDeletingId(invoice.id)}
+                                            isSelected={bulkSelection.isSelected(invoice.id)}
+                                            onToggleSelect={() => bulkSelection.toggleItem(invoice.id)}
                                         />
                                     ))}
                                 </tbody>
@@ -166,26 +308,24 @@ export const InvoicesPage: React.FC = () => {
                     />
                 </>
             ) : (
-                <Card>
-                    <EmptyState
-                        icon={<FileText className="w-8 h-8" />}
-                        title="No invoices found"
-                        description={
-                            searchQuery || statusFilter !== 'all'
-                                ? 'Try adjusting your filters'
-                                : 'Create your first invoice to get started'
-                        }
-                        action={
-                            !searchQuery &&
-                            statusFilter === 'all' && (
-                                <Button onClick={() => navigate('/invoices/new')}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Create Invoice
-                                </Button>
-                            )
-                        }
-                    />
-                </Card>
+                <EmptyState
+                    icon={<FileText className="w-12 h-12 text-[var(--color-neutral-400)]" />}
+                    title="No invoices found"
+                    description={
+                        searchQuery || statusFilter !== 'all'
+                            ? 'Try adjusting your filters to see more results'
+                            : 'Create your first invoice to get started tracking your billing'
+                    }
+                    action={
+                        searchQuery || statusFilter !== 'all'
+                            ? undefined
+                            : {
+                                label: 'Create Invoice',
+                                onClick: () => navigate('/invoices/new'),
+                                icon: <Plus className="w-4 h-4" />,
+                            }
+                    }
+                />
             )}
 
             {/* Delete Confirmation Modal */}
@@ -221,9 +361,11 @@ export const InvoicesPage: React.FC = () => {
 interface InvoiceRowProps {
     invoice: Invoice;
     onDelete: () => void;
+    isSelected: boolean;
+    onToggleSelect: () => void;
 }
 
-const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, onDelete }) => {
+const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, onDelete, isSelected, onToggleSelect }) => {
     const navigate = useNavigate();
     const [showMenu, setShowMenu] = useState(false);
 
@@ -233,14 +375,31 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, onDelete }) => {
         new Date(invoice.dueDate) < new Date();
 
     return (
-        <tr className="border-b border-[var(--color-neutral-100)] hover:bg-[var(--color-neutral-50)] transition-colors">
+        <tr className="border-b border-[var(--color-neutral-100)] hover:bg-[var(--color-neutral-50)] transition-all duration-200">
             <td className="p-4">
-                <Link
-                    to={`/invoices/${invoice.id}`}
-                    className="font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)]"
-                >
-                    {invoice.invoiceNumber}
-                </Link>
+                <Tooltip content={isSelected ? 'Deselect' : 'Select'}>
+                    <button
+                        onClick={onToggleSelect}
+                        className="w-5 h-5 flex items-center justify-center text-[var(--color-neutral-600)] hover:text-[var(--color-primary-600)] transition-colors"
+                        aria-label={isSelected ? 'Deselect' : 'Select'}
+                    >
+                        {isSelected ? (
+                            <CheckSquare className="w-5 h-5 text-[var(--color-primary-600)]" />
+                        ) : (
+                            <Square className="w-5 h-5" />
+                        )}
+                    </button>
+                </Tooltip>
+            </td>
+            <td className="p-4">
+                <Tooltip content="View invoice details">
+                    <Link
+                        to={`/invoices/${invoice.id}`}
+                        className="font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] hover:underline transition-colors"
+                    >
+                        {invoice.invoiceNumber}
+                    </Link>
+                </Tooltip>
             </td>
             <td className="p-4">
                 <span className="text-[var(--color-neutral-900)]">
@@ -249,9 +408,18 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, onDelete }) => {
             </td>
             <td className="p-4 text-[var(--color-neutral-600)]">{formatDate(invoice.issueDate)}</td>
             <td className="p-4">
-                <span className={isOverdue ? 'text-[var(--color-danger-600)] font-medium' : 'text-[var(--color-neutral-600)]'}>
-                    {formatDate(invoice.dueDate)}
-                </span>
+                {isOverdue && (
+                    <Tooltip content="This invoice is overdue">
+                        <span className="text-[var(--color-danger-600)] font-medium">
+                            {formatDate(invoice.dueDate)}
+                        </span>
+                    </Tooltip>
+                )}
+                {!isOverdue && (
+                    <span className="text-[var(--color-neutral-600)]">
+                        {formatDate(invoice.dueDate)}
+                    </span>
+                )}
             </td>
             <td className="p-4 text-right font-medium text-[var(--color-neutral-900)]">
                 {formatCurrency(invoice.total)}
@@ -261,12 +429,14 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, onDelete }) => {
             </td>
             <td className="p-4 text-right">
                 <div className="relative inline-block">
-                    <button
-                        onClick={() => setShowMenu(!showMenu)}
-                        className="p-2 rounded-lg hover:bg-[var(--color-neutral-100)]"
-                    >
-                        <MoreVertical className="w-4 h-4 text-[var(--color-neutral-400)]" />
-                    </button>
+                    <Tooltip content="More actions">
+                        <button
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="p-2 rounded-lg hover:bg-[var(--color-neutral-100)] transition-colors"
+                        >
+                            <MoreVertical className="w-4 h-4 text-[var(--color-neutral-400)]" />
+                        </button>
+                    </Tooltip>
                     {showMenu && (
                         <>
                             <div className="fixed inset-0" onClick={() => setShowMenu(false)} />

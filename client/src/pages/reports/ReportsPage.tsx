@@ -160,6 +160,9 @@ interface ProfitLossReportProps {
 const ProfitLossReport: React.FC<ProfitLossReportProps> = ({ data }) => {
     if (!data) return null;
 
+    const revenueBreakdown = data.revenueBreakdown || [];
+    const expenseBreakdown = data.expenseBreakdown || [];
+
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
@@ -195,43 +198,55 @@ const ProfitLossReport: React.FC<ProfitLossReportProps> = ({ data }) => {
                 <Card>
                     <CardHeader title="Revenue by Category" />
                     <CardBody>
-                        <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={data.revenueBreakdown}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                    <XAxis dataKey="category" tick={{ fontSize: 12 }} />
-                                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `Rs.${v / 1000}k`} />
-                                    <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                                    <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        {revenueBreakdown.length > 0 ? (
+                            <div style={{ width: '100%', height: '300px' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={revenueBreakdown}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis dataKey="category" tick={{ fontSize: 12 }} />
+                                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `Rs.${v / 1000}k`} />
+                                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                                        <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-64 text-neutral-500">
+                                No revenue data available
+                            </div>
+                        )}
                     </CardBody>
                 </Card>
 
                 <Card>
                     <CardHeader title="Expense Breakdown" />
                     <CardBody>
-                        <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RechartsPie>
-                                    <Pie
-                                        data={data.expenseBreakdown}
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={80}
-                                        dataKey="amount"
-                                        nameKey="category"
-                                        label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                                    >
-                                        {data.expenseBreakdown.map((_, index) => (
-                                            <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                                </RechartsPie>
-                            </ResponsiveContainer>
-                        </div>
+                        {expenseBreakdown.length > 0 ? (
+                            <div style={{ width: '100%', height: '300px' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RechartsPie>
+                                        <Pie
+                                            data={expenseBreakdown}
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={80}
+                                            dataKey="amount"
+                                            nameKey="category"
+                                            label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                                        >
+                                            {expenseBreakdown.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                                    </RechartsPie>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-64 text-neutral-500">
+                                No expense data available
+                            </div>
+                        )}
                     </CardBody>
                 </Card>
             </div>
@@ -246,58 +261,96 @@ interface BalanceSheetReportProps {
 const BalanceSheetReport: React.FC<BalanceSheetReportProps> = ({ data }) => {
     if (!data) return null;
 
+    const assetBreakdown = data.assetBreakdown || [];
+    const liabilityBreakdown = data.liabilityBreakdown || [];
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card>
-                <CardHeader title="Assets" />
-                <CardBody>
-                    <p className="text-2xl font-bold text-[var(--color-primary-600)] mb-4">
-                        {formatCurrency(data.assets)}
-                    </p>
-                    <div className="space-y-2">
-                        {data.assetBreakdown?.map((item, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                                <span className="text-[var(--color-neutral-600)]">{item.name}</span>
-                                <span className="font-medium">{formatCurrency(item.amount)}</span>
-                            </div>
-                        ))}
-                    </div>
-                </CardBody>
-            </Card>
-
-            <Card>
-                <CardHeader title="Liabilities" />
-                <CardBody>
-                    <p className="text-2xl font-bold text-[var(--color-danger-600)] mb-4">
-                        {formatCurrency(data.liabilities)}
-                    </p>
-                    <div className="space-y-2">
-                        {data.liabilityBreakdown?.map((item, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                                <span className="text-[var(--color-neutral-600)]">{item.name}</span>
-                                <span className="font-medium">{formatCurrency(item.amount)}</span>
-                            </div>
-                        ))}
-                    </div>
-                </CardBody>
-            </Card>
-
-            <Card>
-                <CardHeader title="Equity" />
-                <CardBody>
-                    <p className="text-2xl font-bold text-[var(--color-success-600)] mb-4">
-                        {formatCurrency(data.equity)}
-                    </p>
-                    <div className="p-4 bg-[var(--color-neutral-50)] rounded-lg">
-                        <p className="text-sm text-[var(--color-neutral-500)]">
-                            Assets - Liabilities = Equity
+        <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <CardBody>
+                        <p className="text-sm text-[var(--color-neutral-500)]">Total Assets</p>
+                        <p className="text-2xl font-bold text-[var(--color-success-600)]">
+                            {formatCurrency(data.assets)}
                         </p>
-                        <p className="text-sm font-medium mt-1">
-                            {formatCurrency(data.assets)} - {formatCurrency(data.liabilities)} = {formatCurrency(data.equity)}
+                    </CardBody>
+                </Card>
+                <Card>
+                    <CardBody>
+                        <p className="text-sm text-[var(--color-neutral-500)]">Total Liabilities</p>
+                        <p className="text-2xl font-bold text-[var(--color-danger-600)]">
+                            {formatCurrency(data.liabilities)}
                         </p>
-                    </div>
-                </CardBody>
-            </Card>
+                    </CardBody>
+                </Card>
+                <Card>
+                    <CardBody>
+                        <p className="text-sm text-[var(--color-neutral-500)]">Equity</p>
+                        <p className="text-2xl font-bold text-[var(--color-primary-600)]">
+                            {formatCurrency(data.equity)}
+                        </p>
+                    </CardBody>
+                </Card>
+            </div>
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader title="Asset Breakdown" />
+                    <CardBody>
+                        {assetBreakdown.length > 0 ? (
+                            <div style={{ width: '100%', height: '300px' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={assetBreakdown}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `Rs.${v / 1000}k`} />
+                                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                                        <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-64 text-neutral-500">
+                                No asset data available
+                            </div>
+                        )}
+                    </CardBody>
+                </Card>
+
+                <Card>
+                    <CardHeader title="Liability Breakdown" />
+                    <CardBody>
+                        {liabilityBreakdown.length > 0 ? (
+                            <div style={{ width: '100%', height: '300px' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RechartsPie>
+                                        <Pie
+                                            data={liabilityBreakdown}
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={80}
+                                            dataKey="amount"
+                                            nameKey="name"
+                                            label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                                        >
+                                            {liabilityBreakdown.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                                    </RechartsPie>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-64 text-neutral-500">
+                                No liability data available
+                            </div>
+                        )}
+                    </CardBody>
+                </Card>
+            </div>
         </div>
     );
 };

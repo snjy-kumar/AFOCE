@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { apiGet, apiPut, API_BASE_URL } from '../../lib/api';
+import { apiGet, apiPatch, API_BASE_URL } from '../../lib/api';
 import { formatDateForInput } from '../../lib/utils';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
@@ -22,8 +22,8 @@ const expenseSchema = z.object({
     accountId: z.string().min(1, 'Expense category is required'),
     date: z.string().min(1, 'Date is required'),
     description: z.string().min(1, 'Description is required'),
-    amount: z.number().positive('Amount must be positive'),
-    vatRate: z.number().min(0).max(100).default(13),
+    amount: z.coerce.number().positive('Amount must be positive'),
+    vatRate: z.coerce.number().min(0).max(100).default(13),
     isPaid: z.boolean().default(true),
     notes: z.string().optional(),
 });
@@ -60,7 +60,7 @@ export const EditExpensePage: React.FC = () => {
         setValue,
         formState: { errors },
     } = useForm<ExpenseFormData>({
-        resolver: zodResolver(expenseSchema),
+        resolver: zodResolver(expenseSchema) as any,
         defaultValues: {
             vatRate: 13,
             isPaid: true,
@@ -82,7 +82,7 @@ export const EditExpensePage: React.FC = () => {
     }, [expense, setValue]);
 
     const updateMutation = useMutation({
-        mutationFn: (data: ExpenseFormData) => apiPut(`/expenses/${id}`, data),
+        mutationFn: (data: ExpenseFormData) => apiPatch(`/expenses/${id}`, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expenses'] });
             queryClient.invalidateQueries({ queryKey: ['expense', id] });
@@ -106,7 +106,7 @@ export const EditExpensePage: React.FC = () => {
                 const response = await fetch(`${API_BASE_URL}/upload`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
                     },
                     body: formData,
                 });
@@ -115,7 +115,7 @@ export const EditExpensePage: React.FC = () => {
                     throw new Error('Failed to upload receipt');
                 }
 
-                const uploadResult = await response.json();
+                await response.json();
                 // Note: Backend needs to be updated to handle receipt URL in expense update
                 // For now, we'll just show success
                 toast.success('Receipt uploaded successfully!');

@@ -1,6 +1,7 @@
 import { PrismaClient, AccountType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import 'dotenv/config';
+import { seedInvoicesAndExpenses } from './seed-data';
 
 /**
  * Database seed script
@@ -212,13 +213,37 @@ async function seedCustomers(userId: string): Promise<void> {
     console.log('\nSeeding customers...');
 
     const customers = [
-        { name: 'ABC Trading Company', email: 'abc@example.com', phone: '+977-1-4444444', panNumber: '111111111' },
-        { name: 'XYZ Enterprises', email: 'xyz@example.com', phone: '+977-1-5555555', panNumber: '222222222' },
-        { name: 'Nepal Tech Solutions', email: 'nts@example.com', phone: '+977-1-6666666', panNumber: '333333333' },
+        { 
+            name: 'Himalayan Traders Pvt. Ltd.', 
+            email: 'contact@himalayan.com.np', 
+            phone: '+977-1-4444444', 
+            address: 'Thamel, Kathmandu',
+            panNumber: '111111111' 
+        },
+        { 
+            name: 'Everest Enterprises', 
+            email: 'info@everest.com.np', 
+            phone: '+977-1-5555555',
+            address: 'Boudha, Kathmandu',
+            panNumber: '222222222' 
+        },
+        { 
+            name: 'Annapurna Suppliers Co.', 
+            email: 'sales@annapurna.com.np', 
+            phone: '+977-1-6666666',
+            address: 'Lazimpat, Kathmandu',
+            panNumber: '333333333' 
+        },
+        { 
+            name: 'Pokhara Trading House', 
+            email: 'info@pokharatrade.com', 
+            phone: '+977-61-554433',
+            address: 'Lakeside, Pokhara',
+            panNumber: '444444444' 
+        },
     ];
 
     for (const customer of customers) {
-        // Check if customer already exists by name for this user
         const existing = await prisma.customer.findFirst({
             where: { userId, name: customer.name },
         });
@@ -227,10 +252,7 @@ async function seedCustomers(userId: string): Promise<void> {
             await prisma.customer.create({
                 data: {
                     userId,
-                    name: customer.name,
-                    email: customer.email,
-                    phone: customer.phone,
-                    panNumber: customer.panNumber,
+                    ...customer,
                 },
             });
             console.log(`  Created: ${customer.name}`);
@@ -244,12 +266,30 @@ async function seedVendors(userId: string): Promise<void> {
     console.log('\nSeeding vendors...');
 
     const vendors = [
-        { name: 'Office Supplies Nepal', email: 'office@example.com', phone: '+977-1-7777777', panNumber: '444444444' },
-        { name: 'IT Solutions Ltd', email: 'it@example.com', phone: '+977-1-8888888', panNumber: '555555555' },
+        { 
+            name: 'Kathmandu Office Supplies', 
+            email: 'sales@ktmoffice.com', 
+            phone: '+977-1-7777777',
+            address: 'New Road, Kathmandu',
+            panNumber: '555555555' 
+        },
+        { 
+            name: 'Nepal Stationary Hub', 
+            email: 'info@nepalstationery.com', 
+            phone: '+977-1-8888888',
+            address: 'Putalisadak, Kathmandu',
+            panNumber: '666666666' 
+        },
+        { 
+            name: 'Himalayan Tech Solutions', 
+            email: 'support@himtech.com.np', 
+            phone: '+977-1-9999999',
+            address: 'Durbarmarg, Kathmandu',
+            panNumber: '777777777' 
+        },
     ];
 
     for (const vendor of vendors) {
-        // Check if vendor already exists by name for this user
         const existing = await prisma.vendor.findFirst({
             where: { userId, name: vendor.name },
         });
@@ -258,10 +298,7 @@ async function seedVendors(userId: string): Promise<void> {
             await prisma.vendor.create({
                 data: {
                     userId,
-                    name: vendor.name,
-                    email: vendor.email,
-                    phone: vendor.phone,
-                    panNumber: vendor.panNumber,
+                    ...vendor,
                 },
             });
             console.log(`  Created: ${vendor.name}`);
@@ -302,6 +339,9 @@ async function main(): Promise<void> {
 
     // Seed vendors
     await seedVendors(user.id);
+
+    // Seed invoices and expenses
+    await seedInvoicesAndExpenses(user.id);
 
     console.log('\n✓ Database seed completed successfully!');
     console.log('\n📋 Demo credentials:');

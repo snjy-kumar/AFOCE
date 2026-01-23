@@ -27,3 +27,9 @@ prisma/*.db-journal
 # OS files
 .DS_Store
 Thumbs.db
+
+# Markdown files
+*.md
+!README.md
+!README.MD
+

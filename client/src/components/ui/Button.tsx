@@ -34,19 +34,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const variants = {
             primary: `
-        bg-[var(--color-primary-600)] text-white
+        bg-[var(--color-primary-600)] text-white shadow-md hover:shadow-lg
         hover:bg-[var(--color-primary-700)]
         focus:ring-[var(--color-primary-500)]
         active:bg-[var(--color-primary-800)]
       `,
             secondary: `
-        bg-[var(--color-neutral-100)] text-[var(--color-neutral-700)]
-        hover:bg-[var(--color-neutral-200)]
+        bg-[var(--color-neutral-100)] text-[var(--color-neutral-700)] border border-[var(--color-neutral-200)] shadow-sm
+        hover:bg-[var(--color-neutral-200)] hover:shadow
         focus:ring-[var(--color-neutral-400)]
         active:bg-[var(--color-neutral-300)]
       `,
             outline: `
-        border-2 border-[var(--color-neutral-300)] text-[var(--color-neutral-700)]
+        border-2 border-[var(--color-neutral-300)] text-[var(--color-neutral-700)] bg-white shadow-sm hover:shadow
         hover:bg-[var(--color-neutral-50)] hover:border-[var(--color-neutral-400)]
         focus:ring-[var(--color-neutral-400)]
       `,
@@ -56,7 +56,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         focus:ring-[var(--color-neutral-400)]
       `,
             danger: `
-        bg-[var(--color-danger-600)] text-white
+        bg-[var(--color-danger-600)] text-white shadow-md hover:shadow-lg
         hover:bg-[var(--color-danger-700)]
         focus:ring-[var(--color-danger-500)]
         active:bg-[var(--color-danger-800)]

@@ -34,20 +34,26 @@ export const validate = (schemas: ValidationSchemas): RequestHandler => {
             const result = schemas.query.safeParse(req.query);
             if (!result.success) {
                 errors.query = result.error.errors;
+            } else {
+                // Apply transformed values (including defaults) to req.query
+                // Modify in-place since Express 5 makes req.query read-only for reassignment
+                Object.keys(result.data).forEach((key) => {
+                    (req.query as Record<string, unknown>)[key] = result.data[key as keyof typeof result.data];
+                });
             }
-            // Express 5: req.query is read-only, so we don't reassign
-            // The validation just ensures the data is valid
-            // Controllers will still use req.query directly
         }
 
         if (schemas.params) {
             const result = schemas.params.safeParse(req.params);
             if (!result.success) {
                 errors.params = result.error.errors;
+            } else {
+                // Apply transformed values to req.params
+                // Modify in-place since Express 5 makes req.params read-only for reassignment
+                Object.keys(result.data).forEach((key) => {
+                    (req.params as Record<string, unknown>)[key] = result.data[key as keyof typeof result.data];
+                });
             }
-            // Express 5: req.params is read-only, so we don't reassign
-            // The validation just ensures the data is valid
-            // Controllers will still use req.params directly
         }
 
         if (Object.keys(errors).length > 0) {

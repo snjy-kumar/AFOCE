@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "Nepal Accounting Software - Backend API",
+  "description": "AFOCE - Adaptive Financial Operations & Compliance Engine - Backend API",
   "license": "ISC",
   "author": "Sanjay Kumar Thakur",
   "type": "module",

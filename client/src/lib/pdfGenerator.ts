@@ -45,7 +45,6 @@ export const generateInvoicePDF = (
 
   // Fresh, high-contrast colors
   const primaryColor: [number, number, number] = [29, 78, 216]; // blue-700 - deeper blue for better contrast
-  const secondaryColor: [number, number, number] = [59, 130, 246]; // blue-500 - vibrant blue
   const textDarkColor: [number, number, number] = [31, 41, 55]; // gray-800 - darker for readability
   const textLightColor: [number, number, number] = [75, 85, 99]; // gray-600 - lighter but still readable
   const backgroundColor: [number, number, number] = [249, 250, 251]; // gray-50 - light fresh background

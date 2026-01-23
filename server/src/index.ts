@@ -8,8 +8,8 @@ import routes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 /**
- * Nepal Accounting Software - Backend Server
- * Express application with security middleware and structured routing
+ * AFOCE - Adaptive Financial Operations & Compliance Engine
+ * Backend Server - Express application with security middleware and structured routing
  */
 
 const app = express();
@@ -40,7 +40,7 @@ const startServer = (): void => {
     app.listen(env.PORT, () => {
         console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║     Nepal Accounting Software - Backend Server            ║
+║     AFOCE - Backend Server                                ║
 ╠═══════════════════════════════════════════════════════════╣
 ║  Status:      Running                                     ║
 ║  Environment: ${env.NODE_ENV.padEnd(43)}║

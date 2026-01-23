@@ -1,6 +1,6 @@
-# Nepal Accounting Software
+# AFOCE - Adaptive Financial Operations & Compliance Engine
 
-A comprehensive accounting application built for small businesses in Nepal, featuring invoicing, expense tracking, VAT management, and financial reporting.
+An enterprise-grade workflow-driven financial operations platform for small businesses in Nepal, featuring intelligent invoicing, automated compliance, expense tracking, and operational visibility.
 
 ## 🚀 Features
 
@@ -46,7 +46,7 @@ A comprehensive accounting application built for small businesses in Nepal, feat
 
 \`\`\`bash
 git clone <repository-url>
-cd accounting-web-app
+cd afoce
 \`\`\`
 
 ### 2. Setup Backend
@@ -100,7 +100,7 @@ Frontend will run at: **http://localhost:5173**
 ## 📁 Project Structure
 
 \`\`\`
-accounting-web-app/
+afoce/
 ├── client/                 # Frontend React app
 │   ├── src/
 │   │   ├── components/    # Reusable UI components

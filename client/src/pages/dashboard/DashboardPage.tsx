@@ -6,7 +6,11 @@ import { formatCurrency, formatDate } from '../../lib/utils';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { StatusBadge, Spinner, EmptyState } from '../../components/ui/Common';
+import { StatusBadge, EmptyState } from '../../components/ui/Common';
+import { StatsSkeleton } from '../../components/ui/Skeleton';
+import { Tooltip } from '../../components/ui/Tooltip';
+import { Badge } from '../../components/ui/Badge';
+import { Alert } from '../../components/ui/Alert';
 import {
     TrendingUp,
     TrendingDown,
@@ -23,7 +27,7 @@ import {
     Area,
     XAxis,
     YAxis,
-    Tooltip,
+    Tooltip as RechartsTooltip,
     ResponsiveContainer,
     PieChart,
     Pie,
@@ -41,8 +45,13 @@ export const DashboardPage: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <Spinner size="lg" />
+            <div className="animate-fade-in">
+                <PageHeader title="Dashboard" subtitle="Overview of your business finances" />
+                <StatsSkeleton />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div className="bg-white rounded-lg border border-[var(--color-neutral-200)] p-6 h-80 animate-pulse" />
+                    <div className="bg-white rounded-lg border border-[var(--color-neutral-200)] p-6 h-80 animate-pulse" />
+                </div>
             </div>
         );
     }
@@ -123,7 +132,7 @@ export const DashboardPage: React.FC = () => {
                                         tick={{ fontSize: 12, fill: '#64748b' }}
                                         tickFormatter={(value) => `Rs.${value / 1000}k`}
                                     />
-                                    <Tooltip
+                                    <RechartsTooltip
                                         contentStyle={{
                                             backgroundColor: 'white',
                                             border: '1px solid #e2e8f0',
@@ -166,7 +175,7 @@ export const DashboardPage: React.FC = () => {
                                             <Cell key={index} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip
+                                    <RechartsTooltip
                                         formatter={(value) => formatCurrency(value as number)}
                                         contentStyle={{
                                             backgroundColor: 'white',
@@ -233,15 +242,17 @@ export const DashboardPage: React.FC = () => {
                                     {(stats?.recentInvoices || []).slice(0, 5).map((invoice) => (
                                         <tr
                                             key={invoice.id}
-                                            className="border-b border-[var(--color-neutral-100)] hover:bg-[var(--color-neutral-50)]"
+                                            className="border-b border-[var(--color-neutral-100)] hover:bg-[var(--color-neutral-50)] transition-all duration-200"
                                         >
                                             <td className="p-4">
-                                                <Link
-                                                    to={`/invoices/${invoice.id}`}
-                                                    className="font-medium text-[var(--color-neutral-900)] hover:text-[var(--color-primary-600)]"
-                                                >
-                                                    {invoice.invoiceNumber}
-                                                </Link>
+                                                <Tooltip content="View invoice details">
+                                                    <Link
+                                                        to={`/invoices/${invoice.id}`}
+                                                        className="font-medium text-[var(--color-neutral-900)] hover:text-[var(--color-primary-600)] transition-colors"
+                                                    >
+                                                        {invoice.invoiceNumber}
+                                                    </Link>
+                                                </Tooltip>
                                                 <div className="text-xs text-[var(--color-neutral-500)]">
                                                     {formatDate(invoice.issueDate)}
                                                 </div>
@@ -307,15 +318,17 @@ export const DashboardPage: React.FC = () => {
                                     {(stats?.recentExpenses || []).slice(0, 5).map((expense) => (
                                         <tr
                                             key={expense.id}
-                                            className="border-b border-[var(--color-neutral-100)] hover:bg-[var(--color-neutral-50)]"
+                                            className="border-b border-[var(--color-neutral-100)] hover:bg-[var(--color-neutral-50)] transition-all duration-200"
                                         >
                                             <td className="p-4">
-                                                <Link
-                                                    to={`/expenses/${expense.id}`}
-                                                    className="font-medium text-[var(--color-neutral-900)] hover:text-[var(--color-primary-600)]"
-                                                >
-                                                    {expense.description}
-                                                </Link>
+                                                <Tooltip content="View expense details">
+                                                    <Link
+                                                        to={`/expenses/${expense.id}`}
+                                                        className="font-medium text-[var(--color-neutral-900)] hover:text-[var(--color-primary-600)] transition-colors"
+                                                    >
+                                                        {expense.description}
+                                                    </Link>
+                                                </Tooltip>
                                                 <div className="text-xs text-[var(--color-neutral-500)]">
                                                     {formatDate(expense.date)}
                                                 </div>
@@ -392,22 +405,24 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, subtitle, ico
     };
 
     return (
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-200">
             <CardBody>
                 <div className="flex items-start justify-between">
-                    <div className={`p-2.5 rounded-lg ${colors[color]}`}>{icon}</div>
+                    <div className={`p-2.5 rounded-lg ${colors[color]} transition-transform hover:scale-110 duration-200`}>{icon}</div>
                     {change !== undefined && (
-                        <div
-                            className={`flex items-center gap-0.5 text-sm font-medium ${change >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'
-                                }`}
-                        >
-                            {change >= 0 ? (
-                                <ArrowUpRight className="w-4 h-4" />
-                            ) : (
-                                <ArrowDownRight className="w-4 h-4" />
-                            )}
-                            {Math.abs(change)}%
-                        </div>
+                        <Tooltip content={`${change >= 0 ? 'Increase' : 'Decrease'} from last period`}>
+                            <div
+                                className={`flex items-center gap-0.5 text-sm font-medium ${change >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'
+                                    }`}
+                            >
+                                {change >= 0 ? (
+                                    <ArrowUpRight className="w-4 h-4" />
+                                ) : (
+                                    <ArrowDownRight className="w-4 h-4" />
+                                )}
+                                {Math.abs(change)}%
+                            </div>
+                        </Tooltip>
                     )}
                 </div>
                 <div className="mt-4">

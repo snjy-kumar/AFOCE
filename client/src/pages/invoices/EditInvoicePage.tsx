@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { apiGet, apiPut } from '../../lib/api';
+import { apiGet, apiPatch } from '../../lib/api';
 import { formatDateForInput } from '../../lib/utils';
 import { generateInvoicePDF } from '../../lib/pdfGenerator';
 import { PageHeader } from '../../components/layout/Layout';
@@ -21,8 +21,8 @@ const invoiceSchema = z.object({
     customerId: z.string().min(1, 'Customer is required'),
     issueDate: z.string().min(1, 'Issue date is required'),
     dueDate: z.string().min(1, 'Due date is required'),
-    vatRate: z.number().min(0).max(100).default(13),
-    discountAmount: z.number().min(0).default(0),
+    vatRate: z.number().min(0).max(100),
+    discountAmount: z.number().min(0),
     notes: z.string().optional(),
     terms: z.string().optional(),
     items: z.array(
@@ -99,7 +99,7 @@ export const EditInvoicePage: React.FC = () => {
     }, [invoice, setValue]);
 
     const updateMutation = useMutation({
-        mutationFn: (data: InvoiceFormData) => apiPut(`/invoices/${id}`, data),
+        mutationFn: (data: InvoiceFormData) => apiPatch(`/invoices/${id}`, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['invoice', id] });
@@ -116,9 +116,11 @@ export const EditInvoicePage: React.FC = () => {
 
         const customer = customers?.find((c) => c.id === invoice.customerId);
 
+        const invoiceTotal = invoice.subtotal + invoice.vatAmount - invoice.discountAmount;
+
         generateInvoicePDF(
             {
-                id: invoice.id,
+                id: Number(invoice.id),
                 invoiceNumber: invoice.invoiceNumber,
                 date: invoice.issueDate,
                 dueDate: invoice.dueDate,
@@ -139,7 +141,7 @@ export const EditInvoicePage: React.FC = () => {
                 vatRate: invoice.vatRate,
                 vatAmount: invoice.vatAmount,
                 discountAmount: invoice.discountAmount,
-                totalAmount: invoice.totalAmount,
+                totalAmount: invoiceTotal,
                 notes: invoice.notes,
                 status: invoice.status,
             },
@@ -155,7 +157,18 @@ export const EditInvoicePage: React.FC = () => {
     };
 
     const onSubmit = (data: InvoiceFormData) => {
-        updateMutation.mutate(data);
+        // Ensure numeric fields are numbers (convert from string inputs)
+        const formattedData = {
+            ...data,
+            vatRate: Number(data.vatRate),
+            discountAmount: Number(data.discountAmount),
+            items: data.items.map(item => ({
+                ...item,
+                quantity: Number(item.quantity),
+                rate: Number(item.rate),
+            })),
+        };
+        updateMutation.mutate(formattedData);
     };
 
     const items = watch('items');
