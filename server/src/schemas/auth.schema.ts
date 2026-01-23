@@ -34,17 +34,25 @@ export const updateProfileSchema = z.object({
 });
 
 export const changePasswordSchema = z.object({
-    currentPassword: z.string().min(1, 'Current password is required'),
+    // Accept both oldPassword and currentPassword for flexibility
+    oldPassword: z.string().min(1, 'Current password is required').optional(),
+    currentPassword: z.string().min(1, 'Current password is required').optional(),
     newPassword: z
         .string()
         .min(8, 'Password must be at least 8 characters')
         .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
         .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
         .regex(/[0-9]/, 'Password must contain at least one number'),
+}).refine((data) => data.oldPassword || data.currentPassword, {
+    message: 'Current password is required (use either oldPassword or currentPassword field)',
+    path: ['currentPassword'],
 });
 
 // Type exports
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema> & {
+    oldPassword?: string;
+    currentPassword?: string;
+};

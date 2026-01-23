@@ -35,6 +35,7 @@ export interface SortParams {
 export interface JwtPayload {
     userId: string;
     email: string;
+    roles?: string[]; // RBAC roles
     iat?: number;
     exp?: number;
 }

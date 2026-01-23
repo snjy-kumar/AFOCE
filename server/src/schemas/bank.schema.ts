@@ -50,8 +50,8 @@ export const bankQuerySchema = z.object({
     endDate: z.string().optional(),
     reconciled: z.enum(['true', 'false', 'all']).optional().default('all'),
     type: z.enum(['debit', 'credit', 'all']).optional().default('all'),
-    page: z.string().transform(Number).optional().default('1'),
-    limit: z.string().transform(Number).optional().default('50'),
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(50),
 });
 
 export type CreateBankAccountInput = z.infer<typeof createBankAccountSchema>;

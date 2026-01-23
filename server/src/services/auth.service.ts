@@ -2,13 +2,15 @@ import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma.js';
 import { generateToken } from '../middleware/auth.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { env } from '../config/env.js';
 import type { RegisterInput, LoginInput, UpdateProfileInput, ChangePasswordInput } from '../schemas/auth.schema.js';
 
 /**
  * Authentication service - handles all auth business logic
  */
 
-const SALT_ROUNDS = 12;
+// Use fewer rounds in development for faster testing (12 in prod, 4 in dev)
+const SALT_ROUNDS = env.NODE_ENV === 'development' ? 4 : 12;
 
 export interface AuthResponse {
     user: {
@@ -182,8 +184,15 @@ export const authService = {
             throw new ApiError(404, 'USER_NOT_FOUND', 'User not found');
         }
 
+        // Support both oldPassword and currentPassword field names
+        const currentPassword = input.currentPassword || input.oldPassword;
+        
+        if (!currentPassword) {
+            throw new ApiError(400, 'MISSING_PASSWORD', 'Current password is required');
+        }
+
         // Verify current password
-        const isPasswordValid = await bcrypt.compare(input.currentPassword, user.password);
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
         if (!isPasswordValid) {
             throw new ApiError(401, 'INVALID_PASSWORD', 'Current password is incorrect');

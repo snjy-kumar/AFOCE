@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authController } from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { authLimiter } from '../middleware/rateLimit.js';
 import {
     registerSchema,
     loginSchema,
@@ -14,6 +15,9 @@ import {
  */
 
 const router = Router();
+
+// Apply rate limiting to all auth routes
+router.use(authLimiter);
 
 // Public routes
 router.post(
@@ -36,6 +40,13 @@ router.get(
 );
 
 router.patch(
+    '/profile',
+    authenticate,
+    validate({ body: updateProfileSchema }),
+    authController.updateProfile
+);
+
+router.put(
     '/profile',
     authenticate,
     validate({ body: updateProfileSchema }),

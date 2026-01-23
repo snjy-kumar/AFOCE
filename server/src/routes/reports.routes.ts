@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { reportController } from '../controllers/report.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { reportLimiter } from '../middleware/rateLimit.js';
 import { reportDateRangeSchema, agingReportQuerySchema } from '../schemas/report.schema.js';
 
 /**
@@ -10,6 +11,7 @@ import { reportDateRangeSchema, agingReportQuerySchema } from '../schemas/report
 
 const router = Router();
 router.use(authenticate);
+router.use(reportLimiter);
 
 // Profit & Loss Statement
 router.get('/profit-loss', validate({ query: reportDateRangeSchema }), reportController.getProfitAndLoss);

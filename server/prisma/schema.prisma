@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL")
 }
 
 // ============================================
@@ -30,14 +29,53 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  invoices     Invoice[]
-  expenses     Expense[]
-  customers    Customer[]
-  vendors      Vendor[]
-  accounts     Account[]
-  bankAccounts BankAccount[]
-  vatRecords   VatRecord[]
+  invoices         Invoice[]
+  expenses         Expense[]
+  customers        Customer[]
+  vendors          Vendor[]
+  accounts         Account[]
+  bankAccounts     BankAccount[]
+  vatRecords       VatRecord[]
+  roles            UserRole[]
+  businessRules    BusinessRule[]
+  auditLogs        AuditLog[]
+  workflowActions  WorkflowHistory[] @relation("WorkflowActor")
+  notifications    Notification[]
+  approvedInvoices Invoice[]         @relation("InvoiceApprover")
+  rejectedInvoices Invoice[]         @relation("InvoiceRejector")
+  approvedExpenses Expense[]         @relation("ExpenseApprover")
+  rejectedExpenses Expense[]         @relation("ExpenseRejector")
 }
+
+// ============================================
+// RBAC - ROLE BASED ACCESS CONTROL
+// ============================================
+
+enum RoleType {
+  OWNER // Full access
+  MANAGER // Approve/reject, view all, create/edit
+  ACCOUNTANT // Create/edit, view all, no approve
+  VIEWER // Read-only access
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleType  RoleType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A user can have multiple roles (e.g., OWNER + ACCOUNTANT)
+  @@unique([userId, roleType])
+  @@index([userId])
+}
+
+// Permission matrix (hardcoded in application logic)
+// OWNER: ALL permissions
+// MANAGER: invoices.*, expenses.*, customers.*, vendors.*, approve, reject
+// ACCOUNTANT: invoices.create, invoices.edit, expenses.*, customers.*, vendors.*
+// VIEWER: *.read
 
 // ============================================
 // CHART OF ACCOUNTS
@@ -126,10 +164,15 @@ model Vendor {
 
 enum InvoiceStatus {
   DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
   SENT
-  PAID
   PARTIALLY_PAID
+  PAID
   OVERDUE
+  COLLECTION
+  WRITTEN_OFF
   CANCELLED
 }
 
@@ -154,16 +197,37 @@ model Invoice {
   pdfUrl         String?
   syncStatus     String        @default("synced") // "synced" | "pending" | "error"
   localId        String? // For offline-first sync
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+
+  // Workflow fields
+  requiresApproval Boolean   @default(false)
+  approvedBy       String?
+  approver         User?     @relation("InvoiceApprover", fields: [approvedBy], references: [id])
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejector         User?     @relation("InvoiceRejector", fields: [rejectedBy], references: [id])
+  rejectedAt       DateTime?
+  rejectionReason  String?   @db.Text
+
+  // Workflow state metadata (JSON for flexibility)
+  workflowState Json? // { currentState, nextPossibleActions, assignedTo, deadline, metadata }
+
+  // Optimistic locking for concurrent updates
+  version Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  items        InvoiceItem[]
-  transactions BankTransaction[]
+  items           InvoiceItem[]
+  transactions    BankTransaction[]
+  workflowHistory WorkflowHistory[]
+  notifications   Notification[]
 
   @@unique([userId, invoiceNumber])
   @@index([userId, status])
   @@index([userId, issueDate])
+  @@index([status, dueDate]) // For automated overdue detection
+  @@index([requiresApproval, status]) // For approval queue queries
 }
 
 model InvoiceItem {
@@ -185,35 +249,69 @@ model InvoiceItem {
 // EXPENSE TRACKING
 // ============================================
 
+enum ExpenseStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
 model Expense {
-  id            String   @id @default(uuid())
+  id            String        @id @default(uuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   expenseNumber String // Sequential: EXP-2080-0001
   vendorId      String?
-  vendor        Vendor?  @relation(fields: [vendorId], references: [id])
+  vendor        Vendor?       @relation(fields: [vendorId], references: [id])
   accountId     String
-  account       Account  @relation(fields: [accountId], references: [id])
+  account       Account       @relation(fields: [accountId], references: [id])
   date          DateTime
   description   String
-  amount        Decimal  @db.Decimal(15, 2)
-  vatRate       Decimal  @default(13.00) @db.Decimal(5, 2)
-  vatAmount     Decimal  @default(0) @db.Decimal(15, 2)
-  totalAmount   Decimal  @db.Decimal(15, 2)
+  amount        Decimal       @db.Decimal(15, 2)
+  vatRate       Decimal       @default(13.00) @db.Decimal(5, 2)
+  vatAmount     Decimal       @default(0) @db.Decimal(15, 2)
+  totalAmount   Decimal       @db.Decimal(15, 2)
   receiptUrl    String? // Uploaded receipt image
   notes         String?
-  isPaid        Boolean  @default(true)
-  syncStatus    String   @default("synced")
+  status        ExpenseStatus @default(DRAFT)
+  isPaid        Boolean       @default(true)
+  syncStatus    String        @default("synced")
   localId       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+
+  // Workflow fields
+  requiresApproval Boolean   @default(false)
+  approvedBy       String?
+  approver         User?     @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejector         User?     @relation("ExpenseRejector", fields: [rejectedBy], references: [id])
+  rejectedAt       DateTime?
+  rejectionReason  String?   @db.Text
+
+  // Policy violations (JSON array of rule violations)
+  policyViolations Json? // [{ ruleId, ruleName, severity, message }]
+
+  // Workflow state
+  workflowState Json?
+
+  // Optimistic locking
+  version Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  transactions BankTransaction[]
+  transactions    BankTransaction[]
+  workflowHistory WorkflowHistory[]
+  notifications   Notification[]
 
   @@unique([userId, expenseNumber])
   @@index([userId, date])
   @@index([userId, accountId])
+  @@index([userId, status])
+  @@index([requiresApproval, status])
 }
 
 // ============================================
@@ -310,4 +408,289 @@ model SyncQueue {
   updatedAt  DateTime @updatedAt
 
   @@index([userId, status])
+}
+
+// ============================================
+// WORKFLOW ENGINE
+// ============================================
+
+enum EntityType {
+  INVOICE
+  EXPENSE
+  CUSTOMER
+  VENDOR
+  PAYMENT
+}
+
+// Workflow History - Immutable audit trail of state transitions
+model WorkflowHistory {
+  id         String     @id @default(uuid())
+  entityType EntityType
+  entityId   String
+
+  // State transition
+  fromState String
+  toState   String
+
+  // Actor information
+  actorId   String
+  actor     User    @relation("WorkflowActor", fields: [actorId], references: [id])
+  actorRole String? // Role at time of action (for historical accuracy)
+  ipAddress String?
+  userAgent String?
+
+  // Reason and metadata
+  reason   String? @db.Text
+  metadata Json? // Additional context: { approvalLevel, comments, attachments }
+
+  // Timestamp - immutable
+  timestamp DateTime @default(now())
+
+  // Relations for easy querying
+  invoice Invoice? @relation(fields: [entityId], references: [id], map: "workflow_invoice_fk")
+  expense Expense? @relation(fields: [entityId], references: [id], map: "workflow_expense_fk")
+
+  @@index([entityType, entityId, timestamp])
+  @@index([actorId, timestamp])
+  @@index([timestamp]) // For time-series queries
+  @@map("workflow_history")
+}
+
+// ============================================
+// BUSINESS RULE ENGINE
+// ============================================
+
+enum RuleType {
+  APPROVAL // Requires approval routing
+  VALIDATION // Block/warn on condition violation
+  COMPLIANCE // Regulatory compliance checks
+  NOTIFICATION // Trigger notifications
+  AUTOMATION // Automated actions
+}
+
+enum RuleAction {
+  REQUIRE_APPROVAL
+  REQUIRE_ATTACHMENT
+  BLOCK_CREATION
+  SHOW_WARNING
+  SEND_NOTIFICATION
+  AUTO_ASSIGN
+  CALCULATE_FIELD
+}
+
+enum RuleSeverity {
+  CRITICAL // Must comply, blocks action
+  WARNING // Shows warning, allows override
+  INFO // Informational only
+}
+
+model BusinessRule {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Rule metadata
+  name        String
+  description String?    @db.Text
+  ruleType    RuleType
+  entityType  EntityType
+
+  // Condition (Abstract Syntax Tree for complex conditions)
+  // Example: { operator: "AND", children: [
+  //   { field: "total", operator: "gt", value: 50000 },
+  //   { field: "customer.type", operator: "eq", value: "ENTERPRISE" }
+  // ]}
+  condition Json
+
+  // Action configuration
+  action       RuleAction
+  actionParams Json? // Parameters for action (e.g., { approverRole: "MANAGER", notifyEmail: "..." })
+
+  // Priority and control
+  enabled  Boolean      @default(true)
+  priority Int          @default(0) // Higher priority rules evaluated first
+  severity RuleSeverity @default(WARNING)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // User ID who created the rule
+
+  // Execution statistics
+  executionCount Int @default(0) // How many times this rule was evaluated
+  triggerCount   Int @default(0) // How many times it triggered an action
+
+  @@index([userId, enabled, priority])
+  @@index([entityType, enabled])
+  @@map("business_rules")
+}
+
+// ============================================
+// AUDIT LOG - IMMUTABLE
+// ============================================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  APPROVE
+  REJECT
+  SEND
+  PAY
+  CANCEL
+  LOGIN
+  LOGOUT
+  SETTINGS_CHANGE
+  RULE_CREATE
+  RULE_UPDATE
+  RULE_DELETE
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  // Timestamp - primary key for time-series
+  timestamp DateTime @default(now())
+
+  // Actor
+  actorId    String
+  actor      User    @relation(fields: [actorId], references: [id])
+  actorEmail String // Denormalized for historical accuracy
+  actorRole  String? // Role at time of action
+  ipAddress  String?
+  userAgent  String?
+
+  // Action
+  action     AuditAction
+  entityType EntityType?
+  entityId   String?
+
+  // Changes (for UPDATE actions)
+  // Format: { old: { field: value }, new: { field: value } }
+  changes Json?
+
+  // Additional metadata
+  metadata Json? // Request payload, response, etc.
+
+  // Security
+  checksum String? // SHA-256 hash for tamper detection
+
+  @@index([timestamp]) // Time-series primary access pattern
+  @@index([actorId, timestamp])
+  @@index([entityType, entityId])
+  @@index([action, timestamp])
+  @@map("audit_logs")
+}
+
+// ============================================
+// NOTIFICATION SYSTEM
+// ============================================
+
+enum NotificationType {
+  APPROVAL_REQUIRED
+  INVOICE_APPROVED
+  INVOICE_REJECTED
+  EXPENSE_APPROVED
+  EXPENSE_REJECTED
+  PAYMENT_RECEIVED
+  INVOICE_OVERDUE
+  BUDGET_THRESHOLD
+  POLICY_VIOLATION
+  SYSTEM_ALERT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  READ
+  FAILED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WEBHOOK
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  // Recipient
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notification details
+  type    NotificationType
+  channel NotificationChannel
+  status  NotificationStatus  @default(PENDING)
+
+  // Content
+  title   String
+  message String @db.Text
+  data    Json? // Structured data for in-app rendering
+
+  // Related entities
+  entityType EntityType?
+  entityId   String?
+  invoice    Invoice?    @relation(fields: [entityId], references: [id], map: "notification_invoice_fk")
+  expense    Expense?    @relation(fields: [entityId], references: [id], map: "notification_expense_fk")
+
+  // Actions
+  actionUrl String? // Deep link to entity
+  actions   Json? // [{ label: "Approve", action: "approve", url: "..." }]
+
+  // Delivery tracking
+  sentAt       DateTime?
+  readAt       DateTime?
+  failedAt     DateTime?
+  errorMessage String?
+  retryCount   Int       @default(0)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  expiresAt DateTime? // Auto-delete after expiry
+
+  @@index([userId, status, createdAt])
+  @@index([status, createdAt]) // For processing queue
+  @@index([type, status])
+  @@map("notifications")
+}
+
+// ============================================
+// BACKGROUND JOBS (BullMQ metadata)
+// ============================================
+
+model JobQueue {
+  id String @id @default(uuid())
+
+  // Job identification
+  jobId     String @unique // BullMQ job ID
+  queueName String // "notifications", "reports", "reminders"
+  jobType   String // Specific job type
+
+  // Job data
+  payload Json
+
+  // Status
+  status   String @default("pending") // pending, active, completed, failed
+  progress Int    @default(0) // 0-100
+
+  // Execution
+  attempts    Int     @default(0)
+  maxAttempts Int     @default(3)
+  lastError   String? @db.Text
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+
+  // Scheduling
+  scheduledFor DateTime? // For delayed jobs
+
+  @@index([status, scheduledFor])
+  @@index([queueName, status])
+  @@map("job_queue")
 }

@@ -12,6 +12,8 @@ import reportRoutes from './reports.routes.js';
 import bankRoutes from './bank.routes.js';
 import syncRoutes from './sync.routes.js';
 import uploadRoutes from './upload.routes.js';
+import workflowRoutes from './workflow.routes.js';
+import metricsRoutes from './metrics.routes.js';
 
 /**
  * Main router that aggregates all API routes
@@ -30,6 +32,8 @@ import uploadRoutes from './upload.routes.js';
  * - /api/bank           - Bank reconciliation
  * - /api/sync           - Offline synchronization
  * - /api/upload         - File uploads
+ * - /api/workflow       - Workflow engine (approval, rules, audit)
+ * - /api/metrics        - Performance metrics (protected)
  */
 
 const router = Router();
@@ -52,6 +56,8 @@ router.use('/reports', reportRoutes);
 router.use('/bank', bankRoutes);
 router.use('/sync', syncRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/workflow', workflowRoutes);
+router.use('/metrics', metricsRoutes);
 
 export default router;
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { authenticate } from '../middleware/auth.js';
+import { uploadLimiter } from '../middleware/rateLimit.js';
 import * as uploadController from '../controllers/upload.controller.js';
 import { env } from '../config/env.js';
 
@@ -37,8 +38,9 @@ if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
 }
 
-// Apply auth to all routes
+// Apply auth and rate limiting to all routes
 router.use(authenticate);
+router.use(uploadLimiter);
 
 // POST /api/upload - Generic file upload
 router.post(
