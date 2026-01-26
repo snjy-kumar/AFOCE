@@ -64,7 +64,16 @@ export interface Vendor {
 }
 
 // Invoice
-export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' | 'CANCELLED';
+export type InvoiceStatus = 
+    | 'DRAFT' 
+    | 'PENDING_APPROVAL'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'SENT' 
+    | 'PAID' 
+    | 'PARTIALLY_PAID' 
+    | 'OVERDUE' 
+    | 'CANCELLED';
 
 export interface InvoiceItem {
     id: string;
@@ -85,6 +94,12 @@ export interface Invoice {
     issueDate: string;
     dueDate: string;
     status: InvoiceStatus;
+    workflowStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+    approvedAt?: string;
+    approvedBy?: { id: string; name: string };
+    rejectedAt?: string;
+    rejectedBy?: { id: string; name: string };
+    rejectionReason?: string;
     subtotal: number;
     vatRate: number;
     vatAmount: number;
@@ -113,6 +128,7 @@ export interface Expense {
     vatRate: number;
     vatAmount: number;
     totalAmount: number;
+    workflowStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
     receiptUrl?: string;
     notes?: string;
     isPaid: boolean;
@@ -174,6 +190,10 @@ export interface DashboardStats {
     netProfit: number;
     outstandingInvoices: number;
     vatPayable: number;
+    pendingApprovals: number;
+    pendingApprovalsValue?: number;
+    overdueInvoices: number;
+    missingReceipts: number;
     recentInvoices: Invoice[];
     recentExpenses: Expense[];
     monthlyRevenue: { month: string; amount: number }[];

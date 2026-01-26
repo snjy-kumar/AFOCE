@@ -7,6 +7,12 @@ import { ToastProvider } from './components/common/Toast';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Spinner } from './components/ui/Common';
 
+// Public Pages - Eager load
+import { LandingPage } from './pages/LandingPage';
+import { AboutPage } from './pages/AboutPage';
+import { PricingPage } from './pages/PricingPage';
+import { FeaturesPage } from './pages/FeaturesPage';
+
 // Auth Pages - Eager load for faster initial auth
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -26,6 +32,7 @@ const VatPage = lazy(() => import('./pages/vat/VatPage').then(m => ({ default: m
 const BankPage = lazy(() => import('./pages/bank/BankPage').then(m => ({ default: m.BankPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.default })));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -57,6 +64,12 @@ function App() {
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
               <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/features" element={<FeaturesPage />} />
+
                 {/* Auth Routes */}
                 <Route element={<AuthLayout />}>
                   <Route path="/login" element={<LoginPage />} />
@@ -97,11 +110,13 @@ function App() {
 
                   {/* Settings */}
                   <Route path="/settings" element={<SettingsPage />} />
+
+                  {/* Admin */}
+                  <Route path="/admin" element={<AdminPage />} />
                 </Route>
 
-                {/* Default redirect */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
           </BrowserRouter>

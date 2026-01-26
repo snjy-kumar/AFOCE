@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { apiGet, apiPatch } from '../../lib/api';
+import { apiGet, apiPatch, apiPost } from '../../lib/api';
 import { formatDateForInput } from '../../lib/utils';
 import { generateInvoicePDF } from '../../lib/pdfGenerator';
 import { PageHeader } from '../../components/layout/Layout';
@@ -14,7 +14,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Spinner } from '../../components/ui/Common';
-import { Plus, Trash2, Save, X, Download } from 'lucide-react';
+import { WorkflowApproval } from '../../components/workflow/WorkflowApproval';
+import { Plus, Trash2, Save, X, Download, Send } from 'lucide-react';
 import type { Invoice, Customer, Account } from '../../types';
 
 const invoiceSchema = z.object({
@@ -108,6 +109,41 @@ export const EditInvoicePage: React.FC = () => {
         },
         onError: (error: Error) => {
             toast.error(error.message || 'Failed to update invoice');
+        },
+    });
+
+    const submitForApprovalMutation = useMutation({
+        mutationFn: () => apiPost(`/workflow/invoices/${id}/submit-for-approval`, {}),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+            toast.success('Invoice submitted for approval!');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to submit for approval');
+        },
+    });
+
+    const approveMutation = useMutation({
+        mutationFn: () => apiPost(`/workflow/invoices/${id}/approve`, {}),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            toast.success('Invoice approved!');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to approve invoice');
+        },
+    });
+
+    const rejectMutation = useMutation({
+        mutationFn: (reason: string) => apiPost(`/workflow/invoices/${id}/reject`, { reason }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            toast.success('Invoice rejected');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to reject invoice');
         },
     });
 
@@ -382,6 +418,47 @@ export const EditInvoicePage: React.FC = () => {
                         />
                     </CardBody>
                 </Card>
+
+                {/* Workflow Approval Section */}
+                <WorkflowApproval
+                    status={invoice.status}
+                    requiresApproval={invoice.status === 'PENDING_APPROVAL' || invoice.status === 'APPROVED' || invoice.status === 'REJECTED'}
+                    approvedAt={invoice.approvedAt}
+                    approvedBy={invoice.approvedBy ? { name: invoice.approvedBy.name || 'Unknown' } : undefined}
+                    rejectedAt={invoice.rejectedAt}
+                    rejectedBy={invoice.rejectedBy ? { name: invoice.rejectedBy.name || 'Unknown' } : undefined}
+                    rejectionReason={invoice.rejectionReason}
+                    onApprove={async () => {
+                        await approveMutation.mutateAsync();
+                    }}
+                    onReject={async (reason: string) => {
+                        await rejectMutation.mutateAsync(reason);
+                    }}
+                    canApprove={invoice.status === 'PENDING_APPROVAL'}
+                />
+
+                {/* Workflow Actions */}
+                {invoice.status === 'DRAFT' && (
+                    <Card>
+                        <CardBody>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-semibold text-neutral-900">Ready to submit?</h3>
+                                    <p className="text-sm text-neutral-600 mt-1">
+                                        Submit this invoice for approval before sending to customer
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => submitForApprovalMutation.mutate()}
+                                    disabled={submitForApprovalMutation.isPending}
+                                    leftIcon={<Send className="w-4 h-4" />}
+                                >
+                                    Submit for Approval
+                                </Button>
+                            </div>
+                        </CardBody>
+                    </Card>
+                )}
             </form>
         </div>
     );

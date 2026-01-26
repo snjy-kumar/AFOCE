@@ -26,6 +26,8 @@ export const dashboardService = {
             recentExpenses,
             invoicesByStatus,
             bankAccounts,
+            pendingApprovals,
+            missingReceipts,
         ] = await Promise.all([
             // Monthly revenue (paid invoices)
             prisma.invoice.aggregate({
@@ -125,6 +127,25 @@ export const dashboardService = {
                     currentBalance: true,
                 },
             }),
+
+            // Pending approvals (invoices waiting for approval)
+            prisma.invoice.aggregate({
+                where: {
+                    userId,
+                    status: 'PENDING_APPROVAL',
+                },
+                _sum: { total: true },
+                _count: true,
+            }),
+
+            // Missing receipts (expenses over threshold without receipt)
+            prisma.expense.count({
+                where: {
+                    userId,
+                    amount: { gt: 5000 },
+                    receiptUrl: null,
+                },
+            }),
         ]);
 
         // Calculate metrics
@@ -138,8 +159,6 @@ export const dashboardService = {
 
         const outstandingAmount =
             Number(outstandingInvoices._sum.total ?? 0) - Number(outstandingInvoices._sum.paidAmount ?? 0);
-        const overdueAmount =
-            Number(overdueInvoices._sum.total ?? 0) - Number(overdueInvoices._sum.paidAmount ?? 0);
 
         const totalCashBalance = bankAccounts.reduce(
             (sum, acc) => sum + Number(acc.currentBalance),
@@ -147,6 +166,20 @@ export const dashboardService = {
         );
 
         return {
+            // Frontend expects these exact field names
+            totalRevenue: monthlyRevenueAmount,
+            totalExpenses: monthlyExpenseAmount,
+            netProfit: monthlyProfit,
+            outstandingInvoices: outstandingAmount,
+            vatPayable: Number(monthlyRevenue._sum.vatAmount ?? 0) - Number(monthlyExpenses._sum.vatAmount ?? 0),
+            
+            // Workflow metrics (NEW - for frontend workflow alerts)
+            pendingApprovals: pendingApprovals._count,
+            pendingApprovalsValue: Number(pendingApprovals._sum.total ?? 0),
+            overdueInvoices: overdueInvoices._count,
+            missingReceipts,
+
+            // Additional detailed data
             overview: {
                 monthlyRevenue: monthlyRevenueAmount,
                 monthlyExpenses: monthlyExpenseAmount,
@@ -157,11 +190,11 @@ export const dashboardService = {
                 yearlyExpenses: yearlyExpenseAmount,
                 yearlyProfit,
             },
-            receivables: {
-                outstanding: outstandingAmount,
-                outstandingCount: outstandingInvoices._count,
-                overdue: overdueAmount,
-                overdueCount: overdueInvoices._count,
+            workflow: {
+                pendingApprovals: pendingApprovals._count,
+                pendingApprovalsValue: Number(pendingApprovals._sum.total ?? 0),
+                overdueInvoices: overdueInvoices._count,
+                missingReceipts,
             },
             cashPosition: {
                 totalBalance: totalCashBalance,
@@ -176,26 +209,30 @@ export const dashboardService = {
                 count: s._count,
                 total: Number(s._sum.total ?? 0),
             })),
-            recentTransactions: {
-                invoices: recentInvoices.map((inv) => ({
-                    id: inv.id,
-                    type: 'invoice' as const,
-                    number: inv.invoiceNumber,
-                    customer: inv.customer.name,
-                    amount: Number(inv.total),
-                    status: inv.status,
-                    date: inv.issueDate,
-                })),
-                expenses: recentExpenses.map((exp) => ({
-                    id: exp.id,
-                    type: 'expense' as const,
-                    number: exp.expenseNumber,
-                    vendor: exp.vendor?.name ?? 'N/A',
-                    category: exp.account.name,
-                    amount: Number(exp.totalAmount),
-                    date: exp.date,
-                })),
-            },
+            
+            // Frontend expects these as top-level arrays (not nested)
+            recentInvoices: recentInvoices.map((inv) => ({
+                id: inv.id,
+                invoiceNumber: inv.invoiceNumber,
+                customer: inv.customer,
+                total: Number(inv.total),
+                status: inv.status,
+                issueDate: inv.issueDate,
+                createdAt: inv.createdAt,
+            })),
+            recentExpenses: recentExpenses.map((exp) => ({
+                id: exp.id,
+                expenseNumber: exp.expenseNumber,
+                vendor: exp.vendor,
+                account: exp.account,
+                totalAmount: Number(exp.totalAmount),
+                date: exp.date,
+                createdAt: exp.createdAt,
+            })),
+            
+            // Chart data (empty arrays for now - frontend handles gracefully)
+            monthlyRevenue: [],
+            expensesByCategory: [],
         };
     },
 

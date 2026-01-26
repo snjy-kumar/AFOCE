@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 import { apiPut } from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
 import { PageHeader } from '../../components/layout/Layout';
@@ -49,6 +50,9 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const SettingsPage: React.FC = () => {
     const { user, updateProfile } = useAuthStore();
+    const [emailNotifications, setEmailNotifications] = useState(true);
+    const [invoiceBranding, setInvoiceBranding] = useState(true);
+    const [bikramSambatDates, setBikramSambatDates] = useState(false);
 
     const {
         register: registerProfile,
@@ -80,6 +84,10 @@ export const SettingsPage: React.FC = () => {
         mutationFn: (data: ProfileFormData) => apiPut('/auth/profile', data),
         onSuccess: (data) => {
             updateProfile(data as UserType);
+            toast.success('Profile updated successfully!');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to update profile');
         },
     });
 
@@ -87,8 +95,30 @@ export const SettingsPage: React.FC = () => {
         mutationFn: (data: PasswordFormData) => apiPut('/auth/password', data),
         onSuccess: () => {
             resetPassword();
+            toast.success('Password updated successfully!');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to update password');
         },
     });
+
+    const handlePreferenceChange = (preference: string, value: boolean) => {
+        // Update local state immediately for better UX
+        switch (preference) {
+            case 'emailNotifications':
+                setEmailNotifications(value);
+                break;
+            case 'invoiceBranding':
+                setInvoiceBranding(value);
+                break;
+            case 'bikramSambatDates':
+                setBikramSambatDates(value);
+                break;
+        }
+        toast.success(`Preference updated`);
+        // In a real app, you'd save this to the backend
+        // apiPut('/auth/preferences', { [preference]: value });
+    };
 
     return (
         <div className="animate-fade-in">
@@ -240,7 +270,12 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={emailNotifications}
+                                        onChange={(e) => handlePreferenceChange('emailNotifications', e.target.checked)}
+                                    />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -258,7 +293,12 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={invoiceBranding}
+                                        onChange={(e) => handlePreferenceChange('invoiceBranding', e.target.checked)}
+                                    />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -276,7 +316,12 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" />
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={bikramSambatDates}
+                                        onChange={(e) => handlePreferenceChange('bikramSambatDates', e.target.checked)}
+                                    />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>

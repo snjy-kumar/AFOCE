@@ -1,0 +1,286 @@
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Target, Users, TrendingUp, Shield } from 'lucide-react';
+
+export function AboutPage() {
+    return (
+        <div className="min-h-screen bg-white">
+            {/* Navigation */}
+            <nav className="border-b border-neutral-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <Link to="/" className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                                <span className="text-white font-bold text-lg">A</span>
+                            </div>
+                            <span className="text-xl font-semibold text-neutral-900">AFOCE</span>
+                        </Link>
+                        <div className="flex items-center gap-8">
+                            <Link to="/" className="inline-flex items-center text-neutral-600 hover:text-neutral-900 transition-colors">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back to Home
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            {/* Hero Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto text-center">
+                    <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
+                        About AFOCE
+                    </h1>
+                    <p className="text-xl text-neutral-600 mb-8">
+                        Adaptive Financial Operations & Compliance Engine
+                    </p>
+                </div>
+            </section>
+
+            {/* Mission Section */}
+            <section className="py-12 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+                <div className="max-w-4xl mx-auto">
+                    <div className="mb-12">
+                        <h2 className="text-3xl font-bold text-neutral-900 mb-4">Our Mission</h2>
+                        <p className="text-lg text-neutral-700 leading-relaxed">
+                            We're building Nepal's first workflow-intelligent financial operations platform that combines
+                            user-friendly invoicing with business process automation and Nepal-specific compliance.
+                        </p>
+                    </div>
+
+                    <div className="mb-12">
+                        <h2 className="text-3xl font-bold text-neutral-900 mb-4">The Problem We Solve</h2>
+                        <p className="text-lg text-neutral-700 leading-relaxed mb-4">
+                            Nepal's SMEs face a critical choice:
+                        </p>
+                        <ul className="space-y-3 text-neutral-700">
+                            <li className="flex items-start">
+                                <span className="mr-3 text-danger-600">•</span>
+                                <span><strong>Global SaaS</strong> (QuickBooks, Xero): Generic solutions with no Nepal IRD integration,
+                                    expensive at ₹2000+/month</span>
+                            </li>
+                            <li className="flex items-start">
+                                <span className="mr-3 text-danger-600">•</span>
+                                <span><strong>Desktop Software</strong>: Offline-only, no collaboration, outdated user experience</span>
+                            </li>
+                            <li className="flex items-start">
+                                <span className="mr-3 text-danger-600">•</span>
+                                <span><strong>Excel Spreadsheets</strong>: Used by 70% of Nepal SMEs—manual, error-prone,
+                                    no compliance tracking</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="mb-12">
+                        <h2 className="text-3xl font-bold text-neutral-900 mb-6">Our Solution</h2>
+                        <p className="text-lg text-neutral-700 leading-relaxed mb-6">
+                            AFOCE combines three critical elements:
+                        </p>
+                        <div className="grid md:grid-cols-3 gap-6">
+                            <div className="p-6 bg-white border border-neutral-200 rounded-lg">
+                                <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center mb-4">
+                                    <Target className="w-6 h-6 text-primary-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                                    Accounting Software
+                                </h3>
+                                <p className="text-neutral-600">
+                                    Professional invoicing, expense tracking, and financial reporting
+                                </p>
+                            </div>
+                            <div className="p-6 bg-white border border-neutral-200 rounded-lg">
+                                <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center mb-4">
+                                    <Users className="w-6 h-6 text-primary-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                                    Workflow Engine
+                                </h3>
+                                <p className="text-neutral-600">
+                                    Smart approval routing, policy enforcement, and automated notifications
+                                </p>
+                            </div>
+                            <div className="p-6 bg-white border border-neutral-200 rounded-lg">
+                                <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center mb-4">
+                                    <Shield className="w-6 h-6 text-primary-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                                    Compliance Automation
+                                </h3>
+                                <p className="text-neutral-600">
+                                    13% VAT automation, IRD formats, Bikram Sambat, and audit trails
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Unique Value Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto">
+                    <h2 className="text-3xl font-bold text-neutral-900 mb-8 text-center">
+                        What Makes AFOCE Different
+                    </h2>
+                    <div className="space-y-6">
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                1. Regulatory Integration
+                            </h3>
+                            <p className="text-neutral-700">
+                                Direct IRD API integration (Phase 2), Nepal tax compliance built-in, not bolted on.
+                                This is a 12+ month barrier to entry for competitors.
+                            </p>
+                        </div>
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                2. Workflow Intelligence
+                            </h3>
+                            <p className="text-neutral-700">
+                                Smart approval routing based on rules (not just status changes). Invoices {'>'}₹50,000
+                                auto-route to managers. Expenses need receipts. Policies enforced automatically.
+                            </p>
+                        </div>
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                3. Local Payment Gateways
+                            </h3>
+                            <p className="text-neutral-700">
+                                Integration with eSewa, Khalti, and Fonepay (Phase 2). Your customers can pay invoices
+                                with one click using familiar payment methods.
+                            </p>
+                        </div>
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                4. Nepal-First Design
+                            </h3>
+                            <p className="text-neutral-700">
+                                Bikram Sambat calendar native support, Devanagari text support, Nepal tax rules
+                                (13% VAT, PAN validation), and local business practices.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Market Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+                <div className="max-w-4xl mx-auto">
+                    <h2 className="text-3xl font-bold text-neutral-900 mb-8">
+                        Built for Nepal's SMEs
+                    </h2>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-4">Target Market</h3>
+                            <ul className="space-y-3 text-neutral-700">
+                                <li className="flex items-start">
+                                    <TrendingUp className="w-5 h-5 mr-2 text-primary-600 flex-shrink-0 mt-0.5" />
+                                    <span>400,000+ registered businesses in Nepal</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <TrendingUp className="w-5 h-5 mr-2 text-primary-600 flex-shrink-0 mt-0.5" />
+                                    <span>100,000 businesses with ₹20L+ annual revenue</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <TrendingUp className="w-5 h-5 mr-2 text-primary-600 flex-shrink-0 mt-0.5" />
+                                    <span>30,000 businesses needing software solutions</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-4">Who We Serve</h3>
+                            <ul className="space-y-3 text-neutral-700">
+                                <li className="flex items-start">
+                                    <span className="mr-3">•</span>
+                                    <span>Multi-location restaurants and retail chains</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="mr-3">•</span>
+                                    <span>Growing consulting and service firms</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="mr-3">•</span>
+                                    <span>Retail shop networks and distributors</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="mr-3">•</span>
+                                    <span>Any business needing approval workflows</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Values Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto">
+                    <h2 className="text-3xl font-bold text-neutral-900 mb-12 text-center">
+                        Our Principles
+                    </h2>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                Simplicity Over Complexity
+                            </h3>
+                            <p className="text-neutral-700">
+                                We build features that solve real problems, not check enterprise buzzword boxes.
+                                If it doesn't make your business easier, we don't build it.
+                            </p>
+                        </div>
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                Transparency
+                            </h3>
+                            <p className="text-neutral-700">
+                                Clear pricing, honest comparisons, and straightforward documentation.
+                                No hidden fees or surprise charges.
+                            </p>
+                        </div>
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                Security First
+                            </h3>
+                            <p className="text-neutral-700">
+                                Bank-level encryption, immutable audit logs, and regular security audits.
+                                Your financial data is our top priority.
+                            </p>
+                        </div>
+                        <div className="p-6 border border-neutral-200 rounded-lg">
+                            <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                                Nepal-Focused
+                            </h3>
+                            <p className="text-neutral-700">
+                                Built by people who understand Nepal's business challenges.
+                                Local support, local compliance, local payment methods.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary-600">
+                <div className="max-w-4xl mx-auto text-center">
+                    <h2 className="text-3xl font-bold text-white mb-4">
+                        Join Nepal's Modern Businesses
+                    </h2>
+                    <p className="text-xl text-primary-100 mb-8">
+                        Start automating your workflows and staying compliant today
+                    </p>
+                    <Link
+                        to="/register"
+                        className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 rounded-lg hover:bg-neutral-50 transition-colors font-semibold"
+                    >
+                        Start Free Trial
+                    </Link>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="bg-neutral-900 text-neutral-400 py-8 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto text-center">
+                    <p className="text-sm">© 2026 AFOCE. Built for Nepal's SMEs.</p>
+                </div>
+            </footer>
+        </div>
+    );
+}

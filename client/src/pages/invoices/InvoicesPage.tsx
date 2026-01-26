@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiGet, apiDelete } from '../../lib/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
-import { exportToCSV, exportToExcel } from '../../lib/export';
+import { exportToExcel } from '../../lib/export';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useBulkSelection } from '../../hooks/useBulkSelection';
@@ -18,7 +18,6 @@ import { TableSkeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { Badge } from '../../components/ui/Badge';
-import { Alert } from '../../components/ui/Alert';
 import { Pagination } from '../../components/common/Pagination';
 import {
     Plus,
@@ -94,24 +93,6 @@ export const InvoicesPage: React.FC = () => {
     ]);
 
     // Export handlers
-    const handleExportCSV = () => {
-        exportToCSV(
-            filteredInvoices,
-            [
-                { key: 'invoiceNumber', label: 'Invoice Number' },
-                { key: 'customer.name', label: 'Customer' },
-                { key: 'issueDate', label: 'Issue Date', format: (val) => formatDate(val) },
-                { key: 'dueDate', label: 'Due Date', format: (val) => formatDate(val) },
-                { key: 'status', label: 'Status' },
-                { key: 'subtotal', label: 'Subtotal', format: (val) => formatCurrency(val) },
-                { key: 'vatAmount', label: 'VAT', format: (val) => formatCurrency(val) },
-                { key: 'total', label: 'Total', format: (val) => formatCurrency(val) },
-                { key: 'paidAmount', label: 'Paid', format: (val) => formatCurrency(val) },
-            ],
-            'invoices'
-        );
-    };
-
     const handleExportExcel = () => {
         exportToExcel(
             filteredInvoices,
@@ -424,8 +405,28 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, onDelete, isSelected, 
             <td className="p-4 text-right font-medium text-[var(--color-neutral-900)]">
                 {formatCurrency(invoice.total)}
             </td>
-            <td className="p-4 text-center">
-                <StatusBadge status={isOverdue && invoice.status === 'SENT' ? 'OVERDUE' : invoice.status} />
+            <td className="p-4">
+                <div className="flex flex-col items-center gap-2">
+                    <StatusBadge status={isOverdue && invoice.status === 'SENT' ? 'OVERDUE' : invoice.status} />
+                    {invoice.workflowStatus && invoice.workflowStatus !== 'NONE' && (
+                        <Badge
+                            variant={
+                                invoice.workflowStatus === 'APPROVED' 
+                                    ? 'success' 
+                                    : invoice.workflowStatus === 'REJECTED'
+                                    ? 'danger'
+                                    : invoice.workflowStatus === 'PENDING'
+                                    ? 'warning'
+                                    : 'default'
+                            }
+                            size="sm"
+                        >
+                            {invoice.workflowStatus === 'PENDING' && '⏳ Pending Approval'}
+                            {invoice.workflowStatus === 'APPROVED' && '✓ Approved'}
+                            {invoice.workflowStatus === 'REJECTED' && '✗ Rejected'}
+                        </Badge>
+                    )}
+                </div>
             </td>
             <td className="p-4 text-right">
                 <div className="relative inline-block">

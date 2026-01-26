@@ -9,8 +9,6 @@ import { Button } from '../../components/ui/Button';
 import { StatusBadge, EmptyState } from '../../components/ui/Common';
 import { StatsSkeleton } from '../../components/ui/Skeleton';
 import { Tooltip } from '../../components/ui/Tooltip';
-import { Badge } from '../../components/ui/Badge';
-import { Alert } from '../../components/ui/Alert';
 import {
     TrendingUp,
     TrendingDown,
@@ -21,6 +19,8 @@ import {
     ArrowDownRight,
     Plus,
     ChevronRight,
+    Clock,
+    AlertCircle,
 } from 'lucide-react';
 import {
     AreaChart,
@@ -72,6 +72,74 @@ export const DashboardPage: React.FC = () => {
                     </div>
                 }
             />
+
+            {/* Workflow Status Alerts - Enhanced with Action Buttons */}
+            {stats && (stats.pendingApprovals > 0 || stats.overdueInvoices > 0 || stats.missingReceipts > 0) && (
+                <Card className="mb-6 border-l-4 border-l-primary-600">
+                    <CardHeader 
+                        title="Workflow Status" 
+                        subtitle="Action items requiring your attention - take action now"
+                    />
+                    <CardBody>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {stats.pendingApprovals > 0 && (
+                                <div className="p-4 bg-warning-50 rounded-lg border border-warning-200">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 bg-warning-100 rounded-full flex items-center justify-center">
+                                            <Clock className="w-5 h-5 text-warning-700" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-neutral-900">{stats.pendingApprovals} Pending Approvals</div>
+                                            <div className="text-sm text-neutral-600">₹{(stats.pendingApprovalsValue || 0).toLocaleString()} total value</div>
+                                        </div>
+                                    </div>
+                                    <Link to="/invoices?status=PENDING_APPROVAL">
+                                        <Button variant="outline" size="sm" className="w-full border-warning-300 text-warning-700 hover:bg-warning-100">
+                                            Review & Approve
+                                        </Button>
+                                    </Link>
+                                </div>
+                            )}
+                            {stats.overdueInvoices > 0 && (
+                                <div className="p-4 bg-danger-50 rounded-lg border border-danger-200">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 bg-danger-100 rounded-full flex items-center justify-center">
+                                            <AlertCircle className="w-5 h-5 text-danger-700" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-neutral-900">{stats.overdueInvoices} Overdue Invoices</div>
+                                            <div className="text-sm text-neutral-600">Follow up needed</div>
+                                        </div>
+                                    </div>
+                                    <Link to="/invoices?status=OVERDUE">
+                                        <Button variant="outline" size="sm" className="w-full border-danger-300 text-danger-700 hover:bg-danger-100">
+                                            Send Reminders
+                                        </Button>
+                                    </Link>
+                                </div>
+                            )}
+                            {stats.missingReceipts > 0 && (
+                                <div className="p-4 bg-warning-50 rounded-lg border border-warning-200">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 bg-warning-100 rounded-full flex items-center justify-center">
+                                            <Receipt className="w-5 h-5 text-warning-700" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-neutral-900">{stats.missingReceipts} Missing Receipts</div>
+                                            <div className="text-sm text-neutral-600">Expenses &gt;₹5,000</div>
+                                        </div>
+                                    </div>
+                                    <Link to="/expenses?filter=missing_receipt">
+                                        <Button variant="outline" size="sm" className="w-full border-warning-300 text-warning-700 hover:bg-warning-100">
+                                            Review Expenses
+                                        </Button>
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    </CardBody>
+                </Card>
+            )}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

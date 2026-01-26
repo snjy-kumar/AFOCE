@@ -1,0 +1,422 @@
+import { Link } from 'react-router-dom';
+import {
+    ArrowLeft,
+    FileText,
+    CheckCircle2,
+    Zap,
+    BarChart3,
+    Shield,
+    Users,
+    Repeat,
+    Clock,
+    AlertCircle,
+    TrendingUp,
+    Lock
+} from 'lucide-react';
+
+export function FeaturesPage() {
+    return (
+        <div className="min-h-screen bg-white">
+            {/* Navigation */}
+            <nav className="border-b border-neutral-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <Link to="/" className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                                <span className="text-white font-bold text-lg">A</span>
+                            </div>
+                            <span className="text-xl font-semibold text-neutral-900">AFOCE</span>
+                        </Link>
+                        <div className="flex items-center gap-8">
+                            <Link to="/" className="inline-flex items-center text-neutral-600 hover:text-neutral-900 transition-colors">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back to Home
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            {/* Hero Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto text-center">
+                    <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
+                        Everything You Need to Run Your Business
+                    </h1>
+                    <p className="text-xl text-neutral-600">
+                        Workflow-intelligent features designed for Nepal's business reality
+                    </p>
+                </div>
+            </section>
+
+            {/* Smart Invoicing */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-medium mb-4">
+                                <FileText className="w-4 h-4" />
+                                Smart Invoicing
+                            </div>
+                            <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+                                IRD-Compliant Invoicing
+                            </h2>
+                            <p className="text-lg text-neutral-700 mb-6">
+                                Professional invoices that meet all Inland Revenue Department requirements
+                            </p>
+                            <ul className="space-y-4">
+                                <li className="flex items-start">
+                                    <CheckCircle2 className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">Sequential Numbering</strong>
+                                        <p className="text-neutral-600">Automatic invoice numbering with no gaps (audit requirement)</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start">
+                                    <CheckCircle2 className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">13% VAT Automation</strong>
+                                        <p className="text-neutral-600">Automatic VAT calculation for registered businesses</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start">
+                                    <CheckCircle2 className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">Bikram Sambat Support</strong>
+                                        <p className="text-neutral-600">Native support for Nepal's official calendar</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start">
+                                    <CheckCircle2 className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">PAN Validation</strong>
+                                        <p className="text-neutral-600">Verify customer PAN numbers automatically</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="bg-white border border-neutral-200 rounded-lg p-8">
+                            <div className="space-y-4">
+                                <div className="border-b border-neutral-200 pb-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-sm text-neutral-500">Invoice #</span>
+                                        <span className="font-mono text-sm">INV-2081-0001</span>
+                                    </div>
+                                    <div className="flex justify-between items-start">
+                                        <span className="text-sm text-neutral-500">Date</span>
+                                        <span className="text-sm">2081-10-15 BS</span>
+                                    </div>
+                                </div>
+                                <div className="border-b border-neutral-200 pb-4">
+                                    <div className="text-sm text-neutral-500 mb-2">Customer</div>
+                                    <div className="font-medium">ABC Pvt. Ltd.</div>
+                                    <div className="text-sm text-neutral-600">PAN: 123456789</div>
+                                </div>
+                                <div className="space-y-2 border-b border-neutral-200 pb-4">
+                                    <div className="flex justify-between text-sm">
+                                        <span>Consulting Services</span>
+                                        <span>₹50,000</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-neutral-600">
+                                        <span>VAT (13%)</span>
+                                        <span>₹6,500</span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between font-bold text-lg">
+                                    <span>Total</span>
+                                    <span>₹56,500</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Approval Workflows */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div className="order-2 md:order-1">
+                            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-8">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                            <FileText className="w-5 h-5 text-primary-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-medium text-neutral-900">Invoice Created</div>
+                                            <div className="text-sm text-neutral-600">₹75,000 • Branch Manager</div>
+                                        </div>
+                                        <div className="px-3 py-1 bg-warning-50 text-warning-700 rounded-full text-xs font-medium">
+                                            Draft
+                                        </div>
+                                    </div>
+                                    <div className="ml-5 border-l-2 border-neutral-300 pl-4 py-2">
+                                        <div className="flex items-center gap-2 text-sm text-neutral-600">
+                                            <AlertCircle className="w-4 h-4" />
+                                            <span>Requires approval ({'>'}₹50,000)</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
+                                            <CheckCircle2 className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-medium text-neutral-900">Manager Approved</div>
+                                            <div className="text-sm text-neutral-600">2 hours ago</div>
+                                        </div>
+                                        <div className="px-3 py-1 bg-success-50 text-success-700 rounded-full text-xs font-medium">
+                                            Approved
+                                        </div>
+                                    </div>
+                                    <div className="ml-5 border-l-2 border-neutral-300 pl-4 py-2">
+                                        <div className="flex items-center gap-2 text-sm text-neutral-600">
+                                            <Clock className="w-4 h-4" />
+                                            <span>Ready to send</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="order-1 md:order-2">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-medium mb-4">
+                                <Repeat className="w-4 h-4" />
+                                Workflow Engine
+                            </div>
+                            <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+                                Smart Approval Workflows
+                            </h2>
+                            <p className="text-lg text-neutral-700 mb-6">
+                                Automate approvals based on rules. No more manual checking or policy violations.
+                            </p>
+                            <ul className="space-y-4">
+                                <li className="flex items-start">
+                                    <Zap className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">Rule-Based Routing</strong>
+                                        <p className="text-neutral-600">Invoices {'>'}₹50,000 auto-route to managers for approval</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start">
+                                    <Zap className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">Policy Enforcement</strong>
+                                        <p className="text-neutral-600">Block expenses without receipts, enforce budget limits</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start">
+                                    <Zap className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">Instant Notifications</strong>
+                                        <p className="text-neutral-600">Email alerts when approval is needed or status changes</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start">
+                                    <Zap className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <strong className="text-neutral-900">Audit Trail</strong>
+                                        <p className="text-neutral-600">Complete history of who approved what, when, and why</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Expense Management */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-12">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-medium mb-4">
+                            <BarChart3 className="w-4 h-4" />
+                            Expense Management
+                        </div>
+                        <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+                            Track Every Rupee
+                        </h2>
+                        <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+                            Submit, approve, and categorize expenses with receipt attachment and budget controls
+                        </p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200">
+                            <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center mb-4">
+                                <FileText className="w-6 h-6 text-primary-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                                Receipt Management
+                            </h3>
+                            <p className="text-neutral-600">
+                                Attach receipts to expenses. Enforce policy: expenses {'>'}₹5,000 must have receipts.
+                            </p>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200">
+                            <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center mb-4">
+                                <AlertCircle className="w-6 h-6 text-primary-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                                Budget Alerts
+                            </h3>
+                            <p className="text-neutral-600">
+                                Get notified when departments reach 80% of budget. Block expenses at 100%.
+                            </p>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200">
+                            <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center mb-4">
+                                <BarChart3 className="w-6 h-6 text-primary-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                                Auto-Categorization
+                            </h3>
+                            <p className="text-neutral-600">
+                                Expenses automatically categorized. Track spending by category and department.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Real-Time Insights */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-12">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-medium mb-4">
+                            <TrendingUp className="w-4 h-4" />
+                            Business Intelligence
+                        </div>
+                        <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+                            Know Your Numbers
+                        </h2>
+                        <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+                            Real-time dashboard with actionable insights—no spreadsheet gymnastics
+                        </p>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="bg-neutral-50 p-6 rounded-lg border border-neutral-200">
+                            <h3 className="text-lg font-semibold text-neutral-900 mb-4">Cash Position</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-neutral-600">Bank Balance</span>
+                                    <span className="font-semibold">₹250,000</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-neutral-600">Receivables</span>
+                                    <span className="font-semibold">₹120,000</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-neutral-600">Payables</span>
+                                    <span className="font-semibold text-danger-600">-₹80,000</span>
+                                </div>
+                                <div className="pt-3 border-t border-neutral-300 flex justify-between items-center">
+                                    <span className="font-semibold text-neutral-900">Net Position</span>
+                                    <span className="font-bold text-primary-600">₹290,000</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-neutral-50 p-6 rounded-lg border border-neutral-200">
+                            <h3 className="text-lg font-semibold text-neutral-900 mb-4">Workflow Status</h3>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-warning-100 rounded-full flex items-center justify-center text-warning-700 font-semibold">
+                                        5
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-neutral-900">Pending Approvals</div>
+                                        <div className="text-sm text-neutral-600">₹125,000 total value</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-danger-100 rounded-full flex items-center justify-center text-danger-700 font-semibold">
+                                        15
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-neutral-900">Overdue Invoices</div>
+                                        <div className="text-sm text-neutral-600">Follow up needed</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-warning-100 rounded-full flex items-center justify-center text-warning-700 font-semibold">
+                                        2
+                                    </div>
+                                    <div>
+                                        <div className="font-medium text-neutral-900">Missing Receipts</div>
+                                        <div className="text-sm text-neutral-600">Action required</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Security & Compliance */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-12">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-medium mb-4">
+                            <Shield className="w-4 h-4" />
+                            Security & Compliance
+                        </div>
+                        <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+                            Built for Audits
+                        </h2>
+                        <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+                            Enterprise-grade security and immutable audit trails for IRD compliance
+                        </p>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200 text-center">
+                            <Lock className="w-8 h-8 text-primary-600 mx-auto mb-3" />
+                            <h3 className="font-semibold text-neutral-900 mb-1">Bank-Level Encryption</h3>
+                            <p className="text-sm text-neutral-600">256-bit SSL/TLS encryption</p>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200 text-center">
+                            <Shield className="w-8 h-8 text-primary-600 mx-auto mb-3" />
+                            <h3 className="font-semibold text-neutral-900 mb-1">Immutable Logs</h3>
+                            <p className="text-sm text-neutral-600">Tamper-proof audit trail</p>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200 text-center">
+                            <Users className="w-8 h-8 text-primary-600 mx-auto mb-3" />
+                            <h3 className="font-semibold text-neutral-900 mb-1">Role-Based Access</h3>
+                            <p className="text-sm text-neutral-600">Control who sees what</p>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200 text-center">
+                            <FileText className="w-8 h-8 text-primary-600 mx-auto mb-3" />
+                            <h3 className="font-semibold text-neutral-900 mb-1">IRD Reports</h3>
+                            <p className="text-sm text-neutral-600">One-click compliance reports</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary-600">
+                <div className="max-w-4xl mx-auto text-center">
+                    <h2 className="text-3xl font-bold text-white mb-4">
+                        Experience the Difference
+                    </h2>
+                    <p className="text-xl text-primary-100 mb-8">
+                        See how AFOCE can transform your business operations
+                    </p>
+                    <Link
+                        to="/register"
+                        className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 rounded-lg hover:bg-neutral-50 transition-colors font-semibold"
+                    >
+                        Start Free Trial
+                    </Link>
+                    <p className="text-primary-100 mt-4">
+                        14 days free • No credit card required
+                    </p>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="bg-neutral-900 text-neutral-400 py-8 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto text-center">
+                    <p className="text-sm">© 2026 AFOCE. Built for Nepal's SMEs.</p>
+                </div>
+            </footer>
+        </div>
+    );
+}

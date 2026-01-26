@@ -14,7 +14,8 @@ import { Input, Textarea } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Spinner } from '../../components/ui/Common';
 import { FileUpload } from '../../components/common/FileUpload';
-import { ArrowLeft, Save, Upload } from 'lucide-react';
+import { Alert } from '../../components/ui/Alert';
+import { ArrowLeft, Save } from 'lucide-react';
 import type { Vendor, Account, Expense } from '../../types';
 
 const expenseSchema = z.object({
@@ -59,6 +60,12 @@ export const NewExpensePage: React.FC = () => {
     });
 
     const onSubmit = async (data: ExpenseFormData) => {
+        // Policy enforcement: Block submission if amount > 5000 without receipt
+        if (data.amount > 5000 && !receiptFile) {
+            toast.error('Receipt required for expenses over ₹5,000. Please attach a receipt.');
+            return;
+        }
+
         // Upload receipt if provided
         if (receiptFile) {
             setUploadingReceipt(true);
@@ -216,6 +223,21 @@ export const NewExpensePage: React.FC = () => {
                         <Card>
                             <CardHeader title="Receipt" />
                             <CardBody>
+                                {/* Policy Enforcement Warning */}
+                                {amount > 5000 && !receiptFile && (
+                                    <Alert
+                                        variant="warning"
+                                        className="mb-4"
+                                    >
+                                        <div>
+                                            <p className="font-semibold">Receipt Required</p>
+                                            <p className="text-sm mt-1">
+                                                Company policy requires receipts for expenses over ₹5,000.
+                                                Please attach a receipt before submitting.
+                                            </p>
+                                        </div>
+                                    </Alert>
+                                )}
                                 <FileUpload
                                     accept="image/*,application/pdf"
                                     maxSize={5}
@@ -223,6 +245,13 @@ export const NewExpensePage: React.FC = () => {
                                     uploadType="receipt"
                                     disabled={uploadingReceipt}
                                 />
+                                {receiptFile && (
+                                    <div className="mt-3 p-3 bg-success-50 border border-success-200 rounded-lg flex items-center gap-2">
+                                        <span className="text-success-700 text-sm font-medium">
+                                            ✓ Receipt attached: {receiptFile.name}
+                                        </span>
+                                    </div>
+                                )}
                             </CardBody>
                         </Card>
                     </div>

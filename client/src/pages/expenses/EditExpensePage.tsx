@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { apiGet, apiPatch, API_BASE_URL } from '../../lib/api';
+import { apiGet, apiPatch, apiPost, API_BASE_URL } from '../../lib/api';
 import { formatDateForInput } from '../../lib/utils';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
@@ -14,7 +14,8 @@ import { Input, Textarea } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Spinner } from '../../components/ui/Common';
 import { FileUpload } from '../../components/common/FileUpload';
-import { Save, X } from 'lucide-react';
+import { WorkflowApproval } from '../../components/workflow/WorkflowApproval';
+import { Save, X, Send } from 'lucide-react';
 import type { Expense, Vendor, Account } from '../../types';
 
 const expenseSchema = z.object({
@@ -91,6 +92,49 @@ export const EditExpensePage: React.FC = () => {
         },
         onError: (error: Error) => {
             toast.error(error.message || 'Failed to update expense');
+        },
+    });
+
+    const submitForApprovalMutation = useMutation({
+        mutationFn: () => apiPost(`/workflow/submit`, {
+            entityType: 'EXPENSE',
+            entityId: id,
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['expense', id] });
+            toast.success('Expense submitted for approval!');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to submit for approval');
+        },
+    });
+
+    const approveMutation = useMutation({
+        mutationFn: () => apiPost(`/workflow/approve`, {
+            entityType: 'EXPENSE',
+            entityId: id,
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['expense', id] });
+            toast.success('Expense approved!');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to approve expense');
+        },
+    });
+
+    const rejectMutation = useMutation({
+        mutationFn: (reason: string) => apiPost(`/workflow/reject`, {
+            entityType: 'EXPENSE',
+            entityId: id,
+            reason,
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['expense', id] });
+            toast.success('Expense rejected');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to reject expense');
         },
     });
 
@@ -283,6 +327,41 @@ export const EditExpensePage: React.FC = () => {
                         </div>
                     </CardBody>
                 </Card>
+
+                {/* Workflow Approval Section */}
+                {expense.workflowStatus && expense.workflowStatus !== 'NONE' && (
+                    <WorkflowApproval
+                        status={expense.workflowStatus}
+                        onApprove={async () => { await approveMutation.mutateAsync(); }}
+                        onReject={async (reason: string) => { await rejectMutation.mutateAsync(reason); }}
+                        canApprove={true}
+                    />
+                )}
+
+                {/* Submit for Approval Button */}
+                {(!expense.workflowStatus || expense.workflowStatus === 'NONE') && (
+                    <Card>
+                        <CardBody>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-medium text-[var(--color-neutral-900)]">
+                                        Ready to Submit?
+                                    </h3>
+                                    <p className="text-sm text-[var(--color-neutral-600)] mt-1">
+                                        Submit this expense for workflow approval
+                                    </p>
+                                </div>
+                                <Button
+                                    leftIcon={<Send className="w-4 h-4" />}
+                                    onClick={() => submitForApprovalMutation.mutate()}
+                                    isLoading={submitForApprovalMutation.isPending}
+                                >
+                                    Submit for Approval
+                                </Button>
+                            </div>
+                        </CardBody>
+                    </Card>
+                )}
             </form>
         </div>
     );

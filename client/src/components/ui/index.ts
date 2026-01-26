@@ -9,6 +9,3 @@ export * from './Skeleton';
 export * from './Tooltip';
 export * from './Alert';
 export * from './Progress';
-export * from './EmptyState';
-export * from './Badge';
-export * from './Spinner';

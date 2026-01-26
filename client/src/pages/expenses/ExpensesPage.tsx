@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiGet, apiDelete } from '../../lib/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
-import { exportToCSV, exportToExcel } from '../../lib/export';
+import { exportToExcel } from '../../lib/export';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
@@ -76,24 +76,6 @@ export const ExpensesPage: React.FC = () => {
     ]);
 
     // Export handlers
-    const handleExportCSV = () => {
-        exportToCSV(
-            filteredExpenses,
-            [
-                { key: 'expenseNumber', label: 'Expense Number' },
-                { key: 'vendor.name', label: 'Vendor' },
-                { key: 'date', label: 'Date', format: (val) => formatDate(val) },
-                { key: 'description', label: 'Description' },
-                { key: 'account.name', label: 'Category' },
-                { key: 'amount', label: 'Amount', format: (val) => formatCurrency(val) },
-                { key: 'vatAmount', label: 'VAT', format: (val) => formatCurrency(val) },
-                { key: 'totalAmount', label: 'Total', format: (val) => formatCurrency(val) },
-                { key: 'isPaid', label: 'Paid', format: (val) => val ? 'Yes' : 'No' },
-            ],
-            'expenses'
-        );
-    };
-
     const handleExportExcel = () => {
         exportToExcel(
             filteredExpenses,
