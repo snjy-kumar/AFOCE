@@ -465,3 +465,282 @@ export async function getBankSummary(userId: string) {
         },
     };
 }
+
+// ============================================
+// BANK STATEMENT IMPORT
+// ============================================
+
+interface ParsedTransaction {
+    date: Date;
+    description: string;
+    amount: number;
+    type: 'DEPOSIT' | 'WITHDRAWAL';
+    reference?: string;
+    balance?: number;
+}
+
+/**
+ * Parse CSV bank statement
+ * Supports common formats from Nepal banks
+ */
+export function parseCSVStatement(csvContent: string, format: 'standard' | 'nabil' | 'nic_asia' | 'global_ime' = 'standard'): ParsedTransaction[] {
+    const lines = csvContent.split('\n').map(line => line.trim()).filter(Boolean);
+    const transactions: ParsedTransaction[] = [];
+    
+    // Skip header row
+    const dataLines = lines.slice(1);
+    
+    for (const line of dataLines) {
+        try {
+            const columns = parseCSVLine(line);
+            let transaction: ParsedTransaction | null = null;
+            
+            switch (format) {
+                case 'nabil':
+                    // Nabil Bank format: Date, Particulars, Cheque No, Debit, Credit, Balance
+                    if (columns.length >= 6) {
+                        const debit = parseFloat(columns[3].replace(/,/g, '')) || 0;
+                        const credit = parseFloat(columns[4].replace(/,/g, '')) || 0;
+                        transaction = {
+                            date: parseDate(columns[0]),
+                            description: columns[1],
+                            amount: credit || debit,
+                            type: credit > 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+                            reference: columns[2] || undefined,
+                            balance: parseFloat(columns[5].replace(/,/g, '')) || undefined,
+                        };
+                    }
+                    break;
+                    
+                case 'nic_asia':
+                    // NIC Asia format: Transaction Date, Value Date, Description, Debit, Credit, Balance
+                    if (columns.length >= 6) {
+                        const debit = parseFloat(columns[3].replace(/,/g, '')) || 0;
+                        const credit = parseFloat(columns[4].replace(/,/g, '')) || 0;
+                        transaction = {
+                            date: parseDate(columns[0]),
+                            description: columns[2],
+                            amount: credit || debit,
+                            type: credit > 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+                            balance: parseFloat(columns[5].replace(/,/g, '')) || undefined,
+                        };
+                    }
+                    break;
+                    
+                case 'global_ime':
+                    // Global IME format: Date, Narration, Instrument No, Debit, Credit, Balance
+                    if (columns.length >= 6) {
+                        const debit = parseFloat(columns[3].replace(/,/g, '')) || 0;
+                        const credit = parseFloat(columns[4].replace(/,/g, '')) || 0;
+                        transaction = {
+                            date: parseDate(columns[0]),
+                            description: columns[1],
+                            amount: credit || debit,
+                            type: credit > 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+                            reference: columns[2] || undefined,
+                            balance: parseFloat(columns[5].replace(/,/g, '')) || undefined,
+                        };
+                    }
+                    break;
+                    
+                default:
+                    // Standard format: Date, Description, Amount, Type
+                    if (columns.length >= 4) {
+                        transaction = {
+                            date: parseDate(columns[0]),
+                            description: columns[1],
+                            amount: Math.abs(parseFloat(columns[2].replace(/,/g, '')) || 0),
+                            type: columns[3].toLowerCase().includes('credit') || columns[3].toLowerCase().includes('deposit') 
+                                ? 'DEPOSIT' 
+                                : 'WITHDRAWAL',
+                        };
+                    } else if (columns.length >= 3) {
+                        // Simple format: Date, Description, Amount (negative = withdrawal)
+                        const amount = parseFloat(columns[2].replace(/,/g, '')) || 0;
+                        transaction = {
+                            date: parseDate(columns[0]),
+                            description: columns[1],
+                            amount: Math.abs(amount),
+                            type: amount >= 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+                        };
+                    }
+            }
+            
+            if (transaction && transaction.date && transaction.amount > 0) {
+                transactions.push(transaction);
+            }
+        } catch (e) {
+            console.warn('Failed to parse line:', line, e);
+        }
+    }
+    
+    return transactions;
+}
+
+/**
+ * Parse a CSV line handling quoted fields
+ */
+function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    result.push(current.trim());
+    
+    return result;
+}
+
+/**
+ * Parse date in various formats
+ */
+function parseDate(dateStr: string): Date {
+    // Try common formats
+    const formats = [
+        /(\d{4})-(\d{2})-(\d{2})/, // YYYY-MM-DD
+        /(\d{2})\/(\d{2})\/(\d{4})/, // DD/MM/YYYY
+        /(\d{2})-(\d{2})-(\d{4})/, // DD-MM-YYYY
+        /(\d{4})\/(\d{2})\/(\d{2})/, // YYYY/MM/DD
+    ];
+    
+    for (const format of formats) {
+        const match = dateStr.match(format);
+        if (match) {
+            if (format.source.startsWith('(\\d{4})')) {
+                return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+            } else {
+                return new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
+            }
+        }
+    }
+    
+    // Fallback to native parsing
+    return new Date(dateStr);
+}
+
+/**
+ * Import bank statement from CSV
+ */
+export async function importBankStatement(
+    userId: string,
+    bankAccountId: string,
+    csvContent: string,
+    format: 'standard' | 'nabil' | 'nic_asia' | 'global_ime' = 'standard'
+): Promise<{ imported: number; skipped: number; errors: string[] }> {
+    // Verify bank account ownership
+    const bankAccount = await prisma.bankAccount.findFirst({
+        where: { id: bankAccountId, userId },
+    });
+    
+    if (!bankAccount) {
+        throw new Error('Bank account not found');
+    }
+    
+    const transactions = parseCSVStatement(csvContent, format);
+    let imported = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+    
+    for (const tx of transactions) {
+        try {
+            // Check for duplicate (same date, amount, description)
+            const existing = await prisma.bankTransaction.findFirst({
+                where: {
+                    bankAccountId,
+                    date: tx.date,
+                    amount: tx.amount,
+                    description: tx.description,
+                },
+            });
+            
+            if (existing) {
+                skipped++;
+                continue;
+            }
+            
+            // Create transaction
+            await prisma.bankTransaction.create({
+                data: {
+                    bankAccountId,
+                    date: tx.date,
+                    description: tx.description + (tx.reference ? ` (Ref: ${tx.reference})` : ''),
+                    amount: tx.amount,
+                    type: tx.type,
+                    reconciled: false,
+                },
+            });
+            
+            // Update bank account balance
+            const balanceChange = tx.type === 'DEPOSIT' ? tx.amount : -tx.amount;
+            await prisma.bankAccount.update({
+                where: { id: bankAccountId },
+                data: {
+                    currentBalance: {
+                        increment: balanceChange,
+                    },
+                },
+            });
+            
+            imported++;
+        } catch (e) {
+            errors.push(`Failed to import transaction: ${tx.description} - ${e}`);
+        }
+    }
+    
+    return { imported, skipped, errors };
+}
+
+/**
+ * Parse OFX (Open Financial Exchange) format
+ * Used by many banks for statement exports
+ */
+export function parseOFXStatement(ofxContent: string): ParsedTransaction[] {
+    const transactions: ParsedTransaction[] = [];
+    
+    // Simple OFX parser - looks for STMTTRN blocks
+    const stmtTrnRegex = /<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi;
+    let match;
+    
+    while ((match = stmtTrnRegex.exec(ofxContent)) !== null) {
+        const block = match[1];
+        
+        const getTagValue = (tag: string): string => {
+            const regex = new RegExp(`<${tag}>([^<\\n]+)`, 'i');
+            const m = block.match(regex);
+            return m ? m[1].trim() : '';
+        };
+        
+        const dtPosted = getTagValue('DTPOSTED');
+        const trnAmt = parseFloat(getTagValue('TRNAMT')) || 0;
+        const name = getTagValue('NAME');
+        const memo = getTagValue('MEMO');
+        const fitId = getTagValue('FITID');
+        
+        if (dtPosted && trnAmt !== 0) {
+            // Parse OFX date format: YYYYMMDDHHMMSS
+            const year = parseInt(dtPosted.substr(0, 4));
+            const month = parseInt(dtPosted.substr(4, 2)) - 1;
+            const day = parseInt(dtPosted.substr(6, 2));
+            
+            transactions.push({
+                date: new Date(year, month, day),
+                description: name || memo || 'Unknown transaction',
+                amount: Math.abs(trnAmt),
+                type: trnAmt > 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+                reference: fitId || undefined,
+            });
+        }
+    }
+    
+    return transactions;
+}

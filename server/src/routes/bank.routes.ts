@@ -108,6 +108,9 @@ router.post(
     bankController.bulkImportTransactions
 );
 
+// POST /api/bank/:id/import-statement - Import bank statement from CSV/OFX
+router.post('/:id/import-statement', bankController.importStatement);
+
 // ============================================
 // SUMMARY
 // ============================================

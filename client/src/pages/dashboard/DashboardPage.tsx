@@ -76,8 +76,8 @@ export const DashboardPage: React.FC = () => {
             {/* Workflow Status Alerts - Enhanced with Action Buttons */}
             {stats && (stats.pendingApprovals > 0 || stats.overdueInvoices > 0 || stats.missingReceipts > 0) && (
                 <Card className="mb-6 border-l-4 border-l-primary-600">
-                    <CardHeader 
-                        title="Workflow Status" 
+                    <CardHeader
+                        title="Workflow Status"
                         subtitle="Action items requiring your attention - take action now"
                     />
                     <CardBody>
@@ -146,21 +146,21 @@ export const DashboardPage: React.FC = () => {
                 <StatCard
                     title="Total Revenue"
                     value={formatCurrency(stats?.totalRevenue || 0)}
-                    change={12.5}
+                    change={stats?.revenueChange ?? 0}
                     icon={<TrendingUp className="w-5 h-5" />}
                     color="primary"
                 />
                 <StatCard
                     title="Total Expenses"
                     value={formatCurrency(stats?.totalExpenses || 0)}
-                    change={-3.2}
+                    change={stats?.expenseChange ?? 0}
                     icon={<TrendingDown className="w-5 h-5" />}
                     color="danger"
                 />
                 <StatCard
                     title="Net Profit"
                     value={formatCurrency(stats?.netProfit || 0)}
-                    change={8.1}
+                    change={stats?.profitChange ?? 0}
                     icon={<TrendingUp className="w-5 h-5" />}
                     color="success"
                 />

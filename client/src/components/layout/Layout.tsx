@@ -77,7 +77,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action 
     );
 };
 
-// Auth layout (for login/register pages)
+// Auth layout (for login/register pages) - Full width for split-screen design
 export const AuthLayout: React.FC = () => {
     const { isAuthenticated, token } = useAuthStore();
 
@@ -86,11 +86,6 @@ export const AuthLayout: React.FC = () => {
         return <Navigate to="/dashboard" replace />;
     }
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-[var(--color-primary-600)] via-[var(--color-primary-700)] to-[var(--color-primary-900)] flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
-                <Outlet />
-            </div>
-        </div>
-    );
+    // Full-width layout - auth pages handle their own layout
+    return <Outlet />;
 };

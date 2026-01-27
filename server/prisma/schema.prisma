@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================
@@ -14,8 +15,8 @@ datasource db {
 // ============================================
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String  @id @default(uuid())
+  email        String  @unique
   password     String // bcrypt hashed
   businessName String
   panNumber    String? // Permanent Account Number
@@ -23,10 +24,15 @@ model User {
   address      String?
   phone        String?
   logoUrl      String?
-  settings     Json     @default("{}")
-  language     String   @default("en") // "en" | "ne"
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  settings     Json    @default("{}")
+  language     String  @default("en") // "en" | "ne"
+
+  // Password reset
+  resetToken       String? // Hashed reset token
+  resetTokenExpiry DateTime? // Token expiry time
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   invoices         Invoice[]
@@ -222,6 +228,7 @@ model Invoice {
   transactions    BankTransaction[]
   workflowHistory WorkflowHistory[]
   notifications   Notification[]
+  payments        Payment[]
 
   @@unique([userId, invoiceNumber])
   @@index([userId, status])
@@ -343,6 +350,90 @@ model VatRecord {
 
   @@unique([userId, periodLabel])
   @@index([userId, status])
+}
+
+// ============================================
+// PAYMENT GATEWAY INTEGRATION
+// ============================================
+
+enum PaymentProvider {
+  ESEWA
+  KHALTI
+  BANK_TRANSFER
+  CASH
+  CHEQUE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+model Payment {
+  id            String          @id @default(uuid())
+  transactionId String          @unique // Our transaction reference
+  invoiceId     String
+  invoice       Invoice         @relation(fields: [invoiceId], references: [id])
+  amount        Decimal         @db.Decimal(15, 2)
+  provider      PaymentProvider
+  status        PaymentStatus   @default(PENDING)
+  khaltiPidx    String? // Khalti payment index
+  metadata      Json? // Provider-specific data
+  rawResponse   Json? // Full response from gateway
+  completedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+// ============================================
+// MULTI-COMPANY SUPPORT (Phase 4)
+// ============================================
+
+model Company {
+  id              String   @id @default(uuid())
+  name            String
+  nameNe          String? // Nepali name
+  panNumber       String?
+  vatNumber       String?
+  address         String?
+  phone           String?
+  email           String?
+  logoUrl         String?
+  fiscalYearStart Int      @default(4) // Month (1-12), Nepal starts in Shrawan (July = 4th month in Gregorian mapping)
+  currency        String   @default("NPR")
+  vatRate         Decimal  @default(13.00) @db.Decimal(5, 2)
+  settings        Json     @default("{}")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  members CompanyMember[]
+
+  @@index([isActive])
+}
+
+model CompanyMember {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String
+  role      RoleType @default(VIEWER)
+  isDefault Boolean  @default(false) // Default company for user
+  isActive  Boolean  @default(true) // Soft delete for members
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, userId])
+  @@index([userId])
+  @@index([isActive])
 }
 
 // ============================================
@@ -693,4 +784,222 @@ model JobQueue {
   @@index([status, scheduledFor])
   @@index([queueName, status])
   @@map("job_queue")
+}
+
+// ============================================
+// INVENTORY MANAGEMENT
+// ============================================
+
+model Product {
+  id     String @id @default(uuid())
+  userId String
+
+  // Product Info
+  name        String
+  nameNe      String? // Nepali name
+  sku         String // Stock Keeping Unit
+  description String?
+  category    String?
+
+  // Pricing
+  costPrice    Decimal @default(0) @db.Decimal(15, 2)
+  sellingPrice Decimal @default(0) @db.Decimal(15, 2)
+
+  // Tax
+  vatRate     Decimal @default(13.00) @db.Decimal(5, 2)
+  isVatExempt Boolean @default(false)
+
+  // Stock
+  currentStock    Int    @default(0)
+  reorderLevel    Int    @default(10)
+  reorderQuantity Int    @default(50)
+  unit            String @default("pcs") // pcs, kg, ltr, etc.
+
+  // Status
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  stockMovements StockMovement[]
+
+  @@unique([userId, sku])
+  @@index([userId, category])
+  @@index([userId, isActive])
+  @@map("products")
+}
+
+enum StockMovementType {
+  PURCHASE // Stock in from purchase
+  SALE // Stock out from sale
+  ADJUSTMENT // Manual adjustment
+  RETURN_IN // Customer return
+  RETURN_OUT // Return to supplier
+  DAMAGED // Damaged goods
+  TRANSFER // Transfer between locations
+}
+
+model StockMovement {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  type     StockMovementType
+  quantity Int // Positive for in, negative for out
+
+  // Reference
+  referenceType String? // "invoice", "expense", "adjustment"
+  referenceId   String?
+
+  // Details
+  notes    String?
+  unitCost Decimal? @db.Decimal(15, 2)
+
+  // Balance tracking
+  previousStock Int
+  newStock      Int
+
+  createdAt DateTime @default(now())
+  createdBy String? // User who made the change
+
+  @@index([productId, createdAt])
+  @@index([type])
+  @@map("stock_movements")
+}
+
+// ============================================
+// PROJECT TRACKING
+// ============================================
+
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model Project {
+  id     String @id @default(uuid())
+  userId String
+
+  // Project Info
+  name        String
+  nameNe      String? // Nepali name
+  code        String // Unique project code
+  description String?
+
+  // Client/Customer
+  customerId String?
+
+  // Financial
+  budget   Decimal? @db.Decimal(15, 2)
+  currency String   @default("NPR")
+
+  // Timeline
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Status
+  status ProjectStatus @default(ACTIVE)
+
+  // Billing
+  billable    Boolean  @default(true)
+  billingRate Decimal? @db.Decimal(15, 2) // Hourly/daily rate
+  billingType String? // "hourly", "fixed", "milestone"
+
+  // Tags and Categories
+  category String?
+  tags     String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  entries ProjectEntry[]
+
+  @@unique([userId, code])
+  @@index([userId, status])
+  @@index([userId, customerId])
+  @@map("projects")
+}
+
+enum ProjectEntryType {
+  REVENUE // Income from project
+  EXPENSE // Cost incurred
+  TIME // Time log entry
+  MILESTONE // Project milestone
+}
+
+model ProjectEntry {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  type ProjectEntryType
+
+  // Description
+  description String
+  notes       String?
+
+  // Financial (for revenue/expense)
+  amount Decimal? @db.Decimal(15, 2)
+
+  // Time tracking
+  hours Decimal? @db.Decimal(8, 2)
+  date  DateTime @default(now())
+
+  // Reference to actual invoice/expense
+  invoiceId String?
+  expenseId String?
+
+  // Metadata
+  isBillable Boolean @default(true)
+  isBilled   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  createdBy String?
+
+  @@index([projectId, type])
+  @@index([projectId, date])
+  @@map("project_entries")
+}
+
+// ============================================
+// MULTI-CURRENCY SUPPORT
+// ============================================
+
+// Exchange rates for currency conversions
+model ExchangeRate {
+  id            String   @id @default(uuid())
+  fromCurrency  String // e.g., "USD"
+  toCurrency    String // e.g., "NPR"
+  rate          Decimal  @db.Decimal(15, 6)
+  effectiveDate DateTime @default(now())
+  source        String? // e.g., "manual", "api", "nepal_rastra_bank"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fromCurrency, toCurrency, effectiveDate])
+  @@index([fromCurrency, toCurrency])
+  @@index([effectiveDate])
+  @@map("exchange_rates")
+}
+
+// Currency configuration (supported currencies)
+model Currency {
+  id       String  @id @default(uuid())
+  code     String  @unique // ISO code: USD, NPR, INR, EUR
+  name     String // Full name
+  nameNe   String? // Nepali name
+  symbol   String // $, रु, ₹, €
+  decimals Int     @default(2)
+  isActive Boolean @default(true)
+  isBase   Boolean @default(false) // Base currency (NPR for Nepal)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("currencies")
 }

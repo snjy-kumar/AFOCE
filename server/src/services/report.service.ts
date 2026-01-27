@@ -511,4 +511,239 @@ export const reportService = {
             totalPayable: expenses.reduce((sum, exp) => sum + Number(exp.totalAmount), 0),
         };
     },
+
+    /**
+     * Cash Flow Statement
+     */
+    async getCashFlowStatement(userId: string, dateRange: ReportDateRange) {
+        const startDate = new Date(dateRange.startDate);
+        const endDate = new Date(dateRange.endDate);
+
+        // Operating Activities
+        // Cash received from customers (paid invoices)
+        const cashFromCustomers = await prisma.invoice.aggregate({
+            where: {
+                userId,
+                status: 'PAID',
+                issueDate: { gte: startDate, lte: endDate },
+            },
+            _sum: { paidAmount: true },
+        });
+
+        // Cash paid for expenses
+        const cashPaidExpenses = await prisma.expense.aggregate({
+            where: {
+                userId,
+                isPaid: true,
+                date: { gte: startDate, lte: endDate },
+            },
+            _sum: { totalAmount: true },
+        });
+
+        // VAT collected and paid
+        const vatCollected = await prisma.invoice.aggregate({
+            where: {
+                userId,
+                status: 'PAID',
+                issueDate: { gte: startDate, lte: endDate },
+            },
+            _sum: { vatAmount: true },
+        });
+
+        const vatPaid = await prisma.expense.aggregate({
+            where: {
+                userId,
+                isPaid: true,
+                date: { gte: startDate, lte: endDate },
+            },
+            _sum: { vatAmount: true },
+        });
+
+        // Bank transactions for investing/financing activities
+        const bankTransactions = await prisma.bankTransaction.findMany({
+            where: {
+                bankAccount: { userId },
+                date: { gte: startDate, lte: endDate },
+            },
+            include: {
+                bankAccount: { select: { name: true } },
+            },
+        });
+
+        // Categorize transactions
+        const investingInflows = bankTransactions
+            .filter(t => t.type === 'DEPOSIT' && t.description?.toLowerCase().includes('investment'))
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+        
+        const investingOutflows = bankTransactions
+            .filter(t => t.type === 'WITHDRAWAL' && (
+                t.description?.toLowerCase().includes('equipment') ||
+                t.description?.toLowerCase().includes('asset') ||
+                t.description?.toLowerCase().includes('investment')
+            ))
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        const financingInflows = bankTransactions
+            .filter(t => t.type === 'DEPOSIT' && (
+                t.description?.toLowerCase().includes('loan') ||
+                t.description?.toLowerCase().includes('capital')
+            ))
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        const financingOutflows = bankTransactions
+            .filter(t => t.type === 'WITHDRAWAL' && (
+                t.description?.toLowerCase().includes('loan') ||
+                t.description?.toLowerCase().includes('dividend')
+            ))
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        // Calculate totals
+        const operatingInflows = Number(cashFromCustomers._sum.paidAmount ?? 0);
+        const operatingOutflows = Number(cashPaidExpenses._sum.totalAmount ?? 0);
+        const netOperating = operatingInflows - operatingOutflows;
+        const netInvesting = investingInflows - investingOutflows;
+        const netFinancing = financingInflows - financingOutflows;
+        const netCashChange = netOperating + netInvesting + netFinancing;
+
+        // Opening and closing cash
+        const openingBalance = await prisma.bankAccount.aggregate({
+            where: { userId },
+            _sum: { openingBalance: true },
+        });
+
+        const closingBalance = await prisma.bankAccount.aggregate({
+            where: { userId },
+            _sum: { currentBalance: true },
+        });
+
+        return {
+            period: { startDate: dateRange.startDate, endDate: dateRange.endDate },
+            operatingActivities: {
+                inflows: {
+                    cashFromCustomers: operatingInflows,
+                    total: operatingInflows,
+                },
+                outflows: {
+                    cashPaidToSuppliers: operatingOutflows,
+                    vatPaid: Number(vatPaid._sum.vatAmount ?? 0) - Number(vatCollected._sum.vatAmount ?? 0),
+                    total: operatingOutflows,
+                },
+                netCashFromOperations: netOperating,
+            },
+            investingActivities: {
+                inflows: investingInflows,
+                outflows: investingOutflows,
+                netCashFromInvesting: netInvesting,
+            },
+            financingActivities: {
+                inflows: financingInflows,
+                outflows: financingOutflows,
+                netCashFromFinancing: netFinancing,
+            },
+            summary: {
+                netCashChange,
+                openingCashBalance: Number(openingBalance._sum.openingBalance ?? 0),
+                closingCashBalance: Number(closingBalance._sum.currentBalance ?? 0),
+            },
+        };
+    },
+
+    /**
+     * VAT Summary Report (for IRD filing)
+     */
+    async getVatSummaryReport(userId: string, dateRange: ReportDateRange) {
+        const startDate = new Date(dateRange.startDate);
+        const endDate = new Date(dateRange.endDate);
+
+        // Sales VAT (Output VAT)
+        const salesWithVat = await prisma.invoice.findMany({
+            where: {
+                userId,
+                status: { not: 'CANCELLED' },
+                issueDate: { gte: startDate, lte: endDate },
+                vatAmount: { gt: 0 },
+            },
+            include: {
+                customer: { select: { name: true, panNumber: true } },
+            },
+            orderBy: { issueDate: 'asc' },
+        });
+
+        // Purchase VAT (Input VAT)
+        const purchasesWithVat = await prisma.expense.findMany({
+            where: {
+                userId,
+                date: { gte: startDate, lte: endDate },
+                vatAmount: { gt: 0 },
+            },
+            include: {
+                vendor: { select: { name: true, panNumber: true } },
+            },
+            orderBy: { date: 'asc' },
+        });
+
+        // Calculate totals
+        const totalSales = salesWithVat.reduce((sum, inv) => sum + Number(inv.subtotal), 0);
+        const totalOutputVat = salesWithVat.reduce((sum, inv) => sum + Number(inv.vatAmount), 0);
+        const totalPurchases = purchasesWithVat.reduce((sum, exp) => sum + Number(exp.amount), 0);
+        const totalInputVat = purchasesWithVat.reduce((sum, exp) => sum + Number(exp.vatAmount), 0);
+        const netVatPayable = totalOutputVat - totalInputVat;
+
+        // Group by VAT rate (currently only 13% in Nepal)
+        const vatRates = {
+            standard: {
+                rate: 13,
+                salesAmount: totalSales,
+                salesVat: totalOutputVat,
+                purchaseAmount: totalPurchases,
+                purchaseVat: totalInputVat,
+            },
+        };
+
+        return {
+            period: { startDate: dateRange.startDate, endDate: dateRange.endDate },
+            sales: {
+                transactions: salesWithVat.map(inv => ({
+                    date: inv.issueDate,
+                    invoiceNumber: inv.invoiceNumber,
+                    customerName: inv.customer.name,
+                    customerPan: inv.customer.panNumber,
+                    taxableAmount: Number(inv.subtotal),
+                    vatAmount: Number(inv.vatAmount),
+                    totalAmount: Number(inv.total),
+                })),
+                totalTaxableAmount: totalSales,
+                totalVat: totalOutputVat,
+                transactionCount: salesWithVat.length,
+            },
+            purchases: {
+                transactions: purchasesWithVat.map(exp => ({
+                    date: exp.date,
+                    billNumber: exp.expenseNumber,
+                    vendorName: exp.vendor?.name ?? 'Unknown',
+                    vendorPan: exp.vendor?.panNumber ?? '',
+                    taxableAmount: Number(exp.amount),
+                    vatAmount: Number(exp.vatAmount),
+                    totalAmount: Number(exp.totalAmount),
+                })),
+                totalTaxableAmount: totalPurchases,
+                totalVat: totalInputVat,
+                transactionCount: purchasesWithVat.length,
+            },
+            vatRates,
+            summary: {
+                outputVat: totalOutputVat,
+                inputVat: totalInputVat,
+                netVatPayable: netVatPayable,
+                status: netVatPayable > 0 ? 'PAYABLE' : netVatPayable < 0 ? 'REFUNDABLE' : 'NIL',
+            },
+            irdFormat: {
+                // IRD Nepal specific fields
+                taxPeriod: `${startDate.toISOString().slice(0, 7)} to ${endDate.toISOString().slice(0, 7)}`,
+                totalSalesIncludingVat: totalSales + totalOutputVat,
+                totalPurchasesIncludingVat: totalPurchases + totalInputVat,
+                vatPayableOrRefundable: netVatPayable,
+            },
+        };
+    },
 };

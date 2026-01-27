@@ -10,6 +10,7 @@ import { performanceMiddleware } from './utils/performance.js';
 import routes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { initializeWorkflowSystem, shutdownWorkflowSystem } from './services/workflow-init.service.js';
+import { emailQueueService } from './services/emailQueue.service.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import { setupProcessHandlers } from './utils/process-handlers.js';
 import { waitForDatabase, disconnectDatabase, checkMigrationStatus } from './utils/database-health.js';
@@ -95,7 +96,15 @@ const startServer = async (): Promise<void> => {
         // 3. Initialize workflow system
         await initializeWorkflowSystem();
 
-        // 4. Start HTTP server
+        // 4. Start email queue worker (if Redis is available)
+        try {
+            emailQueueService.startWorker();
+            logger.info('  ✓ Email queue worker started');
+        } catch (err) {
+            logger.warn('  ⚠ Email queue worker not started (Redis may not be available)');
+        }
+
+        // 5. Start HTTP server
         const server = app.listen(env.PORT, () => {
             logger.info(`
 ╔═══════════════════════════════════════════════════════════╗
@@ -108,6 +117,7 @@ const startServer = async (): Promise<void> => {
 ║  API Docs:    http://localhost:${env.PORT}/api-docs${' '.repeat(19)}║
 ║  Database:    ✓ Connected${' '.repeat(30)}║
 ║  Workflow:    ✓ Initialized${' '.repeat(30)}║
+║  Email Queue: ✓ Running${' '.repeat(32)}║
 ║  Security:    ✓ Hardened${' '.repeat(31)}║
 ╚═══════════════════════════════════════════════════════════╝
     `);
@@ -137,7 +147,11 @@ const shutdown = async (): Promise<void> => {
         logger.info('  → Shutting down workflow system...');
         await shutdownWorkflowSystem();
         
-        // 3. Disconnect from database
+        // 3. Shutdown email queue
+        logger.info('  → Shutting down email queue...');
+        await emailQueueService.close();
+        
+        // 4. Disconnect from database
         logger.info('  → Disconnecting from database...');
         await disconnectDatabase();
         

@@ -8,6 +8,8 @@ import {
     loginSchema,
     updateProfileSchema,
     changePasswordSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema,
 } from '../schemas/auth.schema.js';
 
 /**
@@ -30,6 +32,19 @@ router.post(
     '/login',
     validate({ body: loginSchema }),
     authController.login
+);
+
+// Password reset routes (public)
+router.post(
+    '/forgot-password',
+    validate({ body: forgotPasswordSchema }),
+    authController.forgotPassword
+);
+
+router.post(
+    '/reset-password',
+    validate({ body: resetPasswordSchema }),
+    authController.resetPassword
 );
 
 // Protected routes (require authentication)

@@ -86,4 +86,30 @@ export const reportController = {
             next(error);
         }
     },
+
+    async getCashFlowStatement(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) throw new Error('User ID not found');
+
+            const dateRange = req.query as ReportDateRange;
+            const report = await reportService.getCashFlowStatement(userId, dateRange);
+            sendSuccess(res, report);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async getVatSummaryReport(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) throw new Error('User ID not found');
+
+            const dateRange = req.query as ReportDateRange;
+            const report = await reportService.getVatSummaryReport(userId, dateRange);
+            sendSuccess(res, report);
+        } catch (error) {
+            next(error);
+        }
+    },
 };

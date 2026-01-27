@@ -19,10 +19,33 @@ const envSchema = z.object({
 
     // CORS
     CORS_ORIGIN: z.string().default('http://localhost:5173'),
+    FRONTEND_URL: z.string().default('http://localhost:5173'),
 
     // File uploads
     UPLOAD_DIR: z.string().default('./uploads'),
     MAX_FILE_SIZE: z.string().transform(Number).default('5242880'), // 5MB
+
+    // Email (optional)
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.string().transform(Number).optional(),
+    SMTP_SECURE: z.string().transform(v => v === 'true').optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SENDGRID_API_KEY: z.string().optional(),
+    EMAIL_FROM: z.string().default('AFOCE <noreply@afoce.com>'),
+
+    // Payment Gateways (optional)
+    ESEWA_MERCHANT_ID: z.string().optional(),
+    ESEWA_SECRET_KEY: z.string().optional(),
+    ESEWA_ENVIRONMENT: z.enum(['development', 'production']).default('development'),
+    KHALTI_SECRET_KEY: z.string().optional(),
+    KHALTI_PUBLIC_KEY: z.string().optional(),
+    KHALTI_ENVIRONMENT: z.enum(['development', 'production']).default('development'),
+
+    // IRD Integration (optional)
+    IRD_API_URL: z.string().optional(),
+    IRD_API_KEY: z.string().optional(),
+    IRD_TAXPAYER_ID: z.string().optional(),
 });
 
 // Parse and validate environment variables

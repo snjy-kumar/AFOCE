@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,15 +8,33 @@ import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardBody } from '../../components/ui/Card';
-import { Calculator, Mail, Lock, Building2, FileText } from 'lucide-react';
+import {
+    Calculator,
+    Mail,
+    Lock,
+    Building2,
+    FileText,
+    Eye,
+    EyeOff,
+    CheckCircle2,
+    ArrowRight,
+    Shield,
+    Zap,
+    BarChart3
+} from 'lucide-react';
 
 const registerSchema = z.object({
     businessName: z.string().min(2, 'Business name is required'),
     email: z.string().email('Please enter a valid email'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/[A-Z]/, 'Must contain uppercase letter')
+        .regex(/[a-z]/, 'Must contain lowercase letter')
+        .regex(/[0-9]/, 'Must contain number'),
     confirmPassword: z.string(),
     panNumber: z.string().optional(),
     vatNumber: z.string().optional(),
+    agreeToTerms: z.boolean().refine(val => val === true, 'You must agree to the terms'),
 }).refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
@@ -27,14 +45,37 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
     const { register: registerUser, isLoading, error, clearError } = useAuthStore();
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const {
         register,
         handleSubmit,
+        watch,
         formState: { errors },
     } = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
+        defaultValues: {
+            agreeToTerms: false,
+        },
     });
+
+    const password = watch('password', '');
+
+    // Password strength calculation
+    const getPasswordStrength = (pwd: string) => {
+        let strength = 0;
+        if (pwd.length >= 8) strength++;
+        if (/[A-Z]/.test(pwd)) strength++;
+        if (/[a-z]/.test(pwd)) strength++;
+        if (/[0-9]/.test(pwd)) strength++;
+        if (/[^A-Za-z0-9]/.test(pwd)) strength++;
+        return strength;
+    };
+
+    const passwordStrength = getPasswordStrength(password);
+    const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Excellent'];
+    const strengthColors = ['', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
 
     const onSubmit = async (data: RegisterFormData) => {
         try {
@@ -45,7 +86,7 @@ export const RegisterPage: React.FC = () => {
                 panNumber: data.panNumber,
                 vatNumber: data.vatNumber,
             });
-            toast.success('Account created successfully!');
+            toast.success('Account created successfully! Welcome to AFOCE.');
             navigate('/dashboard');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Registration failed');
@@ -53,100 +94,273 @@ export const RegisterPage: React.FC = () => {
     };
 
     return (
-        <div className="animate-fade-in">
-            {/* Logo */}
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm mb-4">
-                    <Calculator className="w-8 h-8 text-white" />
+        <div className="animate-fade-in min-h-screen flex">
+            {/* Left side - Branding (hidden on mobile) */}
+            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 p-12 flex-col justify-between relative overflow-hidden">
+                {/* Background pattern */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
+
+                <div className="relative z-10">
+                    <Link to="/" className="flex items-center gap-3 mb-8">
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                            <Calculator className="w-7 h-7 text-white" />
+                        </div>
+                        <span className="text-2xl font-bold text-white">AFOCE</span>
+                    </Link>
+
+                    <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+                        Start your journey with
+                        <span className="block text-primary-200">Nepal's Smart Business OS</span>
+                    </h1>
+                    <p className="text-lg text-primary-100 leading-relaxed max-w-md">
+                        Join thousands of Nepal businesses already automating their finances with AFOCE.
+                    </p>
                 </div>
-                <h1 className="text-2xl font-bold text-white">Create Account</h1>
-                <p className="text-white/70 mt-1">Start managing your finances</p>
+
+                <div className="relative z-10 space-y-5">
+                    <h3 className="text-white font-semibold text-lg mb-4">What you'll get:</h3>
+
+                    <div className="flex items-start gap-4 text-white/90">
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-1">13% VAT Automation</h4>
+                            <p className="text-sm text-primary-200">Automatic IRD-compliant calculations</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-4 text-white/90">
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Shield className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-1">Smart Approval Workflows</h4>
+                            <p className="text-sm text-primary-200">Enforce business policies automatically</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-4 text-white/90">
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <BarChart3 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-1">Real-Time Analytics</h4>
+                            <p className="text-sm text-primary-200">Track cash flow, invoices & expenses</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-4 text-white/90">
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Zap className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-1">Bikram Sambat Native</h4>
+                            <p className="text-sm text-primary-200">Full Nepali calendar support</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative z-10 text-primary-200 text-sm">
+                    © 2026 AFOCE. Built for Nepal's SMEs.
+                </div>
             </div>
 
-            <Card className="backdrop-blur-sm bg-white/95">
-                <CardBody className="p-8">
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                        {error && (
-                            <div className="p-3 rounded-lg bg-[var(--color-danger-50)] text-[var(--color-danger-700)] text-sm">
-                                {error}
+            {/* Right side - Register Form */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-gradient-to-br from-neutral-50 to-white overflow-y-auto">
+                <div className="w-full max-w-lg">
+                    {/* Mobile logo */}
+                    <div className="lg:hidden text-center mb-6">
+                        <Link to="/" className="inline-flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
+                                <Calculator className="w-7 h-7 text-white" />
                             </div>
-                        )}
+                            <span className="text-2xl font-bold text-neutral-900">AFOCE</span>
+                        </Link>
+                    </div>
 
-                        <Input
-                            label="Business Name"
-                            placeholder="Your Business Ltd."
-                            leftIcon={<Building2 className="w-4 h-4" />}
-                            error={errors.businessName?.message}
-                            {...register('businessName')}
-                            onFocus={clearError}
-                        />
-
-                        <Input
-                            label="Email Address"
-                            type="email"
-                            placeholder="you@business.com"
-                            leftIcon={<Mail className="w-4 h-4" />}
-                            error={errors.email?.message}
-                            {...register('email')}
-                            onFocus={clearError}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="Password"
-                                type="password"
-                                placeholder="••••••••"
-                                leftIcon={<Lock className="w-4 h-4" />}
-                                error={errors.password?.message}
-                                {...register('password')}
-                            />
-
-                            <Input
-                                label="Confirm Password"
-                                type="password"
-                                placeholder="••••••••"
-                                leftIcon={<Lock className="w-4 h-4" />}
-                                error={errors.confirmPassword?.message}
-                                {...register('confirmPassword')}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="PAN Number"
-                                placeholder="Optional"
-                                leftIcon={<FileText className="w-4 h-4" />}
-                                {...register('panNumber')}
-                                helperText="Permanent Account Number"
-                            />
-
-                            <Input
-                                label="VAT Number"
-                                placeholder="Optional"
-                                leftIcon={<FileText className="w-4 h-4" />}
-                                {...register('vatNumber')}
-                                helperText="VAT Registration Number"
-                            />
-                        </div>
-
-                        <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-                            Create Account
-                        </Button>
-                    </form>
-
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-[var(--color-neutral-600)]">
-                            Already have an account?{' '}
-                            <Link
-                                to="/login"
-                                className="font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)]"
-                            >
-                                Sign in
-                            </Link>
+                    <div className="text-center mb-6">
+                        <h2 className="text-3xl font-bold text-neutral-900 mb-2">Create your account</h2>
+                        <p className="text-neutral-600">
+                            Start your 14-day free trial. No credit card required.
                         </p>
                     </div>
-                </CardBody>
-            </Card>
+
+                    <Card className="shadow-xl border-0">
+                        <CardBody className="p-6 sm:p-8">
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                                {error && (
+                                    <div className="p-4 rounded-xl bg-danger-50 border border-danger-200 text-danger-700 text-sm flex items-start gap-3">
+                                        <div className="w-5 h-5 rounded-full bg-danger-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <span className="text-danger-600 text-xs font-bold">!</span>
+                                        </div>
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                <Input
+                                    label="Business Name"
+                                    placeholder="Your Business Pvt. Ltd."
+                                    leftIcon={<Building2 className="w-4 h-4" />}
+                                    error={errors.businessName?.message}
+                                    {...register('businessName')}
+                                    onFocus={clearError}
+                                />
+
+                                <Input
+                                    label="Email Address"
+                                    type="email"
+                                    placeholder="you@business.com"
+                                    leftIcon={<Mail className="w-4 h-4" />}
+                                    error={errors.email?.message}
+                                    {...register('email')}
+                                    onFocus={clearError}
+                                />
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="relative">
+                                        <Input
+                                            label="Password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            placeholder="••••••••"
+                                            leftIcon={<Lock className="w-4 h-4" />}
+                                            error={errors.password?.message}
+                                            {...register('password')}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-9 text-neutral-400 hover:text-neutral-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+
+                                    <div className="relative">
+                                        <Input
+                                            label="Confirm Password"
+                                            type={showConfirmPassword ? 'text' : 'password'}
+                                            placeholder="••••••••"
+                                            leftIcon={<Lock className="w-4 h-4" />}
+                                            error={errors.confirmPassword?.message}
+                                            {...register('confirmPassword')}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-9 text-neutral-400 hover:text-neutral-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Password Strength */}
+                                {password && (
+                                    <div className="space-y-2">
+                                        <div className="flex gap-1">
+                                            {[1, 2, 3, 4, 5].map((level) => (
+                                                <div
+                                                    key={level}
+                                                    className={`h-1.5 flex-1 rounded-full transition-colors ${level <= passwordStrength
+                                                            ? strengthColors[passwordStrength]
+                                                            : 'bg-neutral-200'
+                                                        }`}
+                                                />
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-neutral-500">
+                                            Password strength: <span className="font-medium">{strengthLabels[passwordStrength]}</span>
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Input
+                                        label="PAN Number"
+                                        placeholder="Optional"
+                                        leftIcon={<FileText className="w-4 h-4" />}
+                                        {...register('panNumber')}
+                                        helperText="Permanent Account Number"
+                                    />
+
+                                    <Input
+                                        label="VAT Number"
+                                        placeholder="Optional"
+                                        leftIcon={<FileText className="w-4 h-4" />}
+                                        {...register('vatNumber')}
+                                        helperText="VAT Registration Number"
+                                    />
+                                </div>
+
+                                {/* Terms Checkbox */}
+                                <div className="pt-2">
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            {...register('agreeToTerms')}
+                                            className="w-4 h-4 mt-0.5 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
+                                        />
+                                        <span className="text-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">
+                                            I agree to the{' '}
+                                            <a href="#" className="text-primary-600 hover:underline">Terms of Service</a>
+                                            {' '}and{' '}
+                                            <a href="#" className="text-primary-600 hover:underline">Privacy Policy</a>
+                                        </span>
+                                    </label>
+                                    {errors.agreeToTerms && (
+                                        <p className="text-danger-600 text-xs mt-1 ml-7">{errors.agreeToTerms.message}</p>
+                                    )}
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    size="lg"
+                                    isLoading={isLoading}
+                                >
+                                    Create Account
+                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                </Button>
+                            </form>
+
+                            {/* Divider */}
+                            <div className="relative my-6">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-neutral-200"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-4 bg-white text-neutral-500">Already have an account?</span>
+                                </div>
+                            </div>
+
+                            <Link to="/login">
+                                <Button variant="outline" className="w-full" size="lg">
+                                    Sign in instead
+                                </Button>
+                            </Link>
+                        </CardBody>
+                    </Card>
+
+                    {/* Trust indicators */}
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-neutral-500">
+                        <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-success-500" />
+                            14-day free trial
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <Shield className="w-3.5 h-3.5 text-primary-500" />
+                            No credit card required
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5 text-primary-500" />
+                            Bank-grade security
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

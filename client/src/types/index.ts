@@ -190,6 +190,11 @@ export interface DashboardStats {
     netProfit: number;
     outstandingInvoices: number;
     vatPayable: number;
+    // Period-over-period change percentages
+    revenueChange?: number;
+    expenseChange?: number;
+    profitChange?: number;
+    // Workflow metrics
     pendingApprovals: number;
     pendingApprovalsValue?: number;
     overdueInvoices: number;

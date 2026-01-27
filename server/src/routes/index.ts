@@ -15,6 +15,14 @@ import uploadRoutes from './upload.routes.js';
 import workflowRoutes from './workflow.routes.js';
 import metricsRoutes from './metrics.routes.js';
 import adminRoutes from './admin.routes.js';
+import paymentRoutes from './payment.routes.js';
+import aiRoutes from './ai.routes.js';
+import analyticsRoutes from './analytics.routes.js';
+import companyRoutes from './company.routes.js';
+import inventoryRoutes from './inventory.routes.js';
+import projectRoutes from './project.routes.js';
+import currencyRoutes from './currency.routes.js';
+import emailQueueRoutes from './emailQueue.routes.js';
 
 /**
  * Main router that aggregates all API routes
@@ -36,6 +44,11 @@ import adminRoutes from './admin.routes.js';
  * - /api/workflow       - Workflow engine (approval, rules, audit)
  * - /api/admin          - Admin functions (workflow rules, settings)
  * - /api/metrics        - Performance metrics (protected)
+ * - /api/companies      - Multi-company management
+ * - /api/inventory      - Inventory management
+ * - /api/projects       - Project tracking
+ * - /api/currencies     - Multi-currency management
+ * - /api/email-queue    - Email queue management
  */
 
 const router = Router();
@@ -61,6 +74,14 @@ router.use('/upload', uploadRoutes);
 router.use('/workflow', workflowRoutes);
 router.use('/admin', adminRoutes);
 router.use('/metrics', metricsRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/ai', aiRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/companies', companyRoutes);
+router.use('/inventory', inventoryRoutes);
+router.use('/projects', projectRoutes);
+router.use('/currencies', currencyRoutes);
+router.use('/email-queue', emailQueueRoutes);
 
 export default router;
 

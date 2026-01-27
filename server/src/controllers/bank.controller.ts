@@ -182,6 +182,35 @@ export async function bulkImportTransactions(req: AuthenticatedRequest, res: Res
 }
 
 // ============================================
+// STATEMENT IMPORT
+// ============================================
+
+export async function importStatement(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        const { id } = req.params;
+        const { content, format = 'standard' } = req.body;
+        
+        if (!content) {
+            return sendError(res, 'VALIDATION_ERROR', 'Statement content is required', 400);
+        }
+        
+        const result = await bankService.importBankStatement(
+            req.user!.userId,
+            id,
+            content,
+            format as 'standard' | 'nabil' | 'nic_asia' | 'global_ime'
+        );
+        
+        sendSuccess(res, {
+            message: `Imported ${result.imported} transactions, skipped ${result.skipped} duplicates`,
+            ...result,
+        }, 201);
+    } catch (error) {
+        next(error);
+    }
+}
+
+// ============================================
 // SUMMARY
 // ============================================
 

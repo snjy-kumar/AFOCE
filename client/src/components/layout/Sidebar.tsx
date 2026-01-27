@@ -5,6 +5,8 @@ import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../stores/authStore';
 import { Avatar } from '../ui/Common';
 import { NotificationCenter } from '../common/NotificationCenter';
+import { LanguageSwitcher } from '../common/LanguageSwitcher';
+import { CompanySelector } from '../common/CompanySelector';
 import { apiGet } from '../../lib/api';
 import {
     LayoutDashboard,
@@ -24,6 +26,9 @@ import {
     Search,
     Shield,
     Bell,
+    TrendingUp,
+    Package,
+    FolderKanban,
 } from 'lucide-react';
 
 const navigation = [
@@ -32,10 +37,13 @@ const navigation = [
     { name: 'Expenses', href: '/expenses', icon: Receipt },
     { name: 'Customers', href: '/customers', icon: Users },
     { name: 'Vendors', href: '/vendors', icon: Building2 },
+    { name: 'Inventory', href: '/inventory', icon: Package },
+    { name: 'Projects', href: '/projects', icon: FolderKanban },
     { name: 'Accounts', href: '/accounts', icon: BookOpen },
     { name: 'VAT', href: '/vat', icon: Calculator },
     { name: 'Bank', href: '/bank', icon: Landmark },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
+    { name: 'Analytics', href: '/analytics', icon: TrendingUp },
     { name: 'Admin', href: '/admin', icon: Shield },
 ];
 
@@ -91,6 +99,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
                     </button>
                 </div>
 
+                {/* Company Selector */}
+                <div className="px-3 py-2 border-b border-[var(--color-neutral-200)]">
+                    <CompanySelector />
+                </div>
+
                 {/* Navigation */}
                 <nav className="flex-1 px-3 py-4 overflow-y-auto">
                     {/* Search button */}
@@ -133,6 +146,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
 
                 {/* User section */}
                 <div className="p-3 border-t border-[var(--color-neutral-200)]">
+                    {/* Language Switcher for Desktop */}
+                    <div className="mb-2 hidden lg:block">
+                        <LanguageSwitcher compact={false} />
+                    </div>
+
                     <div className="relative">
                         <button
                             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -193,16 +211,16 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSearchClick }) => {
     const [showNotifications, setShowNotifications] = React.useState(false);
-    
+
     // Fetch notification count
     const { data: notifications } = useQuery({
         queryKey: ['notifications'],
         queryFn: () => apiGet<any[]>('/workflow/notifications'),
         refetchInterval: 30000, // Refetch every 30 seconds
     });
-    
+
     const unreadCount = notifications?.filter((n: any) => !n.isRead).length || 0;
-    
+
     return (
         <header className="h-16 bg-white border-b border-[var(--color-neutral-200)] flex items-center px-4 lg:hidden">
             <button
@@ -217,6 +235,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSearchClick }) =>
                 </span>
             </div>
             <div className="flex items-center gap-1">
+                {/* Language Switcher */}
+                <LanguageSwitcher compact />
+
                 {/* Notification bell */}
                 <div className="relative">
                     <button
@@ -232,13 +253,13 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSearchClick }) =>
                             </span>
                         )}
                     </button>
-                    
+
                     <NotificationCenter
                         isOpen={showNotifications}
                         onClose={() => setShowNotifications(false)}
                     />
                 </div>
-                
+
                 {onSearchClick && (
                     <button
                         onClick={onSearchClick}

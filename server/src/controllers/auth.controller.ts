@@ -2,7 +2,7 @@ import type { Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service.js';
 import { sendSuccess } from '../utils/response.js';
 import type { AuthenticatedRequest } from '../types/index.js';
-import type { RegisterInput, LoginInput, UpdateProfileInput, ChangePasswordInput } from '../schemas/auth.schema.js';
+import type { RegisterInput, LoginInput, UpdateProfileInput, ChangePasswordInput, ForgotPasswordInput, ResetPasswordInput } from '../schemas/auth.schema.js';
 
 /**
  * Authentication controller - handles HTTP requests
@@ -100,6 +100,43 @@ export const authController = {
             const input = req.body as ChangePasswordInput;
             await authService.changePassword(userId, input);
             sendSuccess(res, { message: 'Password changed successfully' });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    /**
+     * POST /api/auth/forgot-password
+     */
+    async forgotPassword(
+        req: AuthenticatedRequest,
+        res: Response,
+        _next: NextFunction
+    ): Promise<void> {
+        try {
+            const input = req.body as ForgotPasswordInput;
+            await authService.forgotPassword(input.email);
+            // Always return success to prevent email enumeration
+            sendSuccess(res, { message: 'If the email exists, password reset instructions have been sent.' });
+        } catch (error) {
+            // Log error but don't expose to user
+            console.error('Forgot password error:', error);
+            sendSuccess(res, { message: 'If the email exists, password reset instructions have been sent.' });
+        }
+    },
+
+    /**
+     * POST /api/auth/reset-password
+     */
+    async resetPassword(
+        req: AuthenticatedRequest,
+        res: Response,
+        next: NextFunction
+    ): Promise<void> {
+        try {
+            const input = req.body as ResetPasswordInput;
+            await authService.resetPassword(input.token, input.password);
+            sendSuccess(res, { message: 'Password reset successfully' });
         } catch (error) {
             next(error);
         }

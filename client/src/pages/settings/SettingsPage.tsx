@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,8 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { apiPut } from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
+import { usePreferencesStore } from '../../stores/preferencesStore';
+import { useI18n } from '../../lib/i18n';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -22,7 +24,11 @@ import {
     Key,
     Bell,
     Palette,
+    Coins,
+    ChevronRight,
+    Building,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { User as UserType } from '../../types';
 
 const profileSchema = z.object({
@@ -50,9 +56,16 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const SettingsPage: React.FC = () => {
     const { user, updateProfile } = useAuthStore();
-    const [emailNotifications, setEmailNotifications] = useState(true);
-    const [invoiceBranding, setInvoiceBranding] = useState(true);
-    const [bikramSambatDates, setBikramSambatDates] = useState(false);
+    const {
+        useBikramSambat,
+        emailNotifications,
+        invoiceBranding,
+        setLanguage,
+        setUseBikramSambat,
+        setEmailNotifications,
+        setInvoiceBranding,
+    } = usePreferencesStore();
+    const { t, setLanguage: setI18nLanguage, setUseBikramSambat: setI18nBS } = useI18n();
 
     const {
         register: registerProfile,
@@ -102,22 +115,25 @@ export const SettingsPage: React.FC = () => {
         },
     });
 
-    const handlePreferenceChange = (preference: string, value: boolean) => {
-        // Update local state immediately for better UX
+    const handlePreferenceChange = (preference: string, value: boolean | string) => {
         switch (preference) {
             case 'emailNotifications':
-                setEmailNotifications(value);
+                setEmailNotifications(value as boolean);
                 break;
             case 'invoiceBranding':
-                setInvoiceBranding(value);
+                setInvoiceBranding(value as boolean);
                 break;
             case 'bikramSambatDates':
-                setBikramSambatDates(value);
+                setUseBikramSambat(value as boolean);
+                setI18nBS(value as boolean);
+                break;
+            case 'language':
+                const lang = value as 'en' | 'ne';
+                setLanguage(lang);
+                setI18nLanguage(lang);
                 break;
         }
-        toast.success(`Preference updated`);
-        // In a real app, you'd save this to the backend
-        // apiPut('/auth/preferences', { [preference]: value });
+        toast.success(t('success.saved'));
     };
 
     return (
@@ -128,6 +144,49 @@ export const SettingsPage: React.FC = () => {
             />
 
             <div className="max-w-4xl space-y-6">
+                {/* Quick Links Section */}
+                <Card>
+                    <CardHeader title="Configuration" subtitle="Additional settings and configuration" />
+                    <CardBody>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Link
+                                to="/settings/currencies"
+                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-[var(--color-neutral-50)] transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-indigo-100 rounded-lg">
+                                        <Coins className="w-5 h-5 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-[var(--color-neutral-900)]">Currencies</p>
+                                        <p className="text-sm text-[var(--color-neutral-500)]">
+                                            Manage currencies & exchange rates
+                                        </p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-[var(--color-neutral-400)]" />
+                            </Link>
+                            <Link
+                                to="/settings/companies"
+                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-[var(--color-neutral-50)] transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-green-100 rounded-lg">
+                                        <Building className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-[var(--color-neutral-900)]">Companies</p>
+                                        <p className="text-sm text-[var(--color-neutral-500)]">
+                                            Manage multiple companies
+                                        </p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-[var(--color-neutral-400)]" />
+                            </Link>
+                        </div>
+                    </CardBody>
+                </Card>
+
                 {/* Profile Section */}
                 <Card>
                     <CardHeader title="Business Profile" subtitle="Update your business information" />
@@ -270,9 +329,9 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        className="sr-only peer" 
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
                                         checked={emailNotifications}
                                         onChange={(e) => handlePreferenceChange('emailNotifications', e.target.checked)}
                                     />
@@ -293,9 +352,9 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        className="sr-only peer" 
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
                                         checked={invoiceBranding}
                                         onChange={(e) => handlePreferenceChange('invoiceBranding', e.target.checked)}
                                     />
@@ -316,10 +375,10 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        className="sr-only peer" 
-                                        checked={bikramSambatDates}
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={useBikramSambat}
                                         onChange={(e) => handlePreferenceChange('bikramSambatDates', e.target.checked)}
                                     />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>

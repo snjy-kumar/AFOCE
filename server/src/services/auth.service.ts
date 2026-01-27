@@ -1,8 +1,10 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 import { generateToken } from '../middleware/auth.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
+import { emailService } from './email.service.js';
 import type { RegisterInput, LoginInput, UpdateProfileInput, ChangePasswordInput } from '../schemas/auth.schema.js';
 
 /**
@@ -206,5 +208,89 @@ export const authService = {
             where: { id: userId },
             data: { password: hashedPassword },
         });
+    },
+
+    /**
+     * Request password reset - generates token and sends email
+     */
+    async forgotPassword(email: string): Promise<void> {
+        const user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+        });
+
+        // Don't reveal if user exists
+        if (!user) {
+            console.log(`Password reset requested for non-existent email: ${email}`);
+            return;
+        }
+
+        // Generate secure reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenHash = crypto
+            .createHash('sha256')
+            .update(resetToken)
+            .digest('hex');
+
+        // Token expires in 1 hour
+        const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+
+        // Store hashed token in database
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                resetToken: resetTokenHash,
+                resetTokenExpiry,
+            },
+        });
+
+        // Send password reset email
+        try {
+            await emailService.sendPasswordResetEmail(user.email, resetToken, user.businessName);
+            console.log(`[Auth] Password reset email sent to ${email}`);
+        } catch (emailError) {
+            // Log error but don't fail the request (email service might not be configured)
+            console.error(`[Auth] Failed to send reset email:`, emailError);
+            console.log(`[Auth] Reset link: ${env.FRONTEND_URL}/reset-password?token=${resetToken}`);
+        }
+    },
+
+    /**
+     * Reset password using token
+     */
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+        // Hash the provided token to compare with stored hash
+        const tokenHash = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+
+        // Find user with valid reset token
+        const user = await prisma.user.findFirst({
+            where: {
+                resetToken: tokenHash,
+                resetTokenExpiry: {
+                    gt: new Date(),
+                },
+            },
+        });
+
+        if (!user) {
+            throw new ApiError(400, 'INVALID_TOKEN', 'Invalid or expired reset token');
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+        // Update password and clear reset token
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                password: hashedPassword,
+                resetToken: null,
+                resetTokenExpiry: null,
+            },
+        });
+
+        console.log(`[Auth] Password reset successful for user: ${user.email}`);
     },
 };

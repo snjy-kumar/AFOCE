@@ -13,11 +13,17 @@ export const dashboardService = {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         const startOfYear = new Date(now.getFullYear(), 0, 1);
+        
+        // Previous month for comparison
+        const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
         // Run all queries in parallel for performance
         const [
             monthlyRevenue,
             monthlyExpenses,
+            prevMonthRevenue,
+            prevMonthExpenses,
             yearlyRevenue,
             yearlyExpenses,
             outstandingInvoices,
@@ -48,6 +54,25 @@ export const dashboardService = {
                 },
                 _sum: { totalAmount: true, vatAmount: true },
                 _count: true,
+            }),
+            
+            // Previous month revenue (for comparison)
+            prisma.invoice.aggregate({
+                where: {
+                    userId,
+                    status: 'PAID',
+                    issueDate: { gte: startOfPrevMonth, lte: endOfPrevMonth },
+                },
+                _sum: { total: true },
+            }),
+            
+            // Previous month expenses (for comparison)
+            prisma.expense.aggregate({
+                where: {
+                    userId,
+                    date: { gte: startOfPrevMonth, lte: endOfPrevMonth },
+                },
+                _sum: { totalAmount: true },
             }),
 
             // Yearly revenue
@@ -152,7 +177,21 @@ export const dashboardService = {
         const monthlyRevenueAmount = Number(monthlyRevenue._sum.total ?? 0);
         const monthlyExpenseAmount = Number(monthlyExpenses._sum.totalAmount ?? 0);
         const monthlyProfit = monthlyRevenueAmount - monthlyExpenseAmount;
-
+        
+        // Previous month values for comparison
+        const prevMonthRevenueAmount = Number(prevMonthRevenue._sum.total ?? 0);
+        const prevMonthExpenseAmount = Number(prevMonthExpenses._sum.totalAmount ?? 0);
+        const prevMonthProfit = prevMonthRevenueAmount - prevMonthExpenseAmount;
+        
+        // Calculate percentage changes (handle division by zero)
+        const calculateChange = (current: number, previous: number): number => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return Math.round(((current - previous) / previous) * 100);
+        };
+        
+        const revenueChange = calculateChange(monthlyRevenueAmount, prevMonthRevenueAmount);
+        const expenseChange = calculateChange(monthlyExpenseAmount, prevMonthExpenseAmount);
+        const profitChange = calculateChange(monthlyProfit, prevMonthProfit);
         const yearlyRevenueAmount = Number(yearlyRevenue._sum.total ?? 0);
         const yearlyExpenseAmount = Number(yearlyExpenses._sum.totalAmount ?? 0);
         const yearlyProfit = yearlyRevenueAmount - yearlyExpenseAmount;
@@ -173,7 +212,12 @@ export const dashboardService = {
             outstandingInvoices: outstandingAmount,
             vatPayable: Number(monthlyRevenue._sum.vatAmount ?? 0) - Number(monthlyExpenses._sum.vatAmount ?? 0),
             
-            // Workflow metrics (NEW - for frontend workflow alerts)
+            // Period-over-period change percentages (NEW)
+            revenueChange,
+            expenseChange,
+            profitChange,
+            
+            // Workflow metrics (for frontend workflow alerts)
             pendingApprovals: pendingApprovals._count,
             pendingApprovalsValue: Number(pendingApprovals._sum.total ?? 0),
             overdueInvoices: overdueInvoices._count,

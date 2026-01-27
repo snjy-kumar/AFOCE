@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import toast from 'react-hot-toast';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
-import { apiGet, apiPatch, apiDelete } from '../../lib/api';
+import { Input, Textarea } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../lib/api';
 import {
     Settings,
     Plus,
@@ -14,19 +20,82 @@ import {
     CheckCircle2,
     XCircle,
     AlertTriangle,
-    Shield
+    Shield,
+    FileText
 } from 'lucide-react';
+
+// Workflow Rule types matching backend
+type RuleType = 'APPROVAL' | 'VALIDATION' | 'COMPLIANCE' | 'NOTIFICATION' | 'AUTOMATION';
+type EntityType = 'INVOICE' | 'EXPENSE' | 'CUSTOMER' | 'VENDOR' | 'PAYMENT';
+type RuleAction = 'REQUIRE_APPROVAL' | 'REQUIRE_ATTACHMENT' | 'BLOCK_CREATION' | 'SHOW_WARNING' | 'SEND_NOTIFICATION' | 'AUTO_ASSIGN' | 'CALCULATE_FIELD';
+type RuleSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
 
 interface WorkflowRule {
     id: string;
     name: string;
     description: string;
-    condition: string;
-    action: 'REQUIRE_APPROVAL' | 'BLOCK' | 'WARN';
-    isActive: boolean;
+    ruleType: RuleType;
+    entityType: EntityType;
+    condition: any; // AST structure
+    action: RuleAction;
+    actionParams?: any;
+    severity: RuleSeverity;
     priority: number;
+    isActive: boolean;
     createdAt: string;
+    updatedAt: string;
 }
+
+// Form schema
+const ruleFormSchema = z.object({
+    name: z.string().min(1, 'Rule name is required').max(100),
+    description: z.string().min(1, 'Description is required').max(500),
+    ruleType: z.enum(['APPROVAL', 'VALIDATION', 'COMPLIANCE', 'NOTIFICATION', 'AUTOMATION']),
+    entityType: z.enum(['INVOICE', 'EXPENSE', 'CUSTOMER', 'VENDOR', 'PAYMENT']),
+    conditionField: z.string().min(1, 'Field is required'),
+    conditionOperator: z.enum(['>', '<', '>=', '<=', '==', '!=', 'contains', 'startsWith', 'endsWith']),
+    conditionValue: z.string().min(1, 'Value is required'),
+    action: z.enum(['REQUIRE_APPROVAL', 'REQUIRE_ATTACHMENT', 'BLOCK_CREATION', 'SHOW_WARNING', 'SEND_NOTIFICATION', 'AUTO_ASSIGN', 'CALCULATE_FIELD']),
+    severity: z.enum(['CRITICAL', 'WARNING', 'INFO']),
+    priority: z.coerce.number().min(1).max(1000).default(100),
+    isActive: z.boolean().default(true),
+});
+
+type RuleFormData = z.infer<typeof ruleFormSchema>;
+
+// Common field options by entity type
+const FIELD_OPTIONS: Record<EntityType, { value: string; label: string }[]> = {
+    INVOICE: [
+        { value: 'total', label: 'Total Amount' },
+        { value: 'subtotal', label: 'Subtotal' },
+        { value: 'vatAmount', label: 'VAT Amount' },
+        { value: 'status', label: 'Status' },
+        { value: 'customerId', label: 'Customer ID' },
+        { value: 'dueDate', label: 'Due Date' },
+    ],
+    EXPENSE: [
+        { value: 'amount', label: 'Amount' },
+        { value: 'totalAmount', label: 'Total Amount' },
+        { value: 'vatAmount', label: 'VAT Amount' },
+        { value: 'hasReceipt', label: 'Has Receipt' },
+        { value: 'vendorId', label: 'Vendor ID' },
+        { value: 'category', label: 'Category' },
+    ],
+    CUSTOMER: [
+        { value: 'name', label: 'Name' },
+        { value: 'email', label: 'Email' },
+        { value: 'panNumber', label: 'PAN Number' },
+    ],
+    VENDOR: [
+        { value: 'name', label: 'Name' },
+        { value: 'email', label: 'Email' },
+        { value: 'panNumber', label: 'PAN Number' },
+    ],
+    PAYMENT: [
+        { value: 'amount', label: 'Amount' },
+        { value: 'method', label: 'Payment Method' },
+    ],
+};
 
 export const AdminPage: React.FC = () => {
     const queryClient = useQueryClient();
@@ -39,11 +108,89 @@ export const AdminPage: React.FC = () => {
         queryFn: () => apiGet<WorkflowRule[]>('/admin/workflow-rules'),
     });
 
+    // Form setup
+    const {
+        register,
+        handleSubmit,
+        reset,
+        watch,
+        setValue,
+        formState: { errors, isSubmitting },
+    } = useForm<RuleFormData>({
+        resolver: zodResolver(ruleFormSchema) as any,
+        defaultValues: {
+            ruleType: 'VALIDATION',
+            entityType: 'INVOICE',
+            conditionOperator: '>',
+            action: 'SHOW_WARNING',
+            severity: 'WARNING',
+            priority: 100,
+            isActive: true,
+        },
+    });
+
+    const watchedEntityType = watch('entityType');
+
+    // Populate form when editing
+    useEffect(() => {
+        if (editingRule) {
+            // Parse condition from AST
+            const condition = editingRule.condition || {};
+            setValue('name', editingRule.name);
+            setValue('description', editingRule.description);
+            setValue('ruleType', editingRule.ruleType);
+            setValue('entityType', editingRule.entityType);
+            setValue('conditionField', condition.field || '');
+            setValue('conditionOperator', condition.operator || '>');
+            setValue('conditionValue', String(condition.value || ''));
+            setValue('action', editingRule.action);
+            setValue('severity', editingRule.severity);
+            setValue('priority', editingRule.priority);
+            setValue('isActive', editingRule.isActive);
+        } else {
+            reset();
+        }
+    }, [editingRule, setValue, reset]);
+
+    // Create rule mutation
+    const createRuleMutation = useMutation({
+        mutationFn: (data: any) => apiPost('/admin/workflow-rules', data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['workflow-rules'] });
+            toast.success('Rule created successfully!');
+            setShowRuleModal(false);
+            reset();
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to create rule');
+        },
+    });
+
+    // Update rule mutation
+    const updateRuleMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) =>
+            apiPatch(`/admin/workflow-rules/${id}`, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['workflow-rules'] });
+            toast.success('Rule updated successfully!');
+            setShowRuleModal(false);
+            setEditingRule(null);
+            reset();
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to update rule');
+        },
+    });
+
     const toggleRuleMutation = useMutation({
         mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
             apiPatch(`/admin/workflow-rules/${id}`, { isActive }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['workflow-rules'] });
+            toast.success('Rule status updated');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to update rule');
         },
     });
 
@@ -51,33 +198,100 @@ export const AdminPage: React.FC = () => {
         mutationFn: (id: string) => apiDelete(`/admin/workflow-rules/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['workflow-rules'] });
+            toast.success('Rule deleted');
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to delete rule');
         },
     });
 
-    const getActionBadge = (action: string) => {
+    // Form submission
+    const onSubmit = (formData: RuleFormData) => {
+        // Build condition AST
+        const condition = {
+            type: 'comparison',
+            field: formData.conditionField,
+            operator: formData.conditionOperator,
+            value: isNaN(Number(formData.conditionValue))
+                ? formData.conditionValue
+                : Number(formData.conditionValue),
+        };
+
+        const ruleData = {
+            name: formData.name,
+            description: formData.description,
+            ruleType: formData.ruleType,
+            entityType: formData.entityType,
+            condition,
+            action: formData.action,
+            severity: formData.severity,
+            priority: formData.priority,
+            isActive: formData.isActive,
+        };
+
+        if (editingRule) {
+            updateRuleMutation.mutate({ id: editingRule.id, data: ruleData });
+        } else {
+            createRuleMutation.mutate(ruleData);
+        }
+    };
+
+    const getActionBadge = (action: RuleAction) => {
         switch (action) {
             case 'REQUIRE_APPROVAL':
                 return <Badge variant="warning">Requires Approval</Badge>;
-            case 'BLOCK':
+            case 'BLOCK_CREATION':
                 return <Badge variant="danger">Block</Badge>;
-            case 'WARN':
+            case 'SHOW_WARNING':
                 return <Badge variant="info">Warning</Badge>;
+            case 'REQUIRE_ATTACHMENT':
+                return <Badge variant="warning">Attachment Required</Badge>;
+            case 'SEND_NOTIFICATION':
+                return <Badge variant="info">Notify</Badge>;
+            case 'AUTO_ASSIGN':
+                return <Badge variant="success">Auto-Assign</Badge>;
+            case 'CALCULATE_FIELD':
+                return <Badge variant="neutral">Calculate</Badge>;
             default:
                 return <Badge variant="neutral">{action}</Badge>;
         }
     };
 
-    const getActionIcon = (action: string) => {
+    const getSeverityBadge = (severity: RuleSeverity) => {
+        switch (severity) {
+            case 'CRITICAL':
+                return <Badge variant="danger">Critical</Badge>;
+            case 'WARNING':
+                return <Badge variant="warning">Warning</Badge>;
+            case 'INFO':
+                return <Badge variant="info">Info</Badge>;
+            default:
+                return <Badge variant="neutral">{severity}</Badge>;
+        }
+    };
+
+    const getActionIcon = (action: RuleAction) => {
         switch (action) {
             case 'REQUIRE_APPROVAL':
                 return <AlertTriangle className="w-5 h-5 text-warning-600" />;
-            case 'BLOCK':
+            case 'BLOCK_CREATION':
                 return <XCircle className="w-5 h-5 text-danger-600" />;
-            case 'WARN':
+            case 'SHOW_WARNING':
                 return <AlertTriangle className="w-5 h-5 text-primary-600" />;
+            case 'REQUIRE_ATTACHMENT':
+                return <FileText className="w-5 h-5 text-warning-600" />;
             default:
                 return <Shield className="w-5 h-5 text-neutral-600" />;
         }
+    };
+
+    const formatCondition = (condition: any): string => {
+        if (!condition) return 'No condition';
+        if (typeof condition === 'string') return condition;
+        if (condition.type === 'comparison') {
+            return `${condition.field} ${condition.operator} ${condition.value}`;
+        }
+        return JSON.stringify(condition);
     };
 
     return (
@@ -151,7 +365,7 @@ export const AdminPage: React.FC = () => {
                             </div>
                             <div>
                                 <div className="text-2xl font-bold text-neutral-900">
-                                    {rules.filter((r) => r.action === 'BLOCK').length}
+                                    {rules.filter((r) => r.action === 'BLOCK_CREATION').length}
                                 </div>
                                 <div className="text-sm text-neutral-600">Block Rules</div>
                             </div>
@@ -200,8 +414,16 @@ export const AdminPage: React.FC = () => {
 
                                         {/* Condition */}
                                         <div className="mt-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-                                            <div className="text-xs font-medium text-neutral-500 mb-1">CONDITION</div>
-                                            <code className="text-sm text-neutral-700 font-mono">{rule.condition}</code>
+                                            <div className="flex items-center gap-4">
+                                                <div>
+                                                    <div className="text-xs font-medium text-neutral-500 mb-1">CONDITION</div>
+                                                    <code className="text-sm text-neutral-700 font-mono">{formatCondition(rule.condition)}</code>
+                                                </div>
+                                                <div className="ml-auto flex gap-2">
+                                                    <Badge variant="neutral">{rule.entityType}</Badge>
+                                                    {getSeverityBadge(rule.severity)}
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Actions */}
@@ -261,59 +483,138 @@ export const AdminPage: React.FC = () => {
                 onClose={() => {
                     setShowRuleModal(false);
                     setEditingRule(null);
+                    reset();
                 }}
                 title={editingRule ? 'Edit Workflow Rule' : 'Create Workflow Rule'}
                 size="lg"
             >
-                <div className="p-6">
+                <form onSubmit={handleSubmit(onSubmit as any)} className="p-6">
                     <p className="text-neutral-600 mb-6">
                         Define business rules to automate approvals and enforce policies across your organization.
                     </p>
 
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">Rule Name</label>
-                            <input
-                                type="text"
-                                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                placeholder="e.g., High Value Invoice Approval"
+                        <Input
+                            label="Rule Name"
+                            placeholder="e.g., High Value Invoice Approval"
+                            error={errors.name?.message}
+                            {...register('name')}
+                        />
+
+                        <Textarea
+                            label="Description"
+                            placeholder="Describe what this rule does..."
+                            rows={2}
+                            error={errors.description?.message}
+                            {...register('description')}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <Select
+                                label="Rule Type"
+                                options={[
+                                    { value: 'VALIDATION', label: 'Validation' },
+                                    { value: 'APPROVAL', label: 'Approval' },
+                                    { value: 'COMPLIANCE', label: 'Compliance' },
+                                    { value: 'NOTIFICATION', label: 'Notification' },
+                                    { value: 'AUTOMATION', label: 'Automation' },
+                                ]}
+                                error={errors.ruleType?.message}
+                                {...register('ruleType')}
+                            />
+
+                            <Select
+                                label="Entity Type"
+                                options={[
+                                    { value: 'INVOICE', label: 'Invoice' },
+                                    { value: 'EXPENSE', label: 'Expense' },
+                                    { value: 'CUSTOMER', label: 'Customer' },
+                                    { value: 'VENDOR', label: 'Vendor' },
+                                    { value: 'PAYMENT', label: 'Payment' },
+                                ]}
+                                error={errors.entityType?.message}
+                                {...register('entityType')}
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">Description</label>
-                            <textarea
-                                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                rows={3}
-                                placeholder="Describe what this rule does..."
-                            />
+                        {/* Condition Builder */}
+                        <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                            <label className="block text-sm font-medium text-neutral-700 mb-3">Condition</label>
+                            <div className="grid grid-cols-3 gap-3">
+                                <Select
+                                    label="Field"
+                                    options={[
+                                        { value: '', label: 'Select field...' },
+                                        ...FIELD_OPTIONS[watchedEntityType],
+                                    ]}
+                                    error={errors.conditionField?.message}
+                                    {...register('conditionField')}
+                                />
+
+                                <Select
+                                    label="Operator"
+                                    options={[
+                                        { value: '>', label: 'Greater than (>)' },
+                                        { value: '<', label: 'Less than (<)' },
+                                        { value: '>=', label: 'Greater or equal (>=)' },
+                                        { value: '<=', label: 'Less or equal (<=)' },
+                                        { value: '==', label: 'Equals (==)' },
+                                        { value: '!=', label: 'Not equals (!=)' },
+                                        { value: 'contains', label: 'Contains' },
+                                    ]}
+                                    error={errors.conditionOperator?.message}
+                                    {...register('conditionOperator')}
+                                />
+
+                                <Input
+                                    label="Value"
+                                    placeholder="e.g., 50000"
+                                    error={errors.conditionValue?.message}
+                                    {...register('conditionValue')}
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">Condition</label>
-                            <input
-                                type="text"
-                                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
-                                placeholder="e.g., invoice.total > 50000"
+                        <div className="grid grid-cols-3 gap-4">
+                            <Select
+                                label="Action"
+                                options={[
+                                    { value: 'SHOW_WARNING', label: 'Show Warning' },
+                                    { value: 'REQUIRE_APPROVAL', label: 'Require Approval' },
+                                    { value: 'REQUIRE_ATTACHMENT', label: 'Require Attachment' },
+                                    { value: 'BLOCK_CREATION', label: 'Block Creation' },
+                                    { value: 'SEND_NOTIFICATION', label: 'Send Notification' },
+                                ]}
+                                error={errors.action?.message}
+                                {...register('action')}
                             />
-                            <p className="text-xs text-neutral-500 mt-1">Use JavaScript-like expressions</p>
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">Action</label>
-                            <select className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                <option value="REQUIRE_APPROVAL">Require Approval</option>
-                                <option value="BLOCK">Block Action</option>
-                                <option value="WARN">Show Warning</option>
-                            </select>
+                            <Select
+                                label="Severity"
+                                options={[
+                                    { value: 'INFO', label: 'Info' },
+                                    { value: 'WARNING', label: 'Warning' },
+                                    { value: 'CRITICAL', label: 'Critical' },
+                                ]}
+                                error={errors.severity?.message}
+                                {...register('severity')}
+                            />
+
+                            <Input
+                                label="Priority"
+                                type="number"
+                                placeholder="100"
+                                error={errors.priority?.message}
+                                {...register('priority')}
+                            />
                         </div>
 
                         <div>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    defaultChecked
                                     className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                                    {...register('isActive')}
                                 />
                                 <span className="text-sm text-neutral-700">Enable this rule</span>
                             </label>
@@ -322,19 +623,24 @@ export const AdminPage: React.FC = () => {
 
                     <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-neutral-200">
                         <Button
+                            type="button"
                             variant="outline"
                             onClick={() => {
                                 setShowRuleModal(false);
                                 setEditingRule(null);
+                                reset();
                             }}
                         >
                             Cancel
                         </Button>
-                        <Button onClick={() => setShowRuleModal(false)}>
+                        <Button
+                            type="submit"
+                            isLoading={isSubmitting || createRuleMutation.isPending || updateRuleMutation.isPending}
+                        >
                             {editingRule ? 'Update Rule' : 'Create Rule'}
                         </Button>
                     </div>
-                </div>
+                </form>
             </Modal>
         </div>
     );

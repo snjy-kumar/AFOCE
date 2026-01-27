@@ -31,4 +31,10 @@ router.get('/ar-aging', validate({ query: agingReportQuerySchema }), reportContr
 // Accounts Payable Aging
 router.get('/ap-aging', validate({ query: agingReportQuerySchema }), reportController.getAPAgingReport);
 
+// Cash Flow Statement
+router.get('/cash-flow', validate({ query: reportDateRangeSchema }), reportController.getCashFlowStatement);
+
+// VAT Summary Report
+router.get('/vat-summary', validate({ query: reportDateRangeSchema }), reportController.getVatSummaryReport);
+
 export default router;
