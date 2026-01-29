@@ -5,8 +5,14 @@ import { z } from 'zod';
  */
 
 export const vatPeriodQuerySchema = z.object({
-    year: z.string().regex(/^\d{4}$/).optional(),
-    status: z.enum(['PENDING', 'FILED', 'PAID']).optional(),
+    year: z.preprocess(
+        (value) => (value === '' ? undefined : value),
+        z.string().regex(/^\d{4}$/).optional()
+    ),
+    status: z.preprocess(
+        (value) => (value === '' ? undefined : value),
+        z.enum(['PENDING', 'FILED', 'PAID']).optional()
+    ),
 });
 
 export const createVatRecordSchema = z.object({
@@ -16,9 +22,18 @@ export const createVatRecordSchema = z.object({
 });
 
 export const updateVatRecordSchema = z.object({
-    status: z.enum(['PENDING', 'FILED', 'PAID']).optional(),
-    filedDate: z.string().datetime().optional(),
-    notes: z.string().optional(),
+    status: z.preprocess(
+        (value) => (value === '' ? undefined : value),
+        z.enum(['PENDING', 'FILED', 'PAID']).optional()
+    ),
+    filedDate: z.preprocess(
+        (value) => (value === '' ? undefined : value),
+        z.string().datetime().optional()
+    ),
+    notes: z.preprocess(
+        (value) => (value === '' ? undefined : value),
+        z.string().optional()
+    ),
 });
 
 export const vatRecordIdParamSchema = z.object({

@@ -83,6 +83,17 @@ export const notFoundHandler = (
     req: Request,
     res: Response
 ): void => {
+    // Don't log common polling paths to reduce log noise
+    const silentPaths = ['/favicon.ico', '/robots.txt', '/manifest.json'];
+    const isSilent = silentPaths.includes(req.path);
+    
+    if (!isSilent) {
+        // Only log 404s for actual API attempts
+        if (req.path.startsWith('/api')) {
+            // This is logged by the request logger middleware
+        }
+    }
+    
     res.status(404).json({
         success: false,
         error: {

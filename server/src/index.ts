@@ -72,6 +72,19 @@ app.use(express.urlencoded({
 // Static files (uploads)
 app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR || './uploads')));
 
+// Root health check (for load balancers hitting /)
+app.get('/', (_req, res) => {
+    res.json({
+        success: true,
+        data: {
+            name: 'AFOCE API',
+            status: 'running',
+            version: '1.0.0',
+            timestamp: new Date().toISOString(),
+        },
+    });
+});
+
 // API Documentation
 setupSwagger(app);
 

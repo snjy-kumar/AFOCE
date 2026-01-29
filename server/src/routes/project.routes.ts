@@ -1,8 +1,9 @@
 import { Router, Response, NextFunction } from 'express';
 import { projectService } from '../services/project.service.js';
 import { authenticate } from '../middleware/auth.js';
-import { ProjectStatus, ProjectEntryType } from '@prisma/client';
+import type { ProjectStatus, ProjectEntryType } from '../generated/prisma/client.js';
 import type { AuthenticatedRequest } from '../types/index.js';
+import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
         };
 
         const result = await projectService.getProjects(req.user!.userId, query);
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -38,7 +39,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
 router.get('/summary', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const summary = await projectService.getProjectsSummary(req.user!.userId);
-        res.json(summary);
+        sendSuccess(res, summary);
     } catch (error) {
         next(error);
     }
@@ -51,7 +52,7 @@ router.get('/summary', async (req: AuthenticatedRequest, res: Response, next: Ne
 router.get('/categories', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const categories = await projectService.getCategories(req.user!.userId);
-        res.json({ categories });
+        sendSuccess(res, { categories });
     } catch (error) {
         next(error);
     }
@@ -64,7 +65,7 @@ router.get('/categories', async (req: AuthenticatedRequest, res: Response, next:
 router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const project = await projectService.createProject(req.user!.userId, req.body);
-        res.status(201).json(project);
+        sendSuccess(res, project, 201);
     } catch (error) {
         next(error);
     }
@@ -77,7 +78,7 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
 router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const project = await projectService.getProject(req.user!.userId, req.params.id);
-        res.json(project);
+        sendSuccess(res, project);
     } catch (error) {
         next(error);
     }
@@ -90,7 +91,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
 router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const project = await projectService.updateProject(req.user!.userId, req.params.id, req.body);
-        res.json(project);
+        sendSuccess(res, project);
     } catch (error) {
         next(error);
     }
@@ -103,7 +104,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
 router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const result = await projectService.deleteProject(req.user!.userId, req.params.id);
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -126,7 +127,7 @@ router.post('/:id/entries', async (req: AuthenticatedRequest, res: Response, nex
             expenseId: req.body.expenseId,
             isBillable: req.body.isBillable,
         });
-        res.status(201).json(entry);
+        sendSuccess(res, entry, 201);
     } catch (error) {
         next(error);
     }
@@ -142,7 +143,7 @@ router.get('/:id/entries', async (req: AuthenticatedRequest, res: Response, next
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
 
         const result = await projectService.getEntries(req.user!.userId, req.params.id, page, limit);
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -159,7 +160,7 @@ router.delete('/:id/entries/:entryId', async (req: AuthenticatedRequest, res: Re
             req.params.id,
             req.params.entryId
         );
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }

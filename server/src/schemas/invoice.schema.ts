@@ -43,10 +43,10 @@ export const invoiceIdParamSchema = z.object({
 });
 
 export const invoiceQuerySchema = z.object({
-    status: z.enum(['DRAFT', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']).optional(),
-    customerId: z.string().uuid().optional(),
-    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    status: z.preprocess((val) => (val === '' || val === 'all' ? undefined : val), z.enum(['DRAFT', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED']).optional()),
+    customerId: z.preprocess((val) => (val === '' ? undefined : val), z.string().uuid().optional()),
+    startDate: z.preprocess((val) => (val === '' ? undefined : val), z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()),
+    endDate: z.preprocess((val) => (val === '' ? undefined : val), z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()),
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(20),
 });

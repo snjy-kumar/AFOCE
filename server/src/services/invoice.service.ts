@@ -1,4 +1,4 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import prisma from '../lib/prisma.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import type {
@@ -8,7 +8,7 @@ import type {
     InvoiceQuery,
     InvoiceItemInput,
 } from '../schemas/invoice.schema.js';
-import type { InvoiceStatus } from '@prisma/client';
+import type { InvoiceStatus, Prisma } from '../generated/prisma/client.js';
 
 /**
  * Invoice service - Sales invoicing business logic
@@ -60,11 +60,24 @@ async function generateInvoiceNumber(userId: string): Promise<string> {
     return `INV-${year}-${nextNumber.toString().padStart(4, '0')}`;
 }
 
+function incrementInvoiceNumber(base: string, offset: number): string {
+    const parts = base.split('-');
+    if (parts.length < 3) return base;
+    const sequence = parseInt(parts[2], 10);
+    if (Number.isNaN(sequence)) return base;
+    const next = sequence + offset;
+    parts[2] = next.toString().padStart(4, '0');
+    return parts.join('-');
+}
+
 export const invoiceService = {
     /**
      * Get all invoices for a user with filters and pagination
      */
     async getInvoices(userId: string, query: InvoiceQuery) {
+        const page = query.page ?? 1;
+        const limit = query.limit ?? 20;
+
         const where: {
             userId: string;
             status?: InvoiceStatus;
@@ -90,13 +103,13 @@ export const invoiceService = {
             }
         }
 
-        const skip = (query.page - 1) * query.limit;
+        const skip = (page - 1) * limit;
 
         const [invoices, total] = await Promise.all([
             prisma.invoice.findMany({
                 where,
                 skip,
-                take: query.limit,
+                take: limit,
                 orderBy: { issueDate: 'desc' },
                 include: {
                     customer: {
@@ -113,10 +126,10 @@ export const invoiceService = {
         return {
             invoices,
             pagination: {
-                page: query.page,
-                limit: query.limit,
+                page,
+                limit,
                 total,
-                totalPages: Math.ceil(total / query.limit),
+                totalPages: Math.ceil(total / limit),
             },
         };
     },
@@ -160,62 +173,79 @@ export const invoiceService = {
             throw new ApiError(404, 'CUSTOMER_NOT_FOUND', 'Customer not found');
         }
 
-        // Validate all account IDs
-        const accountIds = input.items.map((item) => item.accountId);
-        const accounts = await prisma.account.findMany({
-            where: { id: { in: accountIds }, userId, type: 'INCOME' },
-        });
-
-        if (accounts.length !== accountIds.length) {
-            throw new ApiError(400, 'INVALID_ACCOUNTS', 'One or more income accounts are invalid');
-        }
-
-        // Generate invoice number
-        const invoiceNumber = await generateInvoiceNumber(userId);
-
         // Calculate totals
-        const totals = calculateInvoiceTotals(input.items, input.vatRate, input.discountAmount);
+        const { subtotal, vatAmount, total } = calculateInvoiceTotals(
+            input.items,
+            input.vatRate,
+            input.discountAmount
+        );
 
-        // Create invoice with items
-        const invoice = await prisma.invoice.create({
-            data: {
-                userId,
-                invoiceNumber,
-                customerId: input.customerId,
-                issueDate: new Date(input.issueDate),
-                dueDate: new Date(input.dueDate),
-                vatRate: new Decimal(input.vatRate),
-                discountAmount: new Decimal(input.discountAmount),
-                subtotal: totals.subtotal,
-                vatAmount: totals.vatAmount,
-                total: totals.total,
-                notes: input.notes ?? null,
-                terms: input.terms ?? null,
-                items: {
-                    create: input.items.map((item, index) => ({
-                        accountId: item.accountId,
-                        description: item.description,
-                        quantity: new Decimal(item.quantity),
-                        rate: new Decimal(item.rate),
-                        amount: new Decimal((item.quantity * item.rate).toFixed(2)),
-                        sortOrder: index,
-                    })),
-                },
-            },
-            include: {
-                customer: true,
-                items: {
-                    include: {
-                        account: {
-                            select: { id: true, code: true, name: true },
+        // Generate invoice number and retry on unique constraint collisions
+        const baseInvoiceNumber = await generateInvoiceNumber(userId);
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const invoiceNumber =
+                attempt === 0 ? baseInvoiceNumber : incrementInvoiceNumber(baseInvoiceNumber, attempt);
+            try {
+                const invoice = await prisma.invoice.create({
+                    data: {
+                        userId,
+                        invoiceNumber,
+                        customerId: input.customerId,
+                        issueDate: new Date(input.issueDate),
+                        dueDate: new Date(input.dueDate),
+                        status: 'DRAFT',
+                        subtotal,
+                        vatRate: new Decimal(input.vatRate),
+                        vatAmount,
+                        discountAmount: new Decimal(input.discountAmount || 0),
+                        total,
+                        paidAmount: new Decimal(0),
+                        notes: input.notes,
+                        terms: input.terms,
+                        items: {
+                            create: input.items.map((item, index) => ({
+                                accountId: item.accountId,
+                                description: item.description,
+                                quantity: new Decimal(item.quantity),
+                                rate: new Decimal(item.rate),
+                                amount: new Decimal(item.quantity * item.rate),
+                                sortOrder: index,
+                            })),
                         },
                     },
-                    orderBy: { sortOrder: 'asc' },
-                },
-            },
-        });
+                    include: {
+                        customer: {
+                            select: { id: true, name: true, email: true },
+                        },
+                        items: {
+                            include: {
+                                account: {
+                                    select: { id: true, code: true, name: true },
+                                },
+                            },
+                            orderBy: { sortOrder: 'asc' },
+                        },
+                    },
+                });
 
-        return invoice;
+                return invoice;
+            } catch (error) {
+                if (
+                    typeof error === 'object' &&
+                    error &&
+                    'code' in error &&
+                    (error as { code?: string }).code === 'P2002'
+                ) {
+                    if (attempt < 4) {
+                        continue;
+                    }
+                    throw new ApiError(409, 'DUPLICATE_INVOICE_NUMBER', 'Invoice number already exists');
+                }
+                throw error;
+            }
+        }
+
+        throw new ApiError(500, 'INVOICE_CREATE_FAILED', 'Unable to create invoice');
     },
 
     /**
@@ -384,10 +414,10 @@ export const invoiceService = {
             totalPaid: totals._sum.paidAmount ?? 0,
             totalVat: totals._sum.vatAmount ?? 0,
             outstanding: Number(totals._sum.total ?? 0) - Number(totals._sum.paidAmount ?? 0),
-            byStatus: statusCounts.map((s) => ({
+            byStatus: statusCounts.map((s: Prisma.InvoiceGroupByOutputType) => ({
                 status: s.status,
                 count: s._count,
-                total: s._sum.total ?? 0,
+                total: s._sum?.total ?? 0,
             })),
         };
     },

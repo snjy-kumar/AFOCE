@@ -1,15 +1,25 @@
-import { PrismaClient } from '@prisma/client';
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import prismaClient from '../generated/prisma/client.js';
 
 /**
- * Prisma client singleton
- * Ensures only one database connection in development
+ * Prisma client singleton (Prisma 7)
+ * Uses driver adapter for faster queries and smaller bundle size
+ * Best practice: Use singleton pattern to prevent connection pool exhaustion
  */
+
+const { PrismaClient } = prismaClient;
+
+const connectionString = process.env.DATABASE_URL!;
+
+const adapter = new PrismaPg({ connectionString });
 
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development'
         ? ['query', 'error', 'warn']
         : ['error'],

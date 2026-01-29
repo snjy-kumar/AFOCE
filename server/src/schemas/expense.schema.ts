@@ -4,8 +4,10 @@ import { z } from 'zod';
  * Expense validation schemas
  */
 
+const emptyToUndefined = (val: unknown) => (val === '' ? undefined : val);
+
 export const createExpenseSchema = z.object({
-    vendorId: z.string().uuid().optional(),
+    vendorId: z.preprocess(emptyToUndefined, z.string().uuid().optional()),
     accountId: z.string().uuid('Invalid account ID'),
     date: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
     description: z.string().min(1, 'Description is required'),
@@ -16,9 +18,9 @@ export const createExpenseSchema = z.object({
 });
 
 export const updateExpenseSchema = z.object({
-    vendorId: z.string().uuid().optional().nullable(),
-    accountId: z.string().uuid().optional(),
-    date: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+    vendorId: z.preprocess(emptyToUndefined, z.string().uuid().optional().nullable()),
+    accountId: z.preprocess(emptyToUndefined, z.string().uuid().optional()),
+    date: z.preprocess(emptyToUndefined, z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))).optional(),
     description: z.string().min(1).optional(),
     amount: z.number().positive().optional(),
     vatRate: z.number().min(0).max(100).optional(),
@@ -31,11 +33,11 @@ export const expenseIdParamSchema = z.object({
 });
 
 export const expenseQuerySchema = z.object({
-    vendorId: z.string().uuid().optional(),
-    accountId: z.string().uuid().optional(),
-    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    isPaid: z.string().transform((val) => val === 'true').optional(),
+    vendorId: z.preprocess(emptyToUndefined, z.string().uuid().optional()),
+    accountId: z.preprocess(emptyToUndefined, z.string().uuid().optional()),
+    startDate: z.preprocess(emptyToUndefined, z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()),
+    endDate: z.preprocess(emptyToUndefined, z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()),
+    isPaid: z.preprocess(emptyToUndefined, z.string().transform((val) => val === 'true').optional()),
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(20),
 });

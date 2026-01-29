@@ -13,8 +13,14 @@ interface Notification {
     message: string;
     entityId?: string;
     entityType?: 'INVOICE' | 'EXPENSE';
-    isRead: boolean;
+    status?: 'PENDING' | 'SENT' | 'READ' | 'FAILED';
+    isRead?: boolean;
     createdAt: string;
+}
+
+interface NotificationResponse {
+    notifications: Notification[];
+    unreadCount: number;
 }
 
 interface NotificationCenterProps {
@@ -26,11 +32,18 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
     const queryClient = useQueryClient();
     const navigate = useNavigate();
 
-    const { data: notifications, isLoading } = useQuery({
+    const { data: notificationData, isLoading } = useQuery({
         queryKey: ['notifications'],
-        queryFn: () => apiGet<Notification[]>('/workflow/notifications'),
+        queryFn: () => apiGet<NotificationResponse>('/workflow/notifications'),
         enabled: isOpen,
     });
+
+    const notifications = Array.isArray(notificationData?.notifications)
+        ? notificationData.notifications.map((n) => ({
+            ...n,
+            isRead: n.isRead ?? n.status === 'READ',
+        }))
+        : [];
 
     const markAsReadMutation = useMutation({
         mutationFn: (id: string) => apiPatch(`/workflow/notifications/${id}/read`, {}),
@@ -54,14 +67,16 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
         onClose();
     };
 
-    const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
+    const unreadCount = typeof notificationData?.unreadCount === 'number'
+        ? notificationData.unreadCount
+        : notifications.filter(n => !n.isRead).length;
 
     if (!isOpen) return null;
 
     return (
         <>
-            <div 
-                className="fixed inset-0 z-40" 
+            <div
+                className="fixed inset-0 z-40"
                 onClick={onClose}
             />
             <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-[var(--color-neutral-200)] z-50 max-h-[32rem] flex flex-col">
@@ -87,7 +102,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                         <div className="flex items-center justify-center py-8">
                             <Spinner />
                         </div>
-                    ) : notifications && notifications.length > 0 ? (
+                    ) : notifications.length > 0 ? (
                         <div className="divide-y divide-[var(--color-neutral-100)]">
                             {notifications.map((notification) => (
                                 <NotificationItem
@@ -108,7 +123,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                     )}
                 </div>
 
-                {notifications && notifications.length > 0 && (
+                {notifications.length > 0 && (
                     <div className="p-3 border-t border-[var(--color-neutral-100)]">
                         <button
                             onClick={() => {
@@ -152,9 +167,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
     return (
         <button
             onClick={onClick}
-            className={`w-full p-4 text-left hover:bg-[var(--color-neutral-50)] transition-colors ${
-                !notification.isRead ? 'bg-[var(--color-primary-50)]' : ''
-            }`}
+            className={`w-full p-4 text-left hover:bg-[var(--color-neutral-50)] transition-colors ${!notification.isRead ? 'bg-[var(--color-primary-50)]' : ''
+                }`}
         >
             <div className="flex gap-3">
                 <div className="flex-shrink-0 mt-0.5">
@@ -162,11 +176,10 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm ${
-                            !notification.isRead 
-                                ? 'font-semibold text-[var(--color-neutral-900)]' 
+                        <p className={`text-sm ${!notification.isRead
+                                ? 'font-semibold text-[var(--color-neutral-900)]'
                                 : 'font-medium text-[var(--color-neutral-700)]'
-                        }`}>
+                            }`}>
                             {notification.title}
                         </p>
                         {!notification.isRead && (

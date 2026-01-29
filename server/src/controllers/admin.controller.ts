@@ -9,7 +9,7 @@
 
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../types/index.js';
-import type { RuleType, RuleAction, RuleSeverity, EntityType } from '@prisma/client';
+import type { RuleType, RuleAction, RuleSeverity, EntityType } from '../generated/prisma/client.js';
 import type { RuleConditionAST, RuleActionParams } from '../types/workflow.types.js';
 import { RuleManagementService } from '../services/workflow/rule-engine.service.js';
 import { ApiError } from '../middleware/errorHandler.js';

@@ -1,6 +1,12 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import * as prismaClient from '../src/generated/prisma/client.js';
 
-const prisma = new PrismaClient();
+const { PrismaClient, Prisma } = prismaClient;
+
+const connectionString = process.env.DATABASE_URL!;
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 /**
  * Seed invoices and expenses for demo data
@@ -24,7 +30,7 @@ export async function seedInvoicesAndExpenses(userId: string) {
     const salesAccount = accountMap.get('4001'); // Sales Revenue
     const salaryAccount = accountMap.get('5101'); // Salary & Wages
     const rentAccount = accountMap.get('5102'); // Rent Expense
-    const utilitiesAccount = accountMap.get('5103'); // Utilities
+    accountMap.get('5103'); // Utilities
     const phoneAccount = accountMap.get('5104'); // Telephone & Internet
     const suppliesAccount = accountMap.get('5105'); // Office Supplies
     const marketingAccount = accountMap.get('5111'); // Advertising & Marketing

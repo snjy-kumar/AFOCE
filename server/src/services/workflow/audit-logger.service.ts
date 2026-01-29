@@ -11,7 +11,7 @@
  */
 
 import { createHash } from 'crypto';
-import type { AuditAction, EntityType, RoleType } from '@prisma/client';
+import type { AuditAction, EntityType, RoleType } from '../../generated/prisma/client.js';
 import type {
   AuditLogEntry,
   ChangeSet,

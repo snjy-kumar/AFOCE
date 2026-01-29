@@ -16,14 +16,17 @@ interface InvoiceData {
   items: Array<{
     description: string;
     quantity: number;
-    unitPrice: number;
-    total: number;
+    unitPrice?: number;
+    rate?: number;
+    total?: number;
+    amount?: number;
   }>;
   subtotal: number;
   vatRate: number;
   vatAmount: number;
   discountAmount: number;
-  totalAmount: number;
+  totalAmount?: number;
+  total?: number;
   notes?: string;
   status: string;
 }
@@ -41,6 +44,19 @@ export const generateInvoicePDF = (
   invoice: InvoiceData,
   businessInfo: BusinessInfo
 ) => {
+  const toNumber = (value: unknown, fallback = 0) => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value);
+      return Number.isNaN(parsed) ? fallback : parsed;
+    }
+    return fallback;
+  };
+  const formatCurrency = (value: number) =>
+    `रू ${value.toLocaleString('en-NP', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   const doc = new jsPDF();
 
   // Fresh, high-contrast colors
@@ -150,12 +166,16 @@ export const generateInvoicePDF = (
   autoTable(doc, {
     startY: yPos,
     head: [['Description', 'Quantity', 'Unit Price', 'Total']],
-    body: invoice.items.map((item) => [
+    body: invoice.items.map((item) => {
+      const unitPrice = toNumber(item.unitPrice ?? item.rate, 0);
+      const lineTotal = toNumber(item.total ?? item.amount, unitPrice * item.quantity);
+      return [
       item.description,
       item.quantity.toString(),
-      `रू ${item.unitPrice.toFixed(2)}`,
-      `रू ${item.total.toFixed(2)}`,
-    ]),
+      `रू ${unitPrice.toFixed(2)}`,
+      `रू ${lineTotal.toFixed(2)}`,
+    ];
+    }),
     theme: 'striped',
     headStyles: {
       fillColor: primaryColor,
@@ -174,46 +194,60 @@ export const generateInvoicePDF = (
   // Get the final Y position after the table
   const finalY = (doc as any).lastAutoTable.finalY || yPos + 50;
 
-  // Totals section with improved readability
-  const totalsX = 130;
-  let totalsY = finalY + 15;
+  // Totals summary card
+  const totalsX = 120;
+  const totalsWidth = 75;
+  const rows: Array<{ label: string; value: string; color?: [number, number, number] }> = [
+    {
+      label: 'Subtotal',
+      value: formatCurrency(toNumber(invoice.subtotal)),
+    },
+    {
+      label: `VAT (${toNumber(invoice.vatRate)}%)`,
+      value: formatCurrency(toNumber(invoice.vatAmount)),
+    },
+  ];
 
-  doc.setFontSize(10);
-  doc.setTextColor(textLightColor[0], textLightColor[1], textLightColor[2]);
-
-  // Subtotal
-  doc.text('Subtotal:', totalsX, totalsY);
-  doc.setTextColor(textDarkColor[0], textDarkColor[1], textDarkColor[2]);
-  doc.text(`रू ${invoice.subtotal.toFixed(2)}`, 200, totalsY, { align: 'right' });
-
-  // VAT
-  totalsY += 6;
-  doc.setTextColor(textLightColor[0], textLightColor[1], textLightColor[2]);
-  doc.text(`VAT (${invoice.vatRate}%):`, totalsX, totalsY);
-  doc.setTextColor(textDarkColor[0], textDarkColor[1], textDarkColor[2]);
-  doc.text(`रू ${invoice.vatAmount.toFixed(2)}`, 200, totalsY, { align: 'right' });
-
-  // Discount (if any)
-  if (invoice.discountAmount > 0) {
-    totalsY += 6;
-    doc.setTextColor(textLightColor[0], textLightColor[1], textLightColor[2]);
-    doc.text('Discount:', totalsX, totalsY);
-    doc.setTextColor(220, 38, 38); // red-600 for discount
-    doc.text(`-रू ${invoice.discountAmount.toFixed(2)}`, 200, totalsY, {
-      align: 'right',
+  if (toNumber(invoice.discountAmount) > 0) {
+    rows.push({
+      label: 'Discount',
+      value: `- ${formatCurrency(toNumber(invoice.discountAmount))}`,
+      color: [220, 38, 38],
     });
   }
 
-  // Total with emphasis
-  totalsY += 10;
-  doc.setFontSize(14);
-  doc.setTextColor(textDarkColor[0], textDarkColor[1], textDarkColor[2]);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Total:', totalsX, totalsY);
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.text(`रू ${invoice.totalAmount.toFixed(2)}`, 200, totalsY, {
-    align: 'right',
+  const totalValue = formatCurrency(toNumber(invoice.totalAmount ?? invoice.total));
+  const cardPadding = 6;
+  const rowHeight = 6;
+  const cardHeight = cardPadding * 2 + rowHeight * rows.length + 10;
+  let totalsY = finalY + 12;
+
+  doc.setFillColor(backgroundColor[0], backgroundColor[1], backgroundColor[2]);
+  doc.roundedRect(totalsX, totalsY, totalsWidth, cardHeight, 3, 3, 'F');
+
+  totalsY += cardPadding + 4;
+  doc.setFontSize(10);
+
+  rows.forEach((row) => {
+    doc.setTextColor(textLightColor[0], textLightColor[1], textLightColor[2]);
+    doc.text(`${row.label}:`, totalsX + 4, totalsY);
+    const valueColor = row.color ?? textDarkColor;
+    doc.setTextColor(valueColor[0], valueColor[1], valueColor[2]);
+    doc.text(row.value, totalsX + totalsWidth - 4, totalsY, { align: 'right' });
+    totalsY += rowHeight;
   });
+
+  totalsY += 2;
+  doc.setDrawColor(229, 231, 235);
+  doc.line(totalsX + 4, totalsY, totalsX + totalsWidth - 4, totalsY);
+
+  totalsY += 8;
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(textDarkColor[0], textDarkColor[1], textDarkColor[2]);
+  doc.text('Total', totalsX + 4, totalsY);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text(totalValue, totalsX + totalsWidth - 4, totalsY, { align: 'right' });
   doc.setFont('helvetica', 'normal');
 
   // Notes section (if any)

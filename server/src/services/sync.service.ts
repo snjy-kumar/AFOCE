@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '../generated/prisma/client.js';
 import type { SyncPushInput, SyncPullInput, ResolveConflictInput, SyncItem } from '../schemas/sync.schema.js';
 
 /**

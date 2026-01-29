@@ -8,7 +8,7 @@
  * Provides simplified interface for complex workflow operations.
  */
 
-import type { InvoiceStatus, ExpenseStatus, RoleType, EntityType } from '@prisma/client';
+import type { InvoiceStatus, ExpenseStatus, RoleType, EntityType } from '../../generated/prisma/client.js';
 import { workflowStateMachine } from './state-machine.service.js';
 import { ruleEngine } from './rule-engine.service.js';
 import { rbacService } from './rbac.service.js';

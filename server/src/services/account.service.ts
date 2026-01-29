@@ -1,7 +1,7 @@
 import prisma from '../lib/prisma.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import type { CreateAccountInput, UpdateAccountInput, AccountQuery } from '../schemas/account.schema.js';
-import type { AccountType } from '@prisma/client';
+import type { AccountType } from '../generated/prisma/client.js';
 
 /**
  * Account service - Chart of Accounts business logic

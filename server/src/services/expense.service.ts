@@ -1,4 +1,4 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import prisma from '../lib/prisma.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import type { CreateExpenseInput, UpdateExpenseInput, ExpenseQuery } from '../schemas/expense.schema.js';
@@ -32,11 +32,24 @@ async function generateExpenseNumber(userId: string): Promise<string> {
     return `EXP-${year}-${nextNumber.toString().padStart(4, '0')}`;
 }
 
+function incrementExpenseNumber(base: string, offset: number): string {
+    const parts = base.split('-');
+    if (parts.length < 3) return base;
+    const sequence = parseInt(parts[2], 10);
+    if (Number.isNaN(sequence)) return base;
+    const next = sequence + offset;
+    parts[2] = next.toString().padStart(4, '0');
+    return parts.join('-');
+}
+
 export const expenseService = {
     /**
      * Get all expenses with filters and pagination
      */
     async getExpenses(userId: string, query: ExpenseQuery) {
+        const page = query.page ?? 1;
+        const limit = query.limit ?? 20;
+
         const where: {
             userId: string;
             vendorId?: string;
@@ -55,13 +68,13 @@ export const expenseService = {
             if (query.endDate) where.date.lte = new Date(query.endDate);
         }
 
-        const skip = (query.page - 1) * query.limit;
+        const skip = (page - 1) * limit;
 
         const [expenses, total] = await Promise.all([
             prisma.expense.findMany({
                 where,
                 skip,
-                take: query.limit,
+                take: limit,
                 orderBy: { date: 'desc' },
                 include: {
                     vendor: {
@@ -78,10 +91,10 @@ export const expenseService = {
         return {
             expenses,
             pagination: {
-                page: query.page,
-                limit: query.limit,
+                page,
+                limit,
                 total,
-                totalPages: Math.ceil(total / query.limit),
+                totalPages: Math.ceil(total / limit),
             },
         };
     },
@@ -131,39 +144,55 @@ export const expenseService = {
             }
         }
 
-        // Generate expense number
-        const expenseNumber = await generateExpenseNumber(userId);
-
         // Calculate VAT
         const vatAmount = input.amount * (input.vatRate / 100);
         const totalAmount = input.amount + vatAmount;
 
-        const expense = await prisma.expense.create({
-            data: {
-                userId,
-                expenseNumber,
-                vendorId: input.vendorId ?? null,
-                accountId: input.accountId,
-                date: new Date(input.date),
-                description: input.description,
-                amount: new Decimal(input.amount),
-                vatRate: new Decimal(input.vatRate),
-                vatAmount: new Decimal(vatAmount.toFixed(2)),
-                totalAmount: new Decimal(totalAmount.toFixed(2)),
-                isPaid: input.isPaid,
-                notes: input.notes ?? null,
-            },
-            include: {
-                vendor: {
-                    select: { id: true, name: true },
-                },
-                account: {
-                    select: { id: true, code: true, name: true },
-                },
-            },
-        });
+        // Generate expense number and retry on unique constraint collisions
+        const baseExpenseNumber = await generateExpenseNumber(userId);
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const expenseNumber = attempt === 0
+                ? baseExpenseNumber
+                : incrementExpenseNumber(baseExpenseNumber, attempt);
+            try {
+                const expense = await prisma.expense.create({
+                    data: {
+                        userId,
+                        expenseNumber,
+                        vendorId: input.vendorId ?? null,
+                        accountId: input.accountId,
+                        date: new Date(input.date),
+                        description: input.description,
+                        amount: new Decimal(input.amount),
+                        vatRate: new Decimal(input.vatRate),
+                        vatAmount: new Decimal(vatAmount.toFixed(2)),
+                        totalAmount: new Decimal(totalAmount.toFixed(2)),
+                        isPaid: input.isPaid,
+                        notes: input.notes ?? null,
+                    },
+                    include: {
+                        vendor: {
+                            select: { id: true, name: true },
+                        },
+                        account: {
+                            select: { id: true, code: true, name: true },
+                        },
+                    },
+                });
 
-        return expense;
+                return expense;
+            } catch (error) {
+                if (typeof error === 'object' && error && 'code' in error && (error as { code?: string }).code === 'P2002') {
+                    if (attempt < 4) {
+                        continue;
+                    }
+                    throw new ApiError(409, 'DUPLICATE_EXPENSE_NUMBER', 'Expense number already exists');
+                }
+                throw error;
+            }
+        }
+
+        throw new ApiError(500, 'EXPENSE_CREATE_FAILED', 'Unable to create expense');
     },
 
     /**

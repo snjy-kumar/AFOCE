@@ -72,7 +72,16 @@ if (!fs.existsSync(logsDir)) {
 export const requestLogger = (req: any, res: any, next: any) => {
   const start = Date.now();
   
+  // Paths to skip logging (reduce noise from health checks and static files)
+  const skipPaths = ['/favicon.ico', '/robots.txt', '/manifest.json', '/api/health'];
+  const shouldSkip = skipPaths.some(p => req.url.startsWith(p));
+  
   res.on('finish', () => {
+    // Skip logging for common polling/health check paths with success status
+    if (shouldSkip && res.statusCode < 400) {
+      return;
+    }
+    
     const duration = Date.now() - start;
     const logData = {
       method: req.method,

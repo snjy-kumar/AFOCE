@@ -1,14 +1,21 @@
-import { PrismaClient, AccountType } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 import 'dotenv/config';
-import { seedInvoicesAndExpenses } from './seed-data';
+import { PrismaPg } from '@prisma/adapter-pg';
+import * as prismaClient from '../src/generated/prisma/client.js';
+import bcrypt from 'bcryptjs';
+import { seedInvoicesAndExpenses } from './seed-data.js';
 
 /**
  * Database seed script
  * Creates default chart of accounts based on Nepal accounting standards
  */
 
-const prisma = new PrismaClient();
+const { PrismaClient } = prismaClient;
+
+type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+
+const connectionString = process.env.DATABASE_URL!;
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 // Nepal Standard Chart of Accounts
 const DEFAULT_ACCOUNTS: Array<{

@@ -213,13 +213,19 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSearchClick }) =>
     const [showNotifications, setShowNotifications] = React.useState(false);
 
     // Fetch notification count
-    const { data: notifications } = useQuery({
+    const { data: notificationData } = useQuery({
         queryKey: ['notifications'],
-        queryFn: () => apiGet<any[]>('/workflow/notifications'),
+        queryFn: () => apiGet<{ notifications: any[]; unreadCount: number }>('/workflow/notifications'),
         refetchInterval: 30000, // Refetch every 30 seconds
     });
 
-    const unreadCount = notifications?.filter((n: any) => !n.isRead).length || 0;
+    const notifications = Array.isArray(notificationData?.notifications)
+        ? notificationData.notifications
+        : [];
+
+    const unreadCount = typeof notificationData?.unreadCount === 'number'
+        ? notificationData.unreadCount
+        : notifications.filter((n: any) => n?.status !== 'READ').length;
 
     return (
         <header className="h-16 bg-white border-b border-[var(--color-neutral-200)] flex items-center px-4 lg:hidden">

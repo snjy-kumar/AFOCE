@@ -446,13 +446,22 @@ interface CashFlowReportProps {
 const CashFlowReport: React.FC<CashFlowReportProps> = ({ data }) => {
     if (!data) return null;
 
+    const operating = data.operating ?? { inflows: 0, outflows: 0, net: 0 };
+    const investing = data.investing ?? { inflows: 0, outflows: 0, net: 0 };
+    const financing = data.financing ?? { inflows: 0, outflows: 0, net: 0 };
+    const periodStart = data.period?.start ? new Date(data.period.start) : null;
+    const periodEnd = data.period?.end ? new Date(data.period.end) : null;
+    const openingBalance = data.openingBalance ?? 0;
+    const netCashFlow = data.netCashFlow ?? 0;
+    const closingBalance = data.closingBalance ?? 0;
+
     return (
         <div className="space-y-6">
             {/* Period Info */}
             <Card>
                 <CardBody>
                     <p className="text-sm text-[var(--color-neutral-500)]">
-                        Period: {new Date(data.period.start).toLocaleDateString()} - {new Date(data.period.end).toLocaleDateString()}
+                        Period: {periodStart ? periodStart.toLocaleDateString() : 'N/A'} - {periodEnd ? periodEnd.toLocaleDateString() : 'N/A'}
                     </p>
                 </CardBody>
             </Card>
@@ -463,15 +472,15 @@ const CashFlowReport: React.FC<CashFlowReportProps> = ({ data }) => {
                     <CardBody>
                         <p className="text-sm text-[var(--color-neutral-500)]">Opening Balance</p>
                         <p className="text-2xl font-bold text-[var(--color-neutral-900)]">
-                            {formatCurrency(data.openingBalance)}
+                            {formatCurrency(openingBalance)}
                         </p>
                     </CardBody>
                 </Card>
                 <Card>
                     <CardBody>
                         <p className="text-sm text-[var(--color-neutral-500)]">Net Cash Flow</p>
-                        <p className={`text-2xl font-bold ${data.netCashFlow >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
-                            {formatCurrency(data.netCashFlow)}
+                        <p className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
+                            {formatCurrency(netCashFlow)}
                         </p>
                     </CardBody>
                 </Card>
@@ -479,7 +488,7 @@ const CashFlowReport: React.FC<CashFlowReportProps> = ({ data }) => {
                     <CardBody>
                         <p className="text-sm text-[var(--color-neutral-500)]">Closing Balance</p>
                         <p className="text-2xl font-bold text-[var(--color-neutral-900)]">
-                            {formatCurrency(data.closingBalance)}
+                            {formatCurrency(closingBalance)}
                         </p>
                     </CardBody>
                 </Card>
@@ -493,17 +502,17 @@ const CashFlowReport: React.FC<CashFlowReportProps> = ({ data }) => {
                         <div className="space-y-3">
                             <div className="flex justify-between">
                                 <span className="text-[var(--color-neutral-600)]">Inflows</span>
-                                <span className="font-medium text-[var(--color-success-600)]">{formatCurrency(data.operating.inflows)}</span>
+                                <span className="font-medium text-[var(--color-success-600)]">{formatCurrency(operating.inflows)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-[var(--color-neutral-600)]">Outflows</span>
-                                <span className="font-medium text-[var(--color-danger-600)]">{formatCurrency(data.operating.outflows)}</span>
+                                <span className="font-medium text-[var(--color-danger-600)]">{formatCurrency(operating.outflows)}</span>
                             </div>
                             <hr className="border-[var(--color-neutral-200)]" />
                             <div className="flex justify-between">
                                 <span className="font-medium">Net Operating</span>
-                                <span className={`font-bold ${data.operating.net >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
-                                    {formatCurrency(data.operating.net)}
+                                <span className={`font-bold ${operating.net >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
+                                    {formatCurrency(operating.net)}
                                 </span>
                             </div>
                         </div>
@@ -516,17 +525,17 @@ const CashFlowReport: React.FC<CashFlowReportProps> = ({ data }) => {
                         <div className="space-y-3">
                             <div className="flex justify-between">
                                 <span className="text-[var(--color-neutral-600)]">Inflows</span>
-                                <span className="font-medium text-[var(--color-success-600)]">{formatCurrency(data.investing.inflows)}</span>
+                                <span className="font-medium text-[var(--color-success-600)]">{formatCurrency(investing.inflows)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-[var(--color-neutral-600)]">Outflows</span>
-                                <span className="font-medium text-[var(--color-danger-600)]">{formatCurrency(data.investing.outflows)}</span>
+                                <span className="font-medium text-[var(--color-danger-600)]">{formatCurrency(investing.outflows)}</span>
                             </div>
                             <hr className="border-[var(--color-neutral-200)]" />
                             <div className="flex justify-between">
                                 <span className="font-medium">Net Investing</span>
-                                <span className={`font-bold ${data.investing.net >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
-                                    {formatCurrency(data.investing.net)}
+                                <span className={`font-bold ${investing.net >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
+                                    {formatCurrency(investing.net)}
                                 </span>
                             </div>
                         </div>
@@ -539,17 +548,17 @@ const CashFlowReport: React.FC<CashFlowReportProps> = ({ data }) => {
                         <div className="space-y-3">
                             <div className="flex justify-between">
                                 <span className="text-[var(--color-neutral-600)]">Inflows</span>
-                                <span className="font-medium text-[var(--color-success-600)]">{formatCurrency(data.financing.inflows)}</span>
+                                <span className="font-medium text-[var(--color-success-600)]">{formatCurrency(financing.inflows)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-[var(--color-neutral-600)]">Outflows</span>
-                                <span className="font-medium text-[var(--color-danger-600)]">{formatCurrency(data.financing.outflows)}</span>
+                                <span className="font-medium text-[var(--color-danger-600)]">{formatCurrency(financing.outflows)}</span>
                             </div>
                             <hr className="border-[var(--color-neutral-200)]" />
                             <div className="flex justify-between">
                                 <span className="font-medium">Net Financing</span>
-                                <span className={`font-bold ${data.financing.net >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
-                                    {formatCurrency(data.financing.net)}
+                                <span className={`font-bold ${financing.net >= 0 ? 'text-[var(--color-success-600)]' : 'text-[var(--color-danger-600)]'}`}>
+                                    {formatCurrency(financing.net)}
                                 </span>
                             </div>
                         </div>

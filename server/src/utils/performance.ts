@@ -118,8 +118,10 @@ export class EndpointPerformanceMonitor {
  * Memory monitoring
  */
 export class MemoryMonitor {
-  private static warningThreshold = 0.90; // 90% memory usage (increased from 85%)
-  private static criticalThreshold = 0.98; // 98% memory usage (increased from 95%)
+  // Note: heapUsed/heapTotal percentage can be misleading as Node.js
+  // allocates memory in chunks. Only warn at very high levels.
+  private static warningThreshold = 0.95; // 95% memory usage
+  private static criticalThreshold = 0.99; // 99% memory usage
   
   static check() {
     const usage = process.memoryUsage();

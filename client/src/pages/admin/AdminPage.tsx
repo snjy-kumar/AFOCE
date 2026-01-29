@@ -105,7 +105,13 @@ export const AdminPage: React.FC = () => {
     // Fetch workflow rules from real API
     const { data: rules = [], isLoading } = useQuery({
         queryKey: ['workflow-rules'],
-        queryFn: () => apiGet<WorkflowRule[]>('/admin/workflow-rules'),
+        queryFn: async () => {
+            const rawRules = await apiGet<Array<WorkflowRule & { enabled?: boolean }>>('/admin/workflow-rules');
+            return rawRules.map((rule) => ({
+                ...rule,
+                isActive: rule.isActive ?? Boolean(rule.enabled),
+            }));
+        },
     });
 
     // Form setup
@@ -209,7 +215,7 @@ export const AdminPage: React.FC = () => {
     const onSubmit = (formData: RuleFormData) => {
         // Build condition AST
         const condition = {
-            type: 'comparison',
+            type: 'LEAF',
             field: formData.conditionField,
             operator: formData.conditionOperator,
             value: isNaN(Number(formData.conditionValue))
@@ -288,7 +294,7 @@ export const AdminPage: React.FC = () => {
     const formatCondition = (condition: any): string => {
         if (!condition) return 'No condition';
         if (typeof condition === 'string') return condition;
-        if (condition.type === 'comparison') {
+        if (condition.type === 'LEAF') {
             return `${condition.field} ${condition.operator} ${condition.value}`;
         }
         return JSON.stringify(condition);

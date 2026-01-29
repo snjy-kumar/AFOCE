@@ -15,7 +15,7 @@
  */
 
 import type { DomainEvent, EventHandler, EventType } from '../../types/workflow.types.js';
-import type { EntityType } from '@prisma/client';
+import type { EntityType } from '../../generated/prisma/client.js';
 import { nanoid } from 'nanoid';
 
 // ============================================

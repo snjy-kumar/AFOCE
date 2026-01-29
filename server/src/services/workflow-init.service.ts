@@ -76,11 +76,11 @@ export class WorkflowSystemInitializer {
         SELECT table_name 
         FROM information_schema.tables 
         WHERE table_schema = 'public' 
-        AND table_name IN ('BusinessRule', 'WorkflowHistory', 'AuditLog', 'Notification', 'JobQueue', 'UserRole')
+        AND table_name IN ('business_rules', 'workflow_history', 'audit_logs', 'notifications', 'job_queue', 'UserRole')
       `;
       
       const tables = (tableCheck as any[]).map(t => t.table_name);
-      const requiredTables = ['BusinessRule', 'WorkflowHistory', 'AuditLog', 'Notification', 'JobQueue', 'UserRole'];
+      const requiredTables = ['business_rules', 'workflow_history', 'audit_logs', 'notifications', 'job_queue', 'UserRole'];
       const missingTables = requiredTables.filter(t => !tables.includes(t));
 
       if (missingTables.length > 0) {
@@ -115,8 +115,9 @@ export class WorkflowSystemInitializer {
       this.initialized = false;
       console.log('✅ Workflow system shut down gracefully');
     } catch (error) {
-      console.error('❌ Error during shutdown:', error);
-      throw error;
+      // Log but don't rethrow - allow shutdown to continue
+      console.warn('⚠️ Error during workflow shutdown:', error instanceof Error ? error.message : error);
+      this.initialized = false;
     }
   }
 

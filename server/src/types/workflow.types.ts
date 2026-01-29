@@ -13,7 +13,7 @@ import type {
   NotificationType,
   NotificationChannel,
   RoleType
-} from '@prisma/client';
+} from '../generated/prisma/client.js';
 
 // ============================================
 // STATE MACHINE TYPES

@@ -120,10 +120,18 @@ const notificationWorker = new Worker(
         throw new Error(`Unknown notification job type: ${type}`);
     }
 
-    // Update job metadata
-    await prisma.jobQueue.update({
-      where: { jobId: job.id },
-      data: {
+    // Update job metadata (upsert to handle jobs without pre-created records)
+    await prisma.jobQueue.upsert({
+      where: { jobId: job.id! },
+      update: {
+        status: 'completed',
+        completedAt: new Date(),
+      },
+      create: {
+        jobId: job.id!,
+        queueName: 'notifications',
+        jobType: type,
+        payload: { type, data } as any,
         status: 'completed',
         completedAt: new Date(),
       },
@@ -165,9 +173,19 @@ const reportsWorker = new Worker(
         throw new Error(`Unknown report job type: ${type}`);
     }
 
-    await prisma.jobQueue.update({
-      where: { jobId: job.id },
-      data: {
+    // Update job metadata (upsert to handle jobs without pre-created records)
+    await prisma.jobQueue.upsert({
+      where: { jobId: job.id! },
+      update: {
+        status: 'completed',
+        completedAt: new Date(),
+        progress: 100,
+      },
+      create: {
+        jobId: job.id!,
+        queueName: 'reports',
+        jobType: type,
+        payload: { type, data } as any,
         status: 'completed',
         completedAt: new Date(),
         progress: 100,
@@ -213,9 +231,18 @@ const scheduledTasksWorker = new Worker(
         throw new Error(`Unknown scheduled task type: ${type}`);
     }
 
-    await prisma.jobQueue.update({
-      where: { jobId: job.id },
-      data: {
+    // Update job metadata (upsert to handle recurring jobs without pre-created records)
+    await prisma.jobQueue.upsert({
+      where: { jobId: job.id! },
+      update: {
+        status: 'completed',
+        completedAt: new Date(),
+      },
+      create: {
+        jobId: job.id!,
+        queueName: 'scheduled-tasks',
+        jobType: type,
+        payload: { type } as any,
         status: 'completed',
         completedAt: new Date(),
       },
@@ -523,19 +550,37 @@ export class JobQueueService {
   async shutdown(): Promise<void> {
     console.log('[JobQueue] Closing workers and connections...');
     
-    await Promise.all([
-      notificationWorker.close(),
-      reportsWorker.close(),
-      scheduledTasksWorker.close(),
-    ]);
+    try {
+      await Promise.all([
+        notificationWorker.close(),
+        reportsWorker.close(),
+        scheduledTasksWorker.close(),
+      ]);
+    } catch (err) {
+      console.warn('[JobQueue] Error closing workers:', err instanceof Error ? err.message : err);
+    }
 
-    await Promise.all([
-      notificationQueue.close(),
-      reportsQueue.close(),
-      scheduledTasksQueue.close(),
-    ]);
+    try {
+      await Promise.all([
+        notificationQueue.close(),
+        reportsQueue.close(),
+        scheduledTasksQueue.close(),
+      ]);
+    } catch (err) {
+      console.warn('[JobQueue] Error closing queues:', err instanceof Error ? err.message : err);
+    }
 
-    await redisConnection.quit();
+    try {
+      if (redisConnection.status === 'ready' || redisConnection.status === 'connecting') {
+        await redisConnection.quit();
+      }
+    } catch (err) {
+      // Ignore connection already closed errors
+      if (!(err instanceof Error && err.message.includes('Connection is closed'))) {
+        console.warn('[JobQueue] Error closing Redis:', err instanceof Error ? err.message : err);
+      }
+    }
+    
     console.log('[JobQueue] All connections closed');
   }
 

@@ -9,7 +9,7 @@
  * - Permission caching for performance
  */
 
-import type { RoleType } from '@prisma/client';
+import type { RoleType } from '../../generated/prisma/client.js';
 import type {
   Permission,
   PermissionAction,
@@ -314,7 +314,7 @@ export class RBACService {
       select: { roleType: true },
     });
 
-    const roles = userRoles.map(ur => ur.roleType);
+    const roles = userRoles.map((ur: { roleType: RoleType }) => ur.roleType);
 
     // If no roles, check if user is owner (first user or business owner)
     if (roles.length === 0) {

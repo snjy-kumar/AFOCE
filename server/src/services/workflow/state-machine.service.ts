@@ -9,7 +9,7 @@
  * - Comprehensive audit logging
  */
 
-import type { InvoiceStatus, ExpenseStatus, RoleType, EntityType } from '@prisma/client';
+import type { InvoiceStatus, ExpenseStatus, RoleType, EntityType } from '../../generated/prisma/client.js';
 import type {
   StateTransition,
   TransitionContext,

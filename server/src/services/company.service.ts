@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import type { RoleType } from '@prisma/client';
+import type { RoleType, Prisma } from '../generated/prisma/client.js';
 
 /**
  * Company Service
@@ -78,7 +78,7 @@ export const companyService = {
             },
         });
 
-        return memberships.map((m) => ({
+        return memberships.map((m: Prisma.CompanyMemberGetPayload<{ include: { company: true } }>) => ({
             ...m.company,
             role: m.role,
             isDefault: m.isDefault,
@@ -401,7 +401,7 @@ export const companyService = {
             throw new Error('Not a member of this company');
         }
 
-        const members = await prisma.companyMember.findMany({
+        const members: Prisma.CompanyMemberGetPayload<{}>[] = await prisma.companyMember.findMany({
             where: {
                 companyId,
                 isActive: true,
@@ -412,15 +412,17 @@ export const companyService = {
             ],
         });
 
-        const userIds = members.map((m) => m.userId);
-        const users = await prisma.user.findMany({
+        const userIds = members.map((m: Prisma.CompanyMemberGetPayload<{}>) => m.userId);
+        const users: Array<{ id: string; businessName: string | null; email: string | null }> = await prisma.user.findMany({
             where: { id: { in: userIds } },
             select: { id: true, businessName: true, email: true },
         });
 
-        const userMap = new Map(users.map((u) => [u.id, u]));
+        const userMap = new Map<string, { id: string; businessName: string | null; email: string | null }>(
+            users.map((u) => [u.id, u])
+        );
 
-        return members.map((m) => {
+        return members.map((m: Prisma.CompanyMemberGetPayload<{}>) => {
             const user = userMap.get(m.userId);
             return {
                 ...m,

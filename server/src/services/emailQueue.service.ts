@@ -379,10 +379,35 @@ export const emailQueueService = {
      * Close connections (for graceful shutdown)
      */
     async close() {
-        await this.stopWorker();
-        await emailQueue.close();
-        await queueEvents.close();
-        await connection.quit();
+        try {
+            await this.stopWorker();
+        } catch (err) {
+            console.warn('⚠️ Error stopping email worker:', err instanceof Error ? err.message : err);
+        }
+        
+        try {
+            await emailQueue.close();
+        } catch (err) {
+            console.warn('⚠️ Error closing email queue:', err instanceof Error ? err.message : err);
+        }
+        
+        try {
+            await queueEvents.close();
+        } catch (err) {
+            console.warn('⚠️ Error closing queue events:', err instanceof Error ? err.message : err);
+        }
+        
+        try {
+            if (connection.status === 'ready' || connection.status === 'connecting') {
+                await connection.quit();
+            }
+        } catch (err) {
+            // Ignore connection already closed errors
+            if (!(err instanceof Error && err.message.includes('Connection is closed'))) {
+                console.warn('⚠️ Error closing Redis connection:', err instanceof Error ? err.message : err);
+            }
+        }
+        
         console.log('📧 Email queue connections closed');
     },
 };

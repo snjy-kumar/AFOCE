@@ -9,7 +9,7 @@ import { ruleManagementService } from '../services/workflow/rule-engine.service.
 import { sendSuccess } from '../utils/response.js';
 import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../types/index.js';
-import type { RuleType, EntityType, RuleAction, RuleSeverity } from '@prisma/client';
+import type { RuleType, EntityType, RuleAction, RuleSeverity } from '../generated/prisma/client';
 import type { RuleConditionAST, RuleActionParams } from '../types/workflow.types.js';
 
 const router = Router();
@@ -89,7 +89,12 @@ router.patch('/workflow-rules/:id', async (req: AuthenticatedRequest, res: Respo
     if (!userId) throw new Error('User ID not found');
 
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body } as Record<string, unknown>;
+
+    if ('isActive' in updates) {
+      updates.enabled = Boolean(updates.isActive);
+      delete updates.isActive;
+    }
     
     const rule = await ruleManagementService.updateRule(id, updates);
     sendSuccess(res, rule);

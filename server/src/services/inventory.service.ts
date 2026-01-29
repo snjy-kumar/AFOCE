@@ -1,7 +1,7 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import prisma from '../lib/prisma.js';
 import { ApiError } from '../middleware/errorHandler.js';
-import type { StockMovementType, Product } from '@prisma/client';
+import type { StockMovementType, Product } from '../generated/prisma/client.js';
 
 /**
  * Inventory service - Product and stock management
@@ -63,13 +63,26 @@ export const inventoryService = {
      * Create a new product
      */
     async createProduct(userId: string, data: CreateProductInput) {
-        // Check for duplicate SKU
-        const existing = await prisma.product.findUnique({
-            where: { userId_sku: { userId, sku: data.sku } },
-        });
+        const baseSku = data.sku.trim();
+        if (!baseSku) {
+            throw new ApiError(400, 'INVALID_SKU', 'SKU is required');
+        }
 
-        if (existing) {
-            throw new ApiError(409, 'DUPLICATE_SKU', `Product with SKU "${data.sku}" already exists`);
+        let sku = baseSku;
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const existing = await prisma.product.findUnique({
+                where: { userId_sku: { userId, sku } },
+            });
+
+            if (!existing) {
+                break;
+            }
+
+            if (attempt === 4) {
+                throw new ApiError(409, 'DUPLICATE_SKU', `Product with SKU "${baseSku}" already exists`);
+            }
+
+            sku = `${baseSku}-${attempt + 1}`;
         }
 
         const product = await prisma.product.create({
@@ -77,7 +90,7 @@ export const inventoryService = {
                 userId,
                 name: data.name,
                 nameNe: data.nameNe,
-                sku: data.sku,
+                sku,
                 description: data.description,
                 category: data.category,
                 costPrice: data.costPrice ? new Decimal(data.costPrice) : new Decimal(0),

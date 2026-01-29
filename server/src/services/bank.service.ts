@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '../generated/prisma/client.js';
 import type {
     CreateBankAccountInput,
     UpdateBankAccountInput,
@@ -106,7 +106,7 @@ export async function createTransaction(userId: string, data: CreateTransactionI
     }
 
     // Create transaction and update balance in a transaction
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const transaction = await tx.bankTransaction.create({
             data: {
                 bankAccountId: data.bankAccountId,
@@ -252,7 +252,7 @@ export async function deleteTransaction(userId: string, id: string) {
     if (!existing) return null;
 
     // Delete and revert balance
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const balanceChange = existing.type === 'credit'
             ? -Number(existing.amount)
             : Number(existing.amount);
@@ -352,7 +352,7 @@ export async function bulkImportTransactions(userId: string, data: BulkImportTra
     });
 
     // Bulk create and update balance
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const result = await tx.bankTransaction.createMany({
             data: transactionsData,
         });
@@ -426,7 +426,14 @@ export async function getSuggestedMatches(userId: string, transactionId: string)
 // ============================================
 
 export async function getBankSummary(userId: string) {
-    const accounts = await prisma.bankAccount.findMany({
+    type BankAccountSummary = Prisma.BankAccountGetPayload<{
+        include: {
+            _count: { select: { transactions: true } };
+            transactions: { where: { reconciled: false }; select: { id: true } };
+        };
+    }>;
+
+    const accounts: BankAccountSummary[] = await prisma.bankAccount.findMany({
         where: { userId, isActive: true },
         include: {
             _count: {
@@ -440,17 +447,17 @@ export async function getBankSummary(userId: string) {
     });
 
     const totalBalance = accounts.reduce(
-        (sum, acc) => sum + Number(acc.currentBalance),
+        (sum: number, acc: BankAccountSummary) => sum + Number(acc.currentBalance),
         0
     );
 
     const totalUnreconciled = accounts.reduce(
-        (sum, acc) => sum + acc.transactions.length,
+        (sum: number, acc: BankAccountSummary) => sum + acc.transactions.length,
         0
     );
 
     return {
-        accounts: accounts.map(acc => ({
+        accounts: accounts.map((acc: BankAccountSummary) => ({
             id: acc.id,
             name: acc.name,
             bankName: acc.bankName,

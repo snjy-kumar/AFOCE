@@ -94,6 +94,7 @@ export interface Invoice {
     issueDate: string;
     dueDate: string;
     status: InvoiceStatus;
+    requiresApproval?: boolean;
     workflowStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
     approvedAt?: string;
     approvedBy?: { id: string; name: string };

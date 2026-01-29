@@ -3,6 +3,7 @@ module.exports = {
     {
       name: 'afoce-backend',
       script: './dist/index.js',
+      node_args: '--max-old-space-size=1024', // Set heap size limit
       instances: 'max', // Use all CPU cores
       exec_mode: 'cluster',
       env_production: {
@@ -18,8 +19,8 @@ module.exports = {
       max_restarts: 10,
       min_uptime: '10s',
       
-      // Memory management
-      max_memory_restart: '500M',
+      // Memory management - restart if exceeds 800MB
+      max_memory_restart: '800M',
       
       // Graceful shutdown
       kill_timeout: 5000,
@@ -29,7 +30,7 @@ module.exports = {
       watch: false, // Don't watch in production
       ignore_watch: ['node_modules', 'logs', 'uploads'],
       
-      // Cron restart (optional - restart daily at 3 AM)
+      // Cron restart (optional - restart daily at 3 AM for memory cleanup)
       cron_restart: '0 3 * * *',
       
       // Environment variables

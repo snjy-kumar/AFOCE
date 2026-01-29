@@ -1,7 +1,7 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import prisma from '../lib/prisma.js';
 import { ApiError } from '../middleware/errorHandler.js';
-import type { ProjectStatus, ProjectEntryType, Project } from '@prisma/client';
+import type { ProjectStatus, ProjectEntryType, Project } from '../generated/prisma/client.js';
 
 /**
  * Project service - Project tracking and billing

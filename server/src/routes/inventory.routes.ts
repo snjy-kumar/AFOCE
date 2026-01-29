@@ -3,6 +3,7 @@ import { authenticate } from '../middleware/auth.js';
 import type { AuthenticatedRequest } from '../types/index.js';
 import { inventoryService } from '../services/inventory.service.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get('/products', async (req: AuthenticatedRequest, res: Response, next: N
         };
 
         const result = await inventoryService.getProducts(req.user!.userId, query);
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -38,7 +39,7 @@ router.get('/products', async (req: AuthenticatedRequest, res: Response, next: N
 router.post('/products', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const product = await inventoryService.createProduct(req.user!.userId, req.body);
-        res.status(201).json(product);
+        sendSuccess(res, product, 201);
     } catch (error) {
         next(error);
     }
@@ -51,7 +52,7 @@ router.post('/products', async (req: AuthenticatedRequest, res: Response, next: 
 router.get('/products/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const product = await inventoryService.getProduct(req.user!.userId, req.params.id);
-        res.json(product);
+        sendSuccess(res, product);
     } catch (error) {
         next(error);
     }
@@ -64,7 +65,7 @@ router.get('/products/:id', async (req: AuthenticatedRequest, res: Response, nex
 router.put('/products/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const product = await inventoryService.updateProduct(req.user!.userId, req.params.id, req.body);
-        res.json(product);
+        sendSuccess(res, product);
     } catch (error) {
         next(error);
     }
@@ -77,7 +78,7 @@ router.put('/products/:id', async (req: AuthenticatedRequest, res: Response, nex
 router.delete('/products/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const result = await inventoryService.deleteProduct(req.user!.userId, req.params.id);
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -104,7 +105,7 @@ router.post('/products/:id/adjust-stock', async (req: AuthenticatedRequest, res:
             referenceType,
             referenceId,
         });
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -120,7 +121,7 @@ router.get('/products/:id/movements', async (req: AuthenticatedRequest, res: Res
         const limit = parseInt(req.query.limit as string) || 50;
         
         const result = await inventoryService.getStockMovements(req.user!.userId, req.params.id, page, limit);
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -133,7 +134,7 @@ router.get('/products/:id/movements', async (req: AuthenticatedRequest, res: Res
 router.get('/low-stock', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const result = await inventoryService.getLowStockProducts(req.user!.userId);
-        res.json(result);
+        sendSuccess(res, result);
     } catch (error) {
         next(error);
     }
@@ -159,7 +160,7 @@ router.get('/valuation', async (req: AuthenticatedRequest, res: Response, next: 
 router.get('/categories', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const categories = await inventoryService.getCategories(req.user!.userId);
-        res.json(categories);
+        sendSuccess(res, categories);
     } catch (error) {
         next(error);
     }

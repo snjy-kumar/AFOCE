@@ -1,8 +1,8 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from '@prisma/client/runtime/client';
 import prisma from '../lib/prisma.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import type { VatPeriodQuery, CreateVatRecordInput, UpdateVatRecordInput } from '../schemas/vat.schema.js';
-import type { VatRecordStatus } from '@prisma/client';
+import type { VatRecordStatus } from '../generated/prisma/client.js';
 
 /**
  * VAT Management service - Nepal IRD compliance

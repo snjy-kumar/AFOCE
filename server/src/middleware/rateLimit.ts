@@ -99,7 +99,7 @@ export const uploadLimiter = rateLimit({
  */
 export const reportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 20,
+  max: isDevelopment ? 5000 : 300,
   message: {
     success: false,
     error: {

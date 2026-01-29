@@ -422,7 +422,7 @@ export const EditInvoicePage: React.FC = () => {
                 {/* Workflow Approval Section */}
                 <WorkflowApproval
                     status={invoice.status}
-                    requiresApproval={invoice.status === 'PENDING_APPROVAL' || invoice.status === 'APPROVED' || invoice.status === 'REJECTED'}
+                    requiresApproval={Boolean(invoice.requiresApproval)}
                     approvedAt={invoice.approvedAt}
                     approvedBy={invoice.approvedBy ? { name: invoice.approvedBy.name || 'Unknown' } : undefined}
                     rejectedAt={invoice.rejectedAt}
@@ -438,7 +438,7 @@ export const EditInvoicePage: React.FC = () => {
                 />
 
                 {/* Workflow Actions */}
-                {invoice.status === 'DRAFT' && (
+                {invoice.status === 'DRAFT' && invoice.requiresApproval && (
                     <Card>
                         <CardBody>
                             <div className="flex items-center justify-between">

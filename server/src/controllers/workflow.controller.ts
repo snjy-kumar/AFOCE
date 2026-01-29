@@ -12,7 +12,7 @@ import { auditLogger } from '../services/workflow/audit-logger.service.js';
 import { jobQueueService } from '../services/workflow/job-queue.service.js';
 import prisma from '../lib/prisma.js';
 import { ApiError } from '../middleware/errorHandler.js';
-import type { RoleType } from '@prisma/client';
+import type { RoleType } from '../generated/prisma/client.js';
 
 // ============================================
 // INVOICE WORKFLOW ENDPOINTS

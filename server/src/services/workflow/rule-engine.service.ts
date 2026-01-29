@@ -10,7 +10,7 @@
  * - Dynamic rule compilation
  */
 
-import type { EntityType, RuleType, RuleAction, RuleSeverity } from '@prisma/client';
+import type { EntityType, RuleType, RuleAction, RuleSeverity, Prisma } from '../../generated/prisma/client.js';
 import type {
   RuleConditionAST,
   RuleConditionLeaf,
@@ -526,7 +526,7 @@ export class RuleManagementService {
       },
     });
 
-    return rules.map(rule => ({
+    return rules.map((rule: Prisma.BusinessRuleGetPayload<{}>) => ({
       ...rule,
       triggerRate: rule.executionCount > 0 
         ? (rule.triggerCount / rule.executionCount) * 100 

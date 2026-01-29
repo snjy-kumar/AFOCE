@@ -18,7 +18,7 @@
 import nodemailer from 'nodemailer';
 import type { 
   NotificationChannel 
-} from '@prisma/client';
+} from '../../generated/prisma/client.js';
 import type { 
   NotificationPayload, 
   NotificationAction,
