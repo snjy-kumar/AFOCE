@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '../../lib/utils';
+import { useTranslation } from '../../lib/i18n';
 import { useAuthStore } from '../../stores/authStore';
 import { Avatar } from '../ui/Common';
 import { NotificationCenter } from '../common/NotificationCenter';
@@ -32,19 +33,19 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Invoices', href: '/invoices', icon: FileText },
-    { name: 'Expenses', href: '/expenses', icon: Receipt },
-    { name: 'Customers', href: '/customers', icon: Users },
-    { name: 'Vendors', href: '/vendors', icon: Building2 },
-    { name: 'Inventory', href: '/inventory', icon: Package },
-    { name: 'Projects', href: '/projects', icon: FolderKanban },
-    { name: 'Accounts', href: '/accounts', icon: BookOpen },
-    { name: 'VAT', href: '/vat', icon: Calculator },
-    { name: 'Bank', href: '/bank', icon: Landmark },
-    { name: 'Reports', href: '/reports', icon: BarChart3 },
-    { name: 'Analytics', href: '/analytics', icon: TrendingUp },
-    { name: 'Admin', href: '/admin', icon: Shield },
+    { key: 'nav.dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { key: 'nav.invoices', href: '/invoices', icon: FileText },
+    { key: 'nav.expenses', href: '/expenses', icon: Receipt },
+    { key: 'nav.customers', href: '/customers', icon: Users },
+    { key: 'nav.vendors', href: '/vendors', icon: Building2 },
+    { key: 'nav.inventory', href: '/inventory', icon: Package },
+    { key: 'nav.projects', href: '/projects', icon: FolderKanban },
+    { key: 'nav.accounts', href: '/accounts', icon: BookOpen },
+    { key: 'nav.vat', href: '/vat', icon: Calculator },
+    { key: 'nav.bank', href: '/bank', icon: Landmark },
+    { key: 'nav.reports', href: '/reports', icon: BarChart3 },
+    { key: 'nav.analytics', href: '/analytics', icon: TrendingUp },
+    { key: 'nav.admin', href: '/admin', icon: Shield },
 ];
 
 interface SidebarProps {
@@ -55,6 +56,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick }) => {
     const { user, logout } = useAuthStore();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -116,14 +118,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
                             className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 rounded-lg text-sm font-medium text-[var(--color-neutral-600)] hover:bg-[var(--color-neutral-100)] hover:text-[var(--color-neutral-900)] transition-all duration-200"
                         >
                             <Search className="w-5 h-5" />
-                            <span>Search</span>
+                            <span>{t('common.search')}</span>
                             <span className="ml-auto text-xs text-[var(--color-neutral-400)]">Ctrl+K</span>
                         </button>
                     )}
 
                     <ul className="space-y-1">
                         {navigation.map((item) => (
-                            <li key={item.name}>
+                            <li key={item.key}>
                                 <NavLink
                                     to={item.href}
                                     onClick={onClose}
@@ -137,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
                                     }
                                 >
                                     <item.icon className="w-5 h-5" />
-                                    {item.name}
+                                    {t(item.key)}
                                 </NavLink>
                             </li>
                         ))}
@@ -185,14 +187,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
                                     className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-neutral-600)] hover:bg-[var(--color-neutral-100)]"
                                 >
                                     <Settings className="w-4 h-4" />
-                                    Settings
+                                    {t('nav.settings')}
                                 </NavLink>
                                 <button
                                     onClick={handleLogout}
                                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-danger-600)] hover:bg-[var(--color-danger-50)]"
                                 >
                                     <LogOut className="w-4 h-4" />
-                                    Sign out
+                                    {t('nav.logout')}
                                 </button>
                             </div>
                         )}
@@ -211,6 +213,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSearchClick }) => {
     const [showNotifications, setShowNotifications] = React.useState(false);
+    const { t } = useTranslation();
 
     // Fetch notification count
     const { data: notificationData } = useQuery({
@@ -249,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onSearchClick }) =>
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
                         className="p-2 rounded-lg hover:bg-[var(--color-neutral-100)] relative"
-                        title="Notifications"
+                        title={t('common.notifications')}
                     >
                         <Bell className="w-5 h-5" />
                         {/* Unread badge */}

@@ -104,7 +104,7 @@ export default function CurrencyPage() {
     const initializeCurrencies = async () => {
         try {
             setIsSubmitting(true);
-            await api.post('/currencies/initialize');
+            await api.post('/currencies/initialize', {});
             await fetchCurrencies();
         } catch (error) {
             console.error('Failed to initialize currencies:', error);
@@ -166,6 +166,18 @@ export default function CurrencyPage() {
         setEditingCurrency(currency);
         setCurrencyForm(currency);
         setShowCurrencyModal(true);
+    };
+
+    const swapRateDirection = () => {
+        setRateForm((prev) => {
+            const nextRate = prev.rate > 0 ? Number((1 / prev.rate).toFixed(6)) : prev.rate;
+            return {
+                ...prev,
+                fromCurrency: prev.toCurrency,
+                toCurrency: prev.fromCurrency,
+                rate: nextRate,
+            };
+        });
     };
 
     const baseCurrency = currencies.find((c) => c.isBase);
@@ -509,6 +521,14 @@ export default function CurrencyPage() {
                                 onChange={(e) => setRateForm({ ...rateForm, rate: parseFloat(e.target.value) })}
                                 required
                             />
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span>
+                                    Rate format: 1 {rateForm.fromCurrency} = {Number(rateForm.rate || 0).toFixed(6)} {rateForm.toCurrency}
+                                </span>
+                                <Button type="button" size="sm" variant="outline" onClick={swapRateDirection}>
+                                    Swap & Invert
+                                </Button>
+                            </div>
                             <Input
                                 label="Effective Date"
                                 type="date"

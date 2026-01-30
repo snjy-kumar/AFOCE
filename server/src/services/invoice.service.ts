@@ -142,6 +142,12 @@ export const invoiceService = {
             where: { id: invoiceId, userId },
             include: {
                 customer: true,
+                approver: {
+                    select: { id: true, name: true },
+                },
+                rejector: {
+                    select: { id: true, name: true },
+                },
                 items: {
                     include: {
                         account: {
@@ -306,6 +312,12 @@ export const invoiceService = {
             data: updateData,
             include: {
                 customer: true,
+                approver: {
+                    select: { id: true, name: true },
+                },
+                rejector: {
+                    select: { id: true, name: true },
+                },
                 items: {
                     include: {
                         account: {

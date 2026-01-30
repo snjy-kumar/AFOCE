@@ -234,27 +234,27 @@ export const currencyService = {
     async getExchangeRatesForCurrency(baseCurrency: string, date?: Date) {
         const targetDate = date ? new Date(date) : new Date();
 
-        // Get all unique currency pairs where baseCurrency is the from currency
-        const rates = await prisma.$queryRaw<Array<{
-            fromCurrency: string;
-            toCurrency: string;
-            rate: number;
-            effectiveDate: Date;
-            source: string;
-        }>>`
-            SELECT DISTINCT ON (from_currency, to_currency)
-                from_currency as "fromCurrency",
-                to_currency as "toCurrency",
-                rate::float8 as rate,
-                effective_date as "effectiveDate",
-                source
-            FROM exchange_rates
-            WHERE from_currency = ${baseCurrency.toUpperCase()}
-                AND effective_date <= ${targetDate}
-            ORDER BY from_currency, to_currency, effective_date DESC
-        `;
+        const rates = await prisma.exchangeRate.findMany({
+            where: {
+                fromCurrency: baseCurrency.toUpperCase(),
+                effectiveDate: { lte: targetDate },
+            },
+            orderBy: { effectiveDate: 'desc' },
+        });
 
-        return rates;
+        const latestByPair = new Map<string, typeof rates[number]>();
+
+        for (const rate of rates) {
+            const key = `${rate.fromCurrency}-${rate.toCurrency}`;
+            if (!latestByPair.has(key)) {
+                latestByPair.set(key, rate);
+            }
+        }
+
+        return Array.from(latestByPair.values()).map((rate) => ({
+            ...rate,
+            rate: Number(rate.rate),
+        }));
     },
 
     /**

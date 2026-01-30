@@ -42,6 +42,28 @@ function incrementExpenseNumber(base: string, offset: number): string {
     return parts.join('-');
 }
 
+type PolicyViolation = {
+    ruleId: string;
+    ruleName: string;
+    severity: 'WARNING' | 'CRITICAL';
+    message: string;
+};
+
+function evaluateExpensePolicies(params: { amount: number; receiptUrl?: string | null }): PolicyViolation[] {
+    const violations: PolicyViolation[] = [];
+
+    if (params.amount > 5000 && !params.receiptUrl) {
+        violations.push({
+            ruleId: 'receipt_required_over_5000',
+            ruleName: 'Receipt required for high-value expenses',
+            severity: 'WARNING',
+            message: 'Receipt required for expenses over ₹5,000.',
+        });
+    }
+
+    return violations;
+}
+
 export const expenseService = {
     /**
      * Get all expenses with filters and pagination
@@ -110,6 +132,12 @@ export const expenseService = {
                 account: {
                     select: { id: true, code: true, name: true, type: true },
                 },
+                approver: {
+                    select: { id: true, name: true },
+                },
+                rejector: {
+                    select: { id: true, name: true },
+                },
             },
         });
 
@@ -147,6 +175,10 @@ export const expenseService = {
         // Calculate VAT
         const vatAmount = input.amount * (input.vatRate / 100);
         const totalAmount = input.amount + vatAmount;
+        const policyViolations = evaluateExpensePolicies({
+            amount: input.amount,
+            receiptUrl: input.receiptUrl ?? null,
+        });
 
         // Generate expense number and retry on unique constraint collisions
         const baseExpenseNumber = await generateExpenseNumber(userId);
@@ -167,8 +199,10 @@ export const expenseService = {
                         vatRate: new Decimal(input.vatRate),
                         vatAmount: new Decimal(vatAmount.toFixed(2)),
                         totalAmount: new Decimal(totalAmount.toFixed(2)),
+                        receiptUrl: input.receiptUrl ?? null,
                         isPaid: input.isPaid,
                         notes: input.notes ?? null,
+                        policyViolations: policyViolations.length > 0 ? policyViolations : null,
                     },
                     include: {
                         vendor: {
@@ -219,6 +253,15 @@ export const expenseService = {
             totalAmount = new Decimal((amount + newVatAmount).toFixed(2));
         }
 
+        const amountForPolicy = input.amount ?? Number(existing.amount);
+        const receiptUrlForPolicy = input.receiptUrl !== undefined
+            ? input.receiptUrl
+            : existing.receiptUrl;
+        const policyViolations = evaluateExpensePolicies({
+            amount: amountForPolicy,
+            receiptUrl: receiptUrlForPolicy ?? null,
+        });
+
         // Build update data object - only include defined fields
         const updateData: Record<string, unknown> = {};
         if (input.vendorId !== undefined) updateData.vendorId = input.vendorId;
@@ -230,7 +273,9 @@ export const expenseService = {
         if (vatAmount !== undefined) updateData.vatAmount = vatAmount;
         if (totalAmount !== undefined) updateData.totalAmount = totalAmount;
         if (input.isPaid !== undefined) updateData.isPaid = input.isPaid;
+        if (input.receiptUrl !== undefined) updateData.receiptUrl = input.receiptUrl;
         if (input.notes !== undefined) updateData.notes = input.notes;
+        updateData.policyViolations = policyViolations.length > 0 ? policyViolations : null;
 
         const expense = await prisma.expense.update({
             where: { id: expenseId },

@@ -61,6 +61,7 @@ export const translations = {
             error: 'Error',
             warning: 'Warning',
             info: 'Information',
+            notifications: 'Notifications',
         },
 
         // Navigation
@@ -76,6 +77,9 @@ export const translations = {
             reports: 'Reports',
             settings: 'Settings',
             admin: 'Admin Panel',
+            inventory: 'Inventory',
+            projects: 'Projects',
+            analytics: 'Analytics',
             logout: 'Logout',
             profile: 'Profile',
         },
@@ -116,7 +120,8 @@ export const translations = {
             vatRate: 'VAT Rate',
             discount: 'Discount',
             terms: 'Terms & Conditions',
-            sendToCustomer: 'Send to Customer',
+            info: 'जानकारी',
+            notifications: 'सूचनाहरू',
             markAsPaid: 'Mark as Paid',
             downloadPdf: 'Download PDF',
             duplicateInvoice: 'Duplicate Invoice',
@@ -226,6 +231,9 @@ export const translations = {
             action: 'Action',
             priority: 'Priority',
             isActive: 'Active',
+            inventory: 'भण्डार',
+            projects: 'परियोजनाहरू',
+            analytics: 'विश्लेषण',
             actions: {
                 REQUIRE_APPROVAL: 'Require Approval',
                 BLOCK: 'Block',

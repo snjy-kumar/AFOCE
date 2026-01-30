@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { apiGet, apiPost, API_BASE_URL } from '../../lib/api';
 import { formatCurrency, formatDateForInput } from '../../lib/utils';
 import { PageHeader } from '../../components/layout/Layout';
+import { useDateFormat } from '../../lib/i18n';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input, Textarea } from '../../components/ui/Input';
@@ -30,10 +31,12 @@ const expenseSchema = z.object({
 });
 
 type ExpenseFormData = z.infer<typeof expenseSchema>;
+type ExpensePayload = ExpenseFormData & { receiptUrl?: string | null };
 
 export const NewExpensePage: React.FC = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { formatBSDate, useBikramSambat } = useDateFormat();
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
@@ -48,7 +51,7 @@ export const NewExpensePage: React.FC = () => {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data: ExpenseFormData) => apiPost<Expense>('/expenses', data),
+        mutationFn: (data: ExpensePayload) => apiPost<Expense>('/expenses', data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expenses'] });
             toast.success('Expense created successfully!');
@@ -65,6 +68,8 @@ export const NewExpensePage: React.FC = () => {
             toast.error('Receipt required for expenses over ₹5,000. Please attach a receipt.');
             return;
         }
+
+        let receiptUrl: string | null = null;
 
         // Upload receipt if provided
         if (receiptFile) {
@@ -86,7 +91,8 @@ export const NewExpensePage: React.FC = () => {
                     throw new Error('Failed to upload receipt');
                 }
 
-                await response.json();
+                const uploadResult = await response.json();
+                receiptUrl = uploadResult?.data?.url || uploadResult?.url || null;
                 toast.success('Receipt uploaded successfully!');
             } catch (error) {
                 toast.error('Failed to upload receipt');
@@ -96,7 +102,10 @@ export const NewExpensePage: React.FC = () => {
             setUploadingReceipt(false);
         }
 
-        createMutation.mutate(data);
+        createMutation.mutate({
+            ...data,
+            receiptUrl: receiptUrl ?? undefined,
+        });
     };
 
     const {
@@ -116,6 +125,7 @@ export const NewExpensePage: React.FC = () => {
 
     const amount = watch('amount') || 0;
     const vatRate = watch('vatRate') || 0;
+    const expenseDate = watch('date');
     const vatAmount = amount * (vatRate / 100);
     const total = amount + vatAmount;
 
@@ -179,6 +189,7 @@ export const NewExpensePage: React.FC = () => {
                                         label="Date"
                                         type="date"
                                         error={errors.date?.message}
+                                        helperText={useBikramSambat && expenseDate ? `BS: ${formatBSDate(expenseDate)}` : undefined}
                                         required
                                         {...register('date')}
                                     />

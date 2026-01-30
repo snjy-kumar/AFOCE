@@ -9,6 +9,7 @@ import { apiGet, apiPatch, apiPost } from '../../lib/api';
 import { formatDateForInput } from '../../lib/utils';
 import { generateInvoicePDF } from '../../lib/pdfGenerator';
 import { PageHeader } from '../../components/layout/Layout';
+import { useDateFormat } from '../../lib/i18n';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -42,6 +43,7 @@ export const EditInvoicePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { formatBSDate, useBikramSambat } = useDateFormat();
 
     const { data: invoice, isLoading: loadingInvoice } = useQuery({
         queryKey: ['invoice', id],
@@ -210,6 +212,8 @@ export const EditInvoicePage: React.FC = () => {
     const items = watch('items');
     const vatRate = watch('vatRate');
     const discountAmount = watch('discountAmount');
+    const issueDate = watch('issueDate');
+    const dueDate = watch('dueDate');
 
     const subtotal = items.reduce((sum, item) => sum + (item.quantity || 0) * (item.rate || 0), 0);
     const vatAmount = (subtotal - discountAmount) * (vatRate / 100);
@@ -283,12 +287,14 @@ export const EditInvoicePage: React.FC = () => {
                             label="Issue Date"
                             type="date"
                             error={errors.issueDate?.message}
+                            helperText={useBikramSambat && issueDate ? `BS: ${formatBSDate(issueDate)}` : undefined}
                             {...register('issueDate')}
                         />
                         <Input
                             label="Due Date"
                             type="date"
                             error={errors.dueDate?.message}
+                            helperText={useBikramSambat && dueDate ? `BS: ${formatBSDate(dueDate)}` : undefined}
                             {...register('dueDate')}
                         />
                         <Input
@@ -424,9 +430,9 @@ export const EditInvoicePage: React.FC = () => {
                     status={invoice.status}
                     requiresApproval={Boolean(invoice.requiresApproval)}
                     approvedAt={invoice.approvedAt}
-                    approvedBy={invoice.approvedBy ? { name: invoice.approvedBy.name || 'Unknown' } : undefined}
+                    approvedBy={invoice.approver ? { name: invoice.approver.name || 'Unknown' } : undefined}
                     rejectedAt={invoice.rejectedAt}
-                    rejectedBy={invoice.rejectedBy ? { name: invoice.rejectedBy.name || 'Unknown' } : undefined}
+                    rejectedBy={invoice.rejector ? { name: invoice.rejector.name || 'Unknown' } : undefined}
                     rejectionReason={invoice.rejectionReason}
                     onApprove={async () => {
                         await approveMutation.mutateAsync();

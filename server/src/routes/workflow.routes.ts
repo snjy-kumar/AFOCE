@@ -49,6 +49,55 @@ router.post(
   workflowController.rejectInvoice
 );
 
+// ============================================
+// EXPENSE WORKFLOW ROUTES
+// ============================================
+
+/**
+ * Submit expense for approval
+ * POST /api/workflow/expenses/:id/submit-for-approval
+ */
+router.post(
+  '/expenses/:id/submit-for-approval',
+  workflowController.submitExpenseForApproval
+);
+
+/**
+ * Approve expense
+ * POST /api/workflow/expenses/:id/approve
+ */
+router.post(
+  '/expenses/:id/approve',
+  workflowController.approveExpense
+);
+
+/**
+ * Reject expense
+ * POST /api/workflow/expenses/:id/reject
+ */
+router.post(
+  '/expenses/:id/reject',
+  workflowController.rejectExpense
+);
+
+/**
+ * Get available actions for expense
+ * GET /api/workflow/expenses/:id/actions
+ */
+router.get(
+  '/expenses/:id/actions',
+  workflowController.getExpenseActions
+);
+
+/**
+ * Transition expense state
+ * POST /api/workflow/expenses/:id/transition
+ */
+router.post(
+  '/expenses/:id/transition',
+  workflowController.transitionExpense
+);
+
 /**
  * Get available actions for invoice
  * GET /api/workflow/invoices/:id/actions

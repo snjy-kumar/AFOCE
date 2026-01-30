@@ -176,6 +176,167 @@ export const transitionInvoice = async (
 };
 
 // ============================================
+// EXPENSE WORKFLOW ENDPOINTS
+// ============================================
+
+/**
+ * Submit expense for approval
+ * POST /api/expenses/:id/submit-for-approval
+ */
+export const submitExpenseForApproval = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const user = req.user!;
+
+    const result = await workflowOrchestrator.submitExpenseForApproval({
+      userId: user.userId,
+      userEmail: user.email,
+      userRoles: user.roles as RoleType[],
+      expenseId: id,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Approve expense
+ * POST /api/expenses/:id/approve
+ */
+export const approveExpense = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const user = req.user!;
+
+    const result = await workflowOrchestrator.approveExpense({
+      userId: user.userId,
+      userEmail: user.email,
+      userRoles: user.roles as RoleType[],
+      expenseId: id,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Reject expense
+ * POST /api/expenses/:id/reject
+ */
+export const rejectExpense = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const user = req.user!;
+
+    const result = await workflowOrchestrator.rejectExpense({
+      userId: user.userId,
+      userEmail: user.email,
+      userRoles: user.roles as RoleType[],
+      expenseId: id,
+      reason,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get available actions for expense
+ * GET /api/expenses/:id/actions
+ */
+export const getExpenseActions = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const user = req.user!;
+
+    const actions = await workflowOrchestrator.getExpenseActions({
+      userId: user.userId,
+      userRoles: user.roles as RoleType[],
+      expenseId: id,
+    });
+
+    res.json({
+      success: true,
+      data: actions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Transition expense to specific state
+ * POST /api/expenses/:id/transition
+ */
+export const transitionExpense = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { toState, reason } = req.body;
+    const user = req.user!;
+
+    const result = await workflowOrchestrator.transitionExpense({
+      userId: user.userId,
+      userEmail: user.email,
+      userRoles: user.roles as RoleType[],
+      expenseId: id,
+      toState,
+      reason,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================
 // BUSINESS RULES ENDPOINTS
 // ============================================
 

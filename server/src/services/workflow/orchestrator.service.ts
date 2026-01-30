@@ -336,6 +336,294 @@ export class WorkflowOrchestrator {
   }
 
   /**
+   * Transition expense state with full workflow validation
+   */
+  async transitionExpense(params: {
+    userId: string;
+    userEmail: string;
+    userRoles: RoleType[];
+    expenseId: string;
+    toState: ExpenseStatus;
+    reason?: string;
+    rejectionReason?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<any> {
+    const expense = await prisma.expense.findUnique({
+      where: { id: params.expenseId },
+      include: {
+        vendor: true,
+        account: true,
+        approver: true,
+        rejector: true,
+      },
+    });
+
+    if (!expense) {
+      throw new ApiError(404, 'NOT_FOUND', 'Expense not found');
+    }
+
+    await rbacService.requirePermission({
+      userId: params.userId,
+      userRoles: params.userRoles,
+      resource: 'expenses',
+      action: this.getActionForTransition(params.toState),
+      resourceOwnerId: expense.userId,
+    });
+
+    const context: TransitionContext = {
+      entity: expense,
+      userId: params.userId,
+      userRoles: params.userRoles,
+      fromState: expense.status,
+      toState: params.toState,
+      metadata: {
+        entityType: 'EXPENSE' as EntityType,
+        reason: params.reason,
+        rejectionReason: params.rejectionReason,
+      },
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+    };
+
+    const result = await workflowStateMachine.executeTransition(
+      'EXPENSE',
+      params.expenseId,
+      params.toState,
+      context
+    );
+
+    if (!result.success) {
+      throw new ApiError(400, 'TRANSITION_FAILED', result.errors?.join(', ') || 'Transition failed');
+    }
+
+    const updatedExpense = await prisma.expense.findUnique({
+      where: { id: params.expenseId },
+      include: {
+        vendor: true,
+        account: true,
+        approver: true,
+        rejector: true,
+      },
+    });
+
+    await auditLogger.logExpenseAction({
+      actorId: params.userId,
+      actorEmail: params.userEmail,
+      action: this.getAuditActionForTransition(params.toState),
+      expenseId: params.expenseId,
+      oldData: expense,
+      newData: updatedExpense,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+    });
+
+    return {
+      expense: updatedExpense,
+      result,
+    };
+  }
+
+  /**
+   * Submit expense for approval (high-level operation)
+   */
+  async submitExpenseForApproval(params: {
+    userId: string;
+    userEmail: string;
+    userRoles: RoleType[];
+    expenseId: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<any> {
+    const expense = await prisma.expense.findUnique({
+      where: { id: params.expenseId },
+      include: { vendor: true },
+    });
+
+    if (!expense) {
+      throw new ApiError(404, 'NOT_FOUND', 'Expense not found');
+    }
+
+    if (!expense.requiresApproval) {
+      await prisma.expense.update({
+        where: { id: params.expenseId },
+        data: { requiresApproval: true },
+      });
+    }
+
+    const managers = await prisma.userRole.findMany({
+      where: { roleType: 'MANAGER' },
+      include: { user: true },
+    });
+
+    const approver = managers[0]?.user;
+    if (!approver) {
+      throw new ApiError(400, 'NO_APPROVER', 'No approver available');
+    }
+
+    const result = await this.transitionExpense({
+      ...params,
+      toState: 'PENDING_APPROVAL',
+    });
+
+    await domainEvents.expenseSubmittedForApproval({
+      expenseId: params.expenseId,
+      expense: result.expense,
+      approver: approver.id,
+      userId: params.userId,
+    });
+
+    return result;
+  }
+
+  /**
+   * Approve expense
+   */
+  async approveExpense(params: {
+    userId: string;
+    userEmail: string;
+    userRoles: RoleType[];
+    expenseId: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<any> {
+    await rbacService.requirePermission({
+      userId: params.userId,
+      userRoles: params.userRoles,
+      resource: 'expenses',
+      action: 'approve',
+    });
+
+    const result = await this.transitionExpense({
+      ...params,
+      toState: 'APPROVED',
+    });
+
+    await domainEvents.expenseApproved({
+      expenseId: params.expenseId,
+      expense: result.expense,
+      approver: params.userId,
+      userId: params.userId,
+    });
+
+    return result;
+  }
+
+  /**
+   * Reject expense
+   */
+  async rejectExpense(params: {
+    userId: string;
+    userEmail: string;
+    userRoles: RoleType[];
+    expenseId: string;
+    reason: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<any> {
+    if (!params.reason || params.reason.trim().length === 0) {
+      throw new ApiError(400, 'INVALID_INPUT', 'Rejection reason is required');
+    }
+
+    const result = await this.transitionExpense({
+      ...params,
+      toState: 'REJECTED',
+      rejectionReason: params.reason,
+    });
+
+    await domainEvents.expenseRejected({
+      expenseId: params.expenseId,
+      expense: result.expense,
+      rejector: params.userId,
+      reason: params.reason,
+      userId: params.userId,
+    });
+
+    return result;
+  }
+
+  /**
+   * Get next possible actions for expense
+   */
+  async getExpenseActions(params: {
+    userId: string;
+    userRoles: RoleType[];
+    expenseId: string;
+  }): Promise<{
+    canEdit: boolean;
+    canDelete: boolean;
+    canApprove: boolean;
+    canReject: boolean;
+    canPay: boolean;
+    canCancel: boolean;
+    nextStates: ExpenseStatus[];
+  }> {
+    const expense = await prisma.expense.findUnique({
+      where: { id: params.expenseId },
+    });
+
+    if (!expense) {
+      throw new ApiError(404, 'NOT_FOUND', 'Expense not found');
+    }
+
+    const nextStates = workflowStateMachine.getNextActions(
+      'EXPENSE',
+      expense.status,
+      params.userRoles
+    ) as ExpenseStatus[];
+
+    const [canEdit, canDelete, canApprove, canReject, canPay, canCancel] =
+      await Promise.all([
+        rbacService.hasPermission({
+          userId: params.userId,
+          userRoles: params.userRoles,
+          resource: 'expenses',
+          action: 'update',
+        }),
+        rbacService.hasPermission({
+          userId: params.userId,
+          userRoles: params.userRoles,
+          resource: 'expenses',
+          action: 'delete',
+        }),
+        rbacService.hasPermission({
+          userId: params.userId,
+          userRoles: params.userRoles,
+          resource: 'expenses',
+          action: 'approve',
+        }),
+        rbacService.hasPermission({
+          userId: params.userId,
+          userRoles: params.userRoles,
+          resource: 'expenses',
+          action: 'reject',
+        }),
+        rbacService.hasPermission({
+          userId: params.userId,
+          userRoles: params.userRoles,
+          resource: 'expenses',
+          action: 'update',
+        }),
+        rbacService.hasPermission({
+          userId: params.userId,
+          userRoles: params.userRoles,
+          resource: 'expenses',
+          action: 'delete',
+        }),
+      ]);
+
+    return {
+      canEdit,
+      canDelete,
+      canApprove: canApprove && nextStates.includes('APPROVED'),
+      canReject: canReject && nextStates.includes('REJECTED'),
+      canPay: canPay && nextStates.includes('PAID'),
+      canCancel: canCancel && nextStates.includes('CANCELLED'),
+      nextStates,
+    };
+  }
+
+  /**
    * Get next possible actions for invoice
    */
   async getInvoiceActions(params: {

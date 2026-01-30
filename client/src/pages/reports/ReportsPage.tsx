@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../lib/api';
 import { formatCurrency, formatDateForInput } from '../../lib/utils';
+import { exportToExcel } from '../../lib/export';
 import { PageHeader } from '../../components/layout/Layout';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -146,8 +147,168 @@ export const ReportsPage: React.FC = () => {
     });
 
     const handleExport = () => {
-        // In a real implementation, this would trigger a PDF download
-        alert('Export functionality would download a PDF report');
+        if (!reportData) return;
+
+        const baseFileName = `report_${reportType}`;
+
+        if (reportType === 'profit-loss') {
+            const data = reportData as ReportData['profitLoss'];
+            const rows = [
+                { section: 'Summary', category: 'Total Revenue', amount: data.revenue },
+                { section: 'Summary', category: 'Total Expenses', amount: data.expenses },
+                { section: 'Summary', category: 'Net Profit', amount: data.netProfit },
+                ...data.revenueBreakdown.map((item) => ({
+                    section: 'Revenue',
+                    category: item.category,
+                    amount: item.amount,
+                })),
+                ...data.expenseBreakdown.map((item) => ({
+                    section: 'Expense',
+                    category: item.category,
+                    amount: item.amount,
+                })),
+            ];
+
+            exportToExcel(
+                rows,
+                [
+                    { key: 'section', label: 'Section' },
+                    { key: 'category', label: 'Category' },
+                    { key: 'amount', label: 'Amount', format: (value) => formatCurrency(Number(value)) },
+                ],
+                baseFileName
+            );
+            return;
+        }
+
+        if (reportType === 'balance-sheet') {
+            const data = reportData as ReportData['balanceSheet'];
+            const rows = [
+                { section: 'Summary', category: 'Assets', amount: data.assets },
+                { section: 'Summary', category: 'Liabilities', amount: data.liabilities },
+                { section: 'Summary', category: 'Equity', amount: data.equity },
+                ...data.assetBreakdown.map((item) => ({
+                    section: 'Asset', category: item.name, amount: item.amount,
+                })),
+                ...data.liabilityBreakdown.map((item) => ({
+                    section: 'Liability', category: item.name, amount: item.amount,
+                })),
+            ];
+
+            exportToExcel(
+                rows,
+                [
+                    { key: 'section', label: 'Section' },
+                    { key: 'category', label: 'Account' },
+                    { key: 'amount', label: 'Amount', format: (value) => formatCurrency(Number(value)) },
+                ],
+                baseFileName
+            );
+            return;
+        }
+
+        if (reportType === 'cash-flow') {
+            const data = reportData as ReportData['cashFlow'];
+            const rows = [
+                { section: 'Operating', category: 'Inflows', amount: data.operating.inflows },
+                { section: 'Operating', category: 'Outflows', amount: data.operating.outflows },
+                { section: 'Operating', category: 'Net', amount: data.operating.net },
+                { section: 'Investing', category: 'Inflows', amount: data.investing.inflows },
+                { section: 'Investing', category: 'Outflows', amount: data.investing.outflows },
+                { section: 'Investing', category: 'Net', amount: data.investing.net },
+                { section: 'Financing', category: 'Inflows', amount: data.financing.inflows },
+                { section: 'Financing', category: 'Outflows', amount: data.financing.outflows },
+                { section: 'Financing', category: 'Net', amount: data.financing.net },
+                { section: 'Summary', category: 'Net Cash Flow', amount: data.netCashFlow },
+                { section: 'Summary', category: 'Opening Balance', amount: data.openingBalance },
+                { section: 'Summary', category: 'Closing Balance', amount: data.closingBalance },
+            ];
+
+            exportToExcel(
+                rows,
+                [
+                    { key: 'section', label: 'Section' },
+                    { key: 'category', label: 'Category' },
+                    { key: 'amount', label: 'Amount', format: (value) => formatCurrency(Number(value)) },
+                ],
+                baseFileName
+            );
+            return;
+        }
+
+        if (reportType === 'vat-summary') {
+            const data = reportData as ReportData['vatSummary'];
+            const rows = [
+                { section: 'Sales', category: 'Taxable Sales', amount: data.sales.taxable },
+                { section: 'Sales', category: 'Exempt Sales', amount: data.sales.exempt },
+                { section: 'Sales', category: 'Total Sales', amount: data.sales.total },
+                { section: 'Purchases', category: 'Taxable Purchases', amount: data.purchases.taxable },
+                { section: 'Purchases', category: 'Exempt Purchases', amount: data.purchases.exempt },
+                { section: 'Purchases', category: 'Total Purchases', amount: data.purchases.total },
+                { section: 'Summary', category: 'Output VAT', amount: data.outputVat },
+                { section: 'Summary', category: 'Input VAT', amount: data.inputVat },
+                { section: 'Summary', category: 'Net VAT Payable', amount: data.netVatPayable },
+                ...data.vatByRate.map((item) => ({
+                    section: 'VAT by Rate', category: `${item.rate}%`, amount: item.vatAmount,
+                })),
+            ];
+
+            exportToExcel(
+                rows,
+                [
+                    { key: 'section', label: 'Section' },
+                    { key: 'category', label: 'Category' },
+                    { key: 'amount', label: 'Amount', format: (value) => formatCurrency(Number(value)) },
+                ],
+                baseFileName
+            );
+            return;
+        }
+
+        if (reportType === 'aging-receivables') {
+            const data = reportData as ReportData['agingReceivables'];
+            const rows = [
+                { bucket: 'Current', count: data.current.count, total: data.current.total },
+                { bucket: '1-30 Days', count: data.days1to30.count, total: data.days1to30.total },
+                { bucket: '31-60 Days', count: data.days31to60.count, total: data.days31to60.total },
+                { bucket: '61-90 Days', count: data.days61to90.count, total: data.days61to90.total },
+                { bucket: '90+ Days', count: data.over90.count, total: data.over90.total },
+                { bucket: 'Total Outstanding', count: '', total: data.totalOutstanding },
+            ];
+
+            exportToExcel(
+                rows,
+                [
+                    { key: 'bucket', label: 'Bucket' },
+                    { key: 'count', label: 'Count' },
+                    { key: 'total', label: 'Total', format: (value) => formatCurrency(Number(value)) },
+                ],
+                baseFileName
+            );
+            return;
+        }
+
+        if (reportType === 'aging-payables') {
+            const data = reportData as ReportData['agingPayables'];
+            const rows = [
+                { bucket: 'Current', count: data.current.count, total: data.current.total },
+                { bucket: '1-30 Days', count: data.days1to30.count, total: data.days1to30.total },
+                { bucket: '31-60 Days', count: data.days31to60.count, total: data.days31to60.total },
+                { bucket: '61-90 Days', count: data.days61to90.count, total: data.days61to90.total },
+                { bucket: '90+ Days', count: data.over90.count, total: data.over90.total },
+                { bucket: 'Total Payable', count: '', total: data.totalPayable },
+            ];
+
+            exportToExcel(
+                rows,
+                [
+                    { key: 'bucket', label: 'Bucket' },
+                    { key: 'count', label: 'Count' },
+                    { key: 'total', label: 'Total', format: (value) => formatCurrency(Number(value)) },
+                ],
+                baseFileName
+            );
+        }
     };
 
     const reportTypes = [

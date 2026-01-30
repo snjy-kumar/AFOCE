@@ -408,22 +408,20 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, onDelete, isSelected, 
             <td className="p-4">
                 <div className="flex flex-col items-center gap-2">
                     <StatusBadge status={isOverdue && invoice.status === 'SENT' ? 'OVERDUE' : invoice.status} />
-                    {invoice.workflowStatus && invoice.workflowStatus !== 'NONE' && (
+                    {['PENDING_APPROVAL', 'APPROVED', 'REJECTED'].includes(invoice.status) && (
                         <Badge
                             variant={
-                                invoice.workflowStatus === 'APPROVED' 
-                                    ? 'success' 
-                                    : invoice.workflowStatus === 'REJECTED'
-                                    ? 'danger'
-                                    : invoice.workflowStatus === 'PENDING'
-                                    ? 'warning'
-                                    : 'default'
+                                invoice.status === 'APPROVED'
+                                    ? 'success'
+                                    : invoice.status === 'REJECTED'
+                                        ? 'danger'
+                                        : 'warning'
                             }
                             size="sm"
                         >
-                            {invoice.workflowStatus === 'PENDING' && '⏳ Pending Approval'}
-                            {invoice.workflowStatus === 'APPROVED' && '✓ Approved'}
-                            {invoice.workflowStatus === 'REJECTED' && '✗ Rejected'}
+                            {invoice.status === 'PENDING_APPROVAL' && '⏳ Pending Approval'}
+                            {invoice.status === 'APPROVED' && '✓ Approved'}
+                            {invoice.status === 'REJECTED' && '✗ Rejected'}
                         </Badge>
                     )}
                 </div>

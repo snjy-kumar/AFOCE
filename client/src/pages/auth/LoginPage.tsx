@@ -58,39 +58,41 @@ export const LoginPage: React.FC = () => {
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
 
                 <div className="relative z-10">
-                    <Link to="/" className="flex items-center gap-3 mb-8">
-                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <Link to="/" className="flex items-center gap-3 mb-12 group">
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
                             <Calculator className="w-7 h-7 text-white" />
                         </div>
                         <span className="text-2xl font-bold text-white">AFOCE</span>
                     </Link>
 
-                    <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
-                        Welcome back to
-                        <span className="block text-primary-200">Nepal's Smart Business OS</span>
-                    </h1>
-                    <p className="text-lg text-primary-100 leading-relaxed max-w-md">
-                        Continue managing your invoices, tracking expenses, and staying IRD-compliant.
-                    </p>
+                    <div className="space-y-4 max-w-lg">
+                        <h1 className="text-5xl font-bold text-white mb-3 leading-[1.1] tracking-tight">
+                            Welcome back to
+                            <span className="block text-primary-100 mt-2">Nepal's Smart Business OS</span>
+                        </h1>
+                        <p className="text-lg text-primary-100/90 leading-relaxed">
+                            Continue managing your invoices, tracking expenses, and staying IRD-compliant.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="relative z-10 space-y-6">
-                    <div className="flex items-start gap-4 text-white/90">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="relative z-10 space-y-4">
+                    <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
                             <Shield className="w-5 h-5" />
                         </div>
-                        <div>
-                            <h3 className="font-semibold mb-1">Bank-Grade Security</h3>
-                            <p className="text-sm text-primary-200">Your data is encrypted and protected 24/7</p>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-white mb-1.5">Bank-Grade Security</h3>
+                            <p className="text-sm text-primary-100/80 leading-relaxed">Your data is encrypted and protected 24/7</p>
                         </div>
                     </div>
-                    <div className="flex items-start gap-4 text-white/90">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
                             <Zap className="w-5 h-5" />
                         </div>
-                        <div>
-                            <h3 className="font-semibold mb-1">Real-Time Sync</h3>
-                            <p className="text-sm text-primary-200">Access your data from anywhere, anytime</p>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-white mb-1.5">Real-Time Sync</h3>
+                            <p className="text-sm text-primary-100/80 leading-relaxed">Access your data from anywhere, anytime</p>
                         </div>
                     </div>
                 </div>
@@ -114,13 +116,13 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold text-neutral-900 mb-2">Sign in</h2>
-                        <p className="text-neutral-600">
+                        <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-3 tracking-tight">Sign in</h2>
+                        <p className="text-base text-neutral-600 leading-relaxed">
                             Enter your credentials to access your dashboard
                         </p>
                     </div>
 
-                    <Card className="shadow-xl border-0">
+                    <Card className="shadow-2xl border-0 overflow-hidden">
                         <CardBody className="p-8">
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                                 {error && (
@@ -210,29 +212,34 @@ export const LoginPage: React.FC = () => {
                     </Card>
 
                     {/* Demo credentials */}
-                    <div className="mt-6 p-4 rounded-xl bg-primary-50 border border-primary-100">
+                    <div className="mt-6 p-5 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 border border-primary-200/60 shadow-sm">
                         <div className="flex items-start gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm">
-                                <p className="font-medium text-primary-900 mb-1">Demo Account Available</p>
-                                <p className="text-primary-700">
-                                    <span className="font-mono bg-primary-100 px-1.5 py-0.5 rounded text-xs">demo@nepal-accounting.com</span>
-                                    <span className="mx-2">/</span>
-                                    <span className="font-mono bg-primary-100 px-1.5 py-0.5 rounded text-xs">password123</span>
-                                </p>
+                            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <CheckCircle2 className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="text-sm flex-1">
+                                <p className="font-semibold text-primary-900 mb-2">Demo Account Available</p>
+                                <div className="space-y-1.5">
+                                    <p className="text-primary-700">
+                                        <span className="font-mono bg-white px-2 py-1 rounded text-xs font-medium">demo@nepal-accounting.com</span>
+                                    </p>
+                                    <p className="text-primary-700">
+                                        <span className="font-mono bg-white px-2 py-1 rounded text-xs font-medium">password123</span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Trust indicators */}
-                    <div className="mt-8 flex items-center justify-center gap-6 text-xs text-neutral-500">
-                        <span className="flex items-center gap-1.5">
-                            <Shield className="w-3.5 h-3.5 text-success-500" />
-                            SSL Secured
+                    <div className="mt-8 flex items-center justify-center gap-8 text-sm text-neutral-600">
+                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
+                            <Shield className="w-4 h-4 text-success-500" />
+                            <span className="font-medium">SSL Secured</span>
                         </span>
-                        <span className="flex items-center gap-1.5">
-                            <Lock className="w-3.5 h-3.5 text-primary-500" />
-                            Bank-Grade Security
+                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
+                            <Lock className="w-4 h-4 text-primary-500" />
+                            <span className="font-medium">Bank-Grade Security</span>
                         </span>
                     </div>
                 </div>

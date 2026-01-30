@@ -37,7 +37,7 @@ export const VatPage: React.FC = () => {
 
     const { data: vatRecords, isLoading } = useQuery({
         queryKey: ['vat-records'],
-        queryFn: () => apiGet<VatRecord[]>('/vat/records'),
+        queryFn: () => apiGet<VatRecord[]>('/vat'),
     });
 
     const { data: vatSummary } = useQuery({
@@ -52,8 +52,8 @@ export const VatPage: React.FC = () => {
     });
 
     const fileMutation = useMutation({
-        mutationFn: (data: { periodStart: string; periodEnd: string }) =>
-            apiPost('/vat/file', data),
+        mutationFn: (data: { periodStart: string; periodEnd: string; periodLabel: string }) =>
+            apiPost('/vat', data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vat-records'] });
             setIsModalOpen(false);
@@ -289,7 +289,10 @@ export const VatPage: React.FC = () => {
                         Cancel
                     </Button>
                     <Button
-                        onClick={() => fileMutation.mutate({ periodStart: startDate, periodEnd: endDate })}
+                        onClick={() => {
+                            const periodLabel = startDate ? startDate.slice(0, 7) : '';
+                            fileMutation.mutate({ periodStart: startDate, periodEnd: endDate, periodLabel });
+                        }}
                         isLoading={fileMutation.isPending}
                         disabled={!startDate || !endDate}
                     >

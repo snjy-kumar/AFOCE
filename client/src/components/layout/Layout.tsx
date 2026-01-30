@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
@@ -6,9 +6,16 @@ import { Sidebar, Header } from './Sidebar';
 import { GlobalSearch } from '../common/GlobalSearch';
 
 export const DashboardLayout: React.FC = () => {
-    const { isAuthenticated, token } = useAuthStore();
+    const { isAuthenticated, token, logout } = useAuthStore();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
+    const storedToken = localStorage.getItem('auth_token');
+
+    useEffect(() => {
+        if (!storedToken && (isAuthenticated || token)) {
+            logout();
+        }
+    }, [storedToken, isAuthenticated, token, logout]);
 
     // Global keyboard shortcuts
     useKeyboardShortcuts([
@@ -21,7 +28,7 @@ export const DashboardLayout: React.FC = () => {
     ]);
 
     // Redirect to login if not authenticated
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated || !token || !storedToken) {
         return <Navigate to="/login" replace />;
     }
 
@@ -79,10 +86,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action 
 
 // Auth layout (for login/register pages) - Full width for split-screen design
 export const AuthLayout: React.FC = () => {
-    const { isAuthenticated, token } = useAuthStore();
+    const { isAuthenticated, token, logout } = useAuthStore();
+    const storedToken = localStorage.getItem('auth_token');
+
+    useEffect(() => {
+        if (!storedToken && (isAuthenticated || token)) {
+            logout();
+        }
+    }, [storedToken, isAuthenticated, token, logout]);
 
     // Redirect to dashboard if already authenticated
-    if (isAuthenticated && token) {
+    if (isAuthenticated && token && storedToken) {
         return <Navigate to="/dashboard" replace />;
     }
 

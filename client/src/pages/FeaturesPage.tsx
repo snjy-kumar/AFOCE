@@ -21,23 +21,23 @@ export function FeaturesPage() {
     return (
         <div className="min-h-screen bg-white">
             {/* Navigation - Sticky with backdrop blur */}
-            <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-neutral-200 shadow-sm" role="navigation" aria-label="Main navigation">
+            <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-sm" role="navigation" aria-label="Main navigation">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
+                    <div className="flex justify-between items-center h-18">
                         <Link
                             to="/"
-                            className="flex items-center gap-2 transition-transform duration-300 hover:scale-105"
+                            className="flex items-center gap-3 group transition-transform duration-300 hover:scale-105"
                             aria-label="AFOCE home"
                         >
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-md">
-                                <span className="text-white font-bold text-lg">A</span>
+                            <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                                <span className="text-white font-bold text-xl">A</span>
                             </div>
-                            <span className="text-xl font-bold text-neutral-900">AFOCE</span>
+                            <span className="text-xl font-bold text-neutral-900 tracking-tight">AFOCE</span>
                         </Link>
                         <div className="flex items-center gap-8">
                             <Link
                                 to="/"
-                                className="inline-flex items-center text-neutral-700 hover:text-neutral-900 transition-all duration-300 font-medium"
+                                className="inline-flex items-center text-neutral-700 hover:text-neutral-900 transition-all duration-300 font-semibold text-[15px]"
                                 aria-label="Back to home page"
                             >
                                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -49,22 +49,52 @@ export function FeaturesPage() {
             </nav>
 
             {/* Hero Section - Enhanced with gradient */}
-            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-neutral-50 relative overflow-hidden" aria-labelledby="hero-heading">
+            <section className="py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-neutral-50 relative overflow-hidden" aria-labelledby="hero-heading">
                 {/* Background pattern */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.05),transparent_50%)]"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.05),transparent_50%)]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.08),transparent_50%)]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.08),transparent_50%)]"></div>
 
                 <div className="max-w-4xl mx-auto text-center relative">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-800 rounded-full text-sm font-semibold mb-6 animate-fade-in shadow-sm">
+                    <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-100 text-primary-800 rounded-full text-[15px] font-bold mb-8 animate-fade-in shadow-sm">
                         <Zap className="w-4 h-4" />
                         Workflow-Intelligent Features
                     </div>
-                    <h1 id="hero-heading" className="text-5xl md:text-6xl font-bold text-neutral-900 mb-6 animate-slide-up">
+                    <h1 id="hero-heading" className="text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 mb-8 animate-slide-up tracking-tight leading-[1.1]">
                         Everything You Need to Run Your Business
                     </h1>
                     <p className="text-xl md:text-2xl text-neutral-700 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                        Workflow-intelligent features designed for <strong className="text-neutral-900">Nepal's business reality</strong>. Automate compliance, enforce policies, and focus on growth.
+                        Workflow-intelligent features designed for <strong className="text-neutral-900 font-semibold">Nepal's business reality</strong>. Automate compliance, enforce policies, and focus on growth.
                     </p>
+                </div>
+            </section>
+
+            {/* Feature Overview */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white" aria-labelledby="overview-heading">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 id="overview-heading" className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">
+                            Feature overview
+                        </h2>
+                        <p className="text-lg text-neutral-700">A quick scan of what you get, out of the box.</p>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
+                        {[
+                            { icon: FileText, title: 'IRD-ready invoices', desc: 'Sequential numbering, VAT, PAN validation, BS dates.' },
+                            { icon: Users, title: 'Approval workflows', desc: 'Rules, thresholds, and role‑based approvals.' },
+                            { icon: BarChart3, title: 'Live reporting', desc: 'Profit/Loss, VAT summaries, and cash flow.' },
+                            { icon: Repeat, title: 'Bank reconciliation', desc: 'Match transactions and auto-suggest entries.' },
+                            { icon: Lock, title: 'Audit trails', desc: 'Immutable history of every change and approval.' },
+                            { icon: Smartphone, title: 'Anywhere access', desc: 'Cloud-first, secure, and fast on any device.' },
+                        ].map((item) => (
+                            <div key={item.title} className="p-7 rounded-2xl border-2 border-neutral-200 bg-gradient-to-br from-white to-neutral-50/60 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                                <div className="w-12 h-12 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center mb-4 shadow-sm">
+                                    <item.icon className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-lg font-bold text-neutral-900 mb-3">{item.title}</h3>
+                                <p className="text-[15px] text-neutral-700 leading-relaxed">{item.desc}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 

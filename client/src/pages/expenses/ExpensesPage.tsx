@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { apiGet, apiDelete } from '../../lib/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import { exportToExcel } from '../../lib/export';
@@ -9,6 +9,7 @@ import { PageHeader } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Alert } from '../../components/ui/Alert';
 import { Modal, ModalBody, ModalFooter } from '../../components/ui/Modal';
 import { Spinner, EmptyState, Badge } from '../../components/ui/Common';
 import { Pagination } from '../../components/common/Pagination';
@@ -22,6 +23,7 @@ import {
     Trash2,
     Image,
     FileSpreadsheet,
+    AlertTriangle,
 } from 'lucide-react';
 import type { Expense } from '../../types';
 
@@ -30,6 +32,7 @@ const ITEMS_PER_PAGE = 10;
 export const ExpensesPage: React.FC = () => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -47,12 +50,20 @@ export const ExpensesPage: React.FC = () => {
         },
     });
 
-    const filteredExpenses = (expenses || []).filter(
-        (expense) =>
-            expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            expense.vendor?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            expense.expenseNumber.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const activeFilter = searchParams.get('filter');
+    const missingReceiptFilter = activeFilter === 'missing_receipt';
+
+    const filteredExpenses = (expenses || [])
+        .filter((expense) => {
+            if (!missingReceiptFilter) return true;
+            return Number(expense.totalAmount) > 5000 && !expense.receiptUrl;
+        })
+        .filter(
+            (expense) =>
+                expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                expense.vendor?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                expense.expenseNumber.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
     // Pagination logic
     const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
@@ -106,7 +117,7 @@ export const ExpensesPage: React.FC = () => {
         <div className="animate-fade-in">
             <PageHeader
                 title="Expenses"
-                subtitle={`${expenses?.length || 0} total expenses`}
+                subtitle={`${filteredExpenses.length} ${missingReceiptFilter ? 'missing receipt' : 'total'} expenses`}
                 action={
                     <div className="flex gap-2">
                         <Button
@@ -123,6 +134,14 @@ export const ExpensesPage: React.FC = () => {
                     </div>
                 }
             />
+
+            {missingReceiptFilter && (
+                <div className="mb-6">
+                    <Alert variant="warning" title="Missing receipts filter active">
+                        Showing expenses over ₹5,000 without receipts. Upload receipts to stay compliant.
+                    </Alert>
+                </div>
+            )}
 
             {/* Search */}
             <div className="mb-6">
@@ -160,6 +179,9 @@ export const ExpensesPage: React.FC = () => {
                                         </th>
                                         <th className="text-center p-4 text-sm font-medium text-[var(--color-neutral-600)]">
                                             Receipt
+                                        </th>
+                                        <th className="text-center p-4 text-sm font-medium text-[var(--color-neutral-600)]">
+                                            Policy
                                         </th>
                                         <th className="text-right p-4 text-sm font-medium text-[var(--color-neutral-600)]">
                                             Actions
@@ -286,6 +308,18 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, onDelete }) => {
                     </a>
                 ) : (
                     <span className="text-[var(--color-neutral-400)]">-</span>
+                )}
+            </td>
+            <td className="p-4 text-center">
+                {Number(expense.totalAmount) > 5000 && !expense.receiptUrl ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-[var(--color-warning-700)]">
+                        <AlertTriangle className="w-4 h-4" />
+                        Receipt required
+                    </span>
+                ) : expense.policyViolations?.length ? (
+                    <span className="text-xs text-[var(--color-warning-700)]">Policy warning</span>
+                ) : (
+                    <span className="text-xs text-[var(--color-neutral-400)]">OK</span>
                 )}
             </td>
             <td className="p-4 text-right">

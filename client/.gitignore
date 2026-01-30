@@ -10,6 +10,10 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.vite
+test-results
+playwright-report
+coverage
 *.local
 
 # environment variables
@@ -18,7 +22,6 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
-.env.example
 .env.*
 
 

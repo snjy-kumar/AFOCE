@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 dist/
+coverage/
+test-results/
 
 # Environment files
 .env

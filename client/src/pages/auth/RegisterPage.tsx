@@ -101,52 +101,55 @@ export const RegisterPage: React.FC = () => {
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
 
                 <div className="relative z-10">
-                    <Link to="/" className="flex items-center gap-3 mb-8">
-                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <Link to="/" className="flex items-center gap-3 mb-12 group">
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
                             <Calculator className="w-7 h-7 text-white" />
                         </div>
                         <span className="text-2xl font-bold text-white">AFOCE</span>
                     </Link>
 
-                    <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
-                        Start your journey with
-                        <span className="block text-primary-200">Nepal's Smart Business OS</span>
-                    </h1>
-                    <p className="text-lg text-primary-100 leading-relaxed max-w-md">
-                        Join thousands of Nepal businesses already automating their finances with AFOCE.
-                    </p>
+                    <div className="space-y-4 max-w-lg">
+                        <h1 className="text-5xl font-bold text-white mb-3 leading-[1.1] tracking-tight">
+                            Start your journey with
+                            <span className="block text-primary-100 mt-2">Nepal's Smart Business OS</span>
+                        </h1>
+                        <p className="text-lg text-primary-100/90 leading-relaxed">
+                            Join thousands of Nepal businesses already automating their finances with AFOCE.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="relative z-10 space-y-5">
-                    <h3 className="text-white font-semibold text-lg mb-4">What you'll get:</h3>
+                <div className="relative z-10">
+                    <h3 className="text-white/90 font-medium text-base mb-6">What you'll get:</h3>
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
+                            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
+                                <CheckCircle2 className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-white mb-1.5">13% VAT Automation</h4>
+                                <p className="text-sm text-primary-100/80 leading-relaxed">Automatic IRD-compliant calculations</p>
+                            </div>
+                        </div>
 
-                    <div className="flex items-start gap-4 text-white/90">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <CheckCircle2 className="w-5 h-5" />
+                        <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
+                            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Shield className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-white mb-1.5">Smart Approval Workflows</h4>
+                                <p className="text-sm text-primary-100/80 leading-relaxed">Enforce business policies automatically</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 className="font-semibold mb-1">13% VAT Automation</h4>
-                            <p className="text-sm text-primary-200">Automatic IRD-compliant calculations</p>
-                        </div>
-                    </div>
 
-                    <div className="flex items-start gap-4 text-white/90">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Shield className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-1">Smart Approval Workflows</h4>
-                            <p className="text-sm text-primary-200">Enforce business policies automatically</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start gap-4 text-white/90">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <BarChart3 className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-1">Real-Time Analytics</h4>
-                            <p className="text-sm text-primary-200">Track cash flow, invoices & expenses</p>
+                        <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
+                            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
+                                <BarChart3 className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-white mb-1.5">Real-Time Analytics</h4>
+                                <p className="text-sm text-primary-100/80 leading-relaxed">Track cash flow, invoices & expenses</p>
+                            </div>
                         </div>
                     </div>
 
@@ -179,14 +182,14 @@ export const RegisterPage: React.FC = () => {
                         </Link>
                     </div>
 
-                    <div className="text-center mb-6">
-                        <h2 className="text-3xl font-bold text-neutral-900 mb-2">Create your account</h2>
-                        <p className="text-neutral-600">
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-3 tracking-tight">Create your account</h2>
+                        <p className="text-base text-neutral-600 leading-relaxed">
                             Start your 14-day free trial. No credit card required.
                         </p>
                     </div>
 
-                    <Card className="shadow-xl border-0">
+                    <Card className="shadow-2xl border-0 overflow-hidden">
                         <CardBody className="p-6 sm:p-8">
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                                 {error && (
@@ -265,8 +268,8 @@ export const RegisterPage: React.FC = () => {
                                                 <div
                                                     key={level}
                                                     className={`h-1.5 flex-1 rounded-full transition-colors ${level <= passwordStrength
-                                                            ? strengthColors[passwordStrength]
-                                                            : 'bg-neutral-200'
+                                                        ? strengthColors[passwordStrength]
+                                                        : 'bg-neutral-200'
                                                         }`}
                                                 />
                                             ))}
@@ -345,18 +348,18 @@ export const RegisterPage: React.FC = () => {
                     </Card>
 
                     {/* Trust indicators */}
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-neutral-500">
-                        <span className="flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-success-500" />
-                            14-day free trial
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-neutral-600">
+                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
+                            <CheckCircle2 className="w-4 h-4 text-success-500" />
+                            <span className="font-medium">14-day free trial</span>
                         </span>
-                        <span className="flex items-center gap-1.5">
-                            <Shield className="w-3.5 h-3.5 text-primary-500" />
-                            No credit card required
+                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
+                            <Shield className="w-4 h-4 text-primary-500" />
+                            <span className="font-medium">No credit card required</span>
                         </span>
-                        <span className="flex items-center gap-1.5">
-                            <Lock className="w-3.5 h-3.5 text-primary-500" />
-                            Bank-grade security
+                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
+                            <Lock className="w-4 h-4 text-primary-500" />
+                            <span className="font-medium">Bank-grade security</span>
                         </span>
                     </div>
                 </div>

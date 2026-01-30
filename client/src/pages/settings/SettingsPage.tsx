@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { apiPut } from '../../lib/api';
+import { apiPost, apiPut } from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
 import { usePreferencesStore } from '../../stores/preferencesStore';
 import { useI18n } from '../../lib/i18n';
@@ -105,7 +105,7 @@ export const SettingsPage: React.FC = () => {
     });
 
     const passwordMutation = useMutation({
-        mutationFn: (data: PasswordFormData) => apiPut('/auth/password', data),
+        mutationFn: (data: PasswordFormData) => apiPost('/auth/change-password', data),
         onSuccess: () => {
             resetPassword();
             toast.success('Password updated successfully!');

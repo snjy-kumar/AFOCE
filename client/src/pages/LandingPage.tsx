@@ -18,47 +18,47 @@ export function LandingPage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
             {/* Navigation */}
-            <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-neutral-200 shadow-sm" role="navigation" aria-label="Main navigation">
+            <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-sm" role="navigation" aria-label="Main navigation">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
+                    <div className="flex justify-between items-center h-18">
                         <Link to="/" className="flex items-center gap-3 group" aria-label="AFOCE Home">
-                            <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
+                            <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
                                 <span className="text-white font-bold text-xl">A</span>
                             </div>
-                            <span className="text-xl font-bold text-neutral-900">AFOCE</span>
+                            <span className="text-xl font-bold text-neutral-900 tracking-tight">AFOCE</span>
                         </Link>
                         <div className="hidden md:flex items-center gap-8">
                             <Link
                                 to="/about"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium"
+                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
                                 aria-label="Learn about AFOCE"
                             >
                                 About
                             </Link>
                             <Link
                                 to="/features"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium"
+                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
                                 aria-label="Explore features"
                             >
                                 Features
                             </Link>
                             <Link
                                 to="/pricing"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium"
+                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
                                 aria-label="View pricing plans"
                             >
                                 Pricing
                             </Link>
                             <Link
                                 to="/login"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium"
+                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
                                 aria-label="Sign in to your account"
                             >
                                 Login
                             </Link>
                             <Link
                                 to="/register"
-                                className="px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg hover:scale-105"
+                                className="px-6 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg hover:scale-105 text-[15px]"
                                 aria-label="Start your free trial"
                             >
                                 Start Free Trial
@@ -69,89 +69,142 @@ export function LandingPage() {
             </nav>
 
             {/* Hero Section */}
-            <section className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden" aria-labelledby="hero-title">
-                {/* Subtle background pattern */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-30" aria-hidden="true"></div>
+            <section className="py-28 px-4 sm:px-6 lg:px-8 relative overflow-hidden" aria-labelledby="hero-title">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.1),transparent_50%),radial-gradient(circle_at_80%_30%,rgba(16,185,129,0.08),transparent_50%)]" aria-hidden="true"></div>
 
                 <div className="max-w-7xl mx-auto relative">
-                    <div className="text-center max-w-4xl mx-auto">
-                        <div className="inline-block mb-6 animate-fade-in">
-                            <span className="px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-semibold border border-primary-200" role="status">
+                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+                        <div className="max-w-xl animate-slide-up">
+                            <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur border border-primary-200/60 text-primary-700 rounded-full text-[15px] font-semibold mb-8 shadow-sm hover:shadow-md transition-shadow">
                                 🇳🇵 Made for Nepal's Business Ecosystem
-                            </span>
-                        </div>
-                        <h1
-                            id="hero-title"
-                            className="text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 mb-8 leading-tight animate-slide-up"
-                        >
-                            Nepal's Smart Business
-                            <span className="block text-primary-600 mt-2">Operating System</span>
-                        </h1>
-                        <p className="text-xl md:text-2xl text-neutral-700 mb-12 leading-relaxed max-w-3xl mx-auto animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                            Transform your business operations with intelligent automation.
-                            <span className="block mt-2 font-semibold text-neutral-900">
-                                AFOCE handles invoicing, expense tracking, and IRD compliance—so you can focus on growth.
-                            </span>
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-5 justify-center items-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                            <Link
-                                to="/register"
-                                className="group inline-flex items-center justify-center px-8 py-4 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-105"
-                                aria-label="Get started with free trial"
+                            </div>
+                            <h1
+                                id="hero-title"
+                                className="text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 mb-7 leading-[1.1] tracking-tight"
                             >
-                                Start Free Trial
-                                <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-                            </Link>
-                            <Link
-                                to="/features"
-                                className="inline-flex items-center justify-center px-8 py-4 border-2 border-neutral-300 text-neutral-800 rounded-xl hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-300 font-semibold text-lg"
-                                aria-label="See how AFOCE works"
-                            >
-                                See How It Works
-                            </Link>
+                                Automate finance.
+                                <span className="block text-primary-600 mt-2">Stay IRD-compliant.</span>
+                            </h1>
+                            <p className="text-lg md:text-xl text-neutral-700 mb-10 leading-relaxed">
+                                AFOCE is the workflow‑intelligent platform that streamlines invoicing, expenses, VAT, and approvals—built for Nepal.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 items-start mb-8">
+                                <Link
+                                    to="/register"
+                                    className="group inline-flex items-center justify-center px-8 py-4 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-semibold shadow-xl hover:shadow-2xl hover:scale-105 text-base"
+                                    aria-label="Get started with free trial"
+                                >
+                                    Start Free Trial
+                                    <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+                                </Link>
+                                <Link
+                                    to="/features"
+                                    className="inline-flex items-center justify-center px-8 py-4 border-2 border-neutral-300 text-neutral-800 rounded-xl hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-300 font-semibold text-base"
+                                    aria-label="See how AFOCE works"
+                                >
+                                    See How It Works
+                                </Link>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-6 text-[15px] text-neutral-700">
+                                <span className="flex items-center gap-2 font-medium">
+                                    <CheckCircle2 className="w-4 h-4 text-success-600" aria-hidden="true" />
+                                    14-day free trial
+                                </span>
+                                <span className="flex items-center gap-2 font-medium">
+                                    <CheckCircle2 className="w-4 h-4 text-success-600" aria-hidden="true" />
+                                    No credit card required
+                                </span>
+                                <span className="flex items-center gap-2 font-medium">
+                                    <CheckCircle2 className="w-4 h-4 text-success-600" aria-hidden="true" />
+                                    Setup in 5 minutes
+                                </span>
+                            </div>
                         </div>
-                        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-neutral-700" role="list">
-                            <span className="flex items-center gap-2" role="listitem">
-                                <CheckCircle2 className="w-5 h-5 text-success-600" aria-hidden="true" />
-                                14-day free trial
-                            </span>
-                            <span className="flex items-center gap-2" role="listitem">
-                                <CheckCircle2 className="w-5 h-5 text-success-600" aria-hidden="true" />
-                                No credit card required
-                            </span>
-                            <span className="flex items-center gap-2" role="listitem">
-                                <CheckCircle2 className="w-5 h-5 text-success-600" aria-hidden="true" />
-                                Cancel anytime
-                            </span>
+
+                        <div className="bg-white/90 backdrop-blur-lg border-2 border-neutral-200/60 rounded-3xl shadow-2xl p-7 lg:p-9 animate-slide-up hover:shadow-3xl transition-shadow duration-500" style={{ animationDelay: '0.2s' }}>
+                            <div className="flex items-center justify-between mb-7">
+                                <div>
+                                    <p className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">Live snapshot</p>
+                                    <p className="text-xl font-bold text-neutral-900 mt-1">Business overview</p>
+                                </div>
+                                <div className="px-3 py-1.5 rounded-full bg-success-100 text-success-700 text-xs font-bold shadow-sm">Compliant</div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="rounded-2xl border-2 border-neutral-200 p-5 bg-gradient-to-br from-white to-neutral-50/50 hover:shadow-md transition-shadow">
+                                    <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wide">Outstanding</p>
+                                    <p className="text-2xl font-bold text-neutral-900 mt-2">₹3,20,000</p>
+                                    <p className="text-xs text-success-600 mt-2 font-semibold">+12% this month</p>
+                                </div>
+                                <div className="rounded-2xl border-2 border-neutral-200 p-5 bg-gradient-to-br from-white to-neutral-50/50 hover:shadow-md transition-shadow">
+                                    <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wide">VAT Payable</p>
+                                    <p className="text-2xl font-bold text-neutral-900 mt-2">₹45,500</p>
+                                    <p className="text-xs text-warning-600 mt-2 font-semibold">Due in 8 days</p>
+                                </div>
+                                <div className="rounded-2xl border-2 border-neutral-200 p-5 col-span-2 bg-gradient-to-br from-white to-neutral-50/50 hover:shadow-md transition-shadow">
+                                    <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wide mb-4">Workflow approvals</p>
+                                    <div className="flex items-center justify-between rounded-xl bg-primary-50/50 px-5 py-3.5 border border-primary-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shadow-sm">
+                                                <Clock className="w-5 h-5 text-primary-600" aria-hidden="true" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-neutral-900">3 items pending</p>
+                                                <p className="text-xs text-neutral-500">Invoices &gt; ₹50K</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-xs font-semibold text-primary-700">Review</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Trust Indicators */}
-            <section className="py-16 bg-white border-y border-neutral-200" aria-label="Key metrics and achievements">
+            <section className="py-12 bg-white border-y border-neutral-200" aria-label="Key metrics and achievements">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center">
-                        <div className="transform hover:scale-105 transition-transform duration-300">
-                            <div className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent mb-3" aria-label="13 percent">13%</div>
-                            <div className="text-neutral-800 font-semibold">Automated VAT Calculation</div>
-                            <div className="text-sm text-neutral-600 mt-1">IRD Compliant</div>
+                    <div className="flex flex-wrap items-center justify-between gap-6 text-sm text-neutral-600">
+                        <div className="font-semibold text-neutral-800">Trusted by Nepal’s growing teams</div>
+                        <div className="flex flex-wrap gap-3">
+                            {['Retail', 'Services', 'Manufacturing', 'Hospitality', 'Agencies'].map((label) => (
+                                <span key={label} className="px-3 py-1 rounded-full bg-neutral-50 border border-neutral-200 text-neutral-700">
+                                    {label}
+                                </span>
+                            ))}
                         </div>
-                        <div className="transform hover:scale-105 transition-transform duration-300">
-                            <div className="text-5xl font-bold bg-gradient-to-r from-success-600 to-success-700 bg-clip-text text-transparent mb-3" aria-label="75 percent">75%</div>
-                            <div className="text-neutral-800 font-semibold">Faster Invoice Processing</div>
-                            <div className="text-sm text-neutral-600 mt-1">Save Time Daily</div>
+                        <div className="flex items-center gap-6">
+                            <div className="text-neutral-900 font-semibold">13% VAT</div>
+                            <div className="text-neutral-900 font-semibold">Bikram Sambat</div>
+                            <div className="text-neutral-900 font-semibold">Audit-ready</div>
                         </div>
-                        <div className="transform hover:scale-105 transition-transform duration-300">
-                            <div className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent mb-3" aria-label="100 percent">100%</div>
-                            <div className="text-neutral-800 font-semibold">IRD Compliance</div>
-                            <div className="text-sm text-neutral-600 mt-1">Audit-Ready</div>
-                        </div>
-                        <div className="transform hover:scale-105 transition-transform duration-300">
-                            <div className="text-5xl font-bold bg-gradient-to-r from-warning-600 to-warning-700 bg-clip-text text-transparent mb-3" aria-label="24/7">24/7</div>
-                            <div className="text-neutral-800 font-semibold">Access Anywhere</div>
-                            <div className="text-sm text-neutral-600 mt-1">Cloud-Based</div>
-                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* How It Works */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-neutral-50" aria-labelledby="how-it-works-title">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 id="how-it-works-title" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-3">
+                            How it works
+                        </h2>
+                        <p className="text-neutral-700">Get compliant workflows running in minutes, not weeks.</p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {[
+                            { title: 'Connect your business', body: 'Add your company, VAT details, and users in a guided setup.' },
+                            { title: 'Automate approvals', body: 'Define thresholds, receipt rules, and role-based approvals.' },
+                            { title: 'Track & file VAT', body: 'See VAT summaries and generate filings on time.' },
+                        ].map((step, index) => (
+                            <div key={step.title} className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
+                                <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-700 flex items-center justify-center font-semibold mb-4">
+                                    {index + 1}
+                                </div>
+                                <h3 className="text-lg font-semibold text-neutral-900 mb-2">{step.title}</h3>
+                                <p className="text-neutral-700 text-sm leading-relaxed">{step.body}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -217,11 +270,11 @@ export function LandingPage() {
             <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-neutral-50 to-white" aria-labelledby="features-title">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-20">
-                        <span className="text-primary-600 font-semibold text-sm uppercase tracking-wider mb-3 block" role="status">The Solution</span>
-                        <h2 id="features-title" className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
+                        <span className="text-primary-600 font-semibold text-sm uppercase tracking-wider mb-3 block text-center" role="status">The Solution</span>
+                        <h2 id="features-title" className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6 text-center">
                             Built for Nepal's Business Reality
                         </h2>
-                        <p className="text-xl md:text-2xl text-neutral-700 max-w-3xl mx-auto leading-relaxed">
+                        <p className="text-xl md:text-2xl text-neutral-700 max-w-3xl mx-auto leading-relaxed text-center">
                             Everything you need to run a compliant, efficient business—
                             <span className="block mt-2 font-semibold text-neutral-900">designed specifically for Nepal's unique regulatory environment</span>
                         </p>

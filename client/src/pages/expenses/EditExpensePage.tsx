@@ -8,11 +8,13 @@ import toast from 'react-hot-toast';
 import { apiGet, apiPatch, apiPost, API_BASE_URL } from '../../lib/api';
 import { formatDateForInput } from '../../lib/utils';
 import { PageHeader } from '../../components/layout/Layout';
+import { useDateFormat } from '../../lib/i18n';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input, Textarea } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Spinner } from '../../components/ui/Common';
+import { Alert } from '../../components/ui/Alert';
 import { FileUpload } from '../../components/common/FileUpload';
 import { WorkflowApproval } from '../../components/workflow/WorkflowApproval';
 import { Save, X, Send } from 'lucide-react';
@@ -30,12 +32,15 @@ const expenseSchema = z.object({
 });
 
 type ExpenseFormData = z.infer<typeof expenseSchema>;
+type ExpensePayload = ExpenseFormData & { receiptUrl?: string | null };
 
 export const EditExpensePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { formatBSDate, useBikramSambat } = useDateFormat();
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState<string | null>(null);
     const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
     const { data: expense, isLoading: loadingExpense } = useQuery({
@@ -83,7 +88,7 @@ export const EditExpensePage: React.FC = () => {
     }, [expense, setValue]);
 
     const updateMutation = useMutation({
-        mutationFn: (data: ExpenseFormData) => apiPatch(`/expenses/${id}`, data),
+        mutationFn: (data: ExpensePayload) => apiPatch(`/expenses/${id}`, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expenses'] });
             queryClient.invalidateQueries({ queryKey: ['expense', id] });
@@ -96,10 +101,7 @@ export const EditExpensePage: React.FC = () => {
     });
 
     const submitForApprovalMutation = useMutation({
-        mutationFn: () => apiPost(`/workflow/submit`, {
-            entityType: 'EXPENSE',
-            entityId: id,
-        }),
+        mutationFn: () => apiPost(`/workflow/expenses/${id}/submit-for-approval`, {}),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expense', id] });
             toast.success('Expense submitted for approval!');
@@ -110,10 +112,7 @@ export const EditExpensePage: React.FC = () => {
     });
 
     const approveMutation = useMutation({
-        mutationFn: () => apiPost(`/workflow/approve`, {
-            entityType: 'EXPENSE',
-            entityId: id,
-        }),
+        mutationFn: () => apiPost(`/workflow/expenses/${id}/approve`, {}),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expense', id] });
             toast.success('Expense approved!');
@@ -124,11 +123,7 @@ export const EditExpensePage: React.FC = () => {
     });
 
     const rejectMutation = useMutation({
-        mutationFn: (reason: string) => apiPost(`/workflow/reject`, {
-            entityType: 'EXPENSE',
-            entityId: id,
-            reason,
-        }),
+        mutationFn: (reason: string) => apiPost(`/workflow/expenses/${id}/reject`, { reason }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['expense', id] });
             toast.success('Expense rejected');
@@ -139,6 +134,8 @@ export const EditExpensePage: React.FC = () => {
     });
 
     const onSubmit = async (data: ExpenseFormData) => {
+        let receiptUrl = uploadedReceiptUrl ?? expense?.receiptUrl ?? null;
+
         // Upload receipt if provided
         if (receiptFile) {
             setUploadingReceipt(true);
@@ -159,9 +156,9 @@ export const EditExpensePage: React.FC = () => {
                     throw new Error('Failed to upload receipt');
                 }
 
-                await response.json();
-                // Note: Backend needs to be updated to handle receipt URL in expense update
-                // For now, we'll just show success
+                const uploadResult = await response.json();
+                receiptUrl = uploadResult?.data?.url || uploadResult?.url || null;
+                setUploadedReceiptUrl(receiptUrl);
                 toast.success('Receipt uploaded successfully!');
             } catch (error) {
                 toast.error('Failed to upload receipt');
@@ -171,13 +168,24 @@ export const EditExpensePage: React.FC = () => {
             setUploadingReceipt(false);
         }
 
-        updateMutation.mutate(data);
+        if (data.amount > 5000 && !receiptUrl) {
+            toast.error('Receipt required for expenses over ₹5,000. Please attach a receipt.');
+            return;
+        }
+
+        updateMutation.mutate({
+            ...data,
+            receiptUrl: receiptUrl ?? undefined,
+        });
     };
 
     const amount = watch('amount');
     const vatRate = watch('vatRate');
+    const expenseDate = watch('date');
     const vatAmount = (amount || 0) * (vatRate / 100);
     const totalAmount = (amount || 0) + vatAmount;
+    const hasReceipt = Boolean(uploadedReceiptUrl || expense?.receiptUrl);
+    const requiresReceipt = (amount || 0) > 5000;
 
     if (loadingExpense) {
         return (
@@ -223,6 +231,18 @@ export const EditExpensePage: React.FC = () => {
                 }
             />
 
+            {expense.policyViolations && expense.policyViolations.length > 0 && (
+                <div className="mb-6">
+                    <Alert variant="warning" title="Policy warnings">
+                        <ul className="list-disc pl-5 space-y-1">
+                            {expense.policyViolations.map((violation) => (
+                                <li key={violation.ruleId}>{violation.message}</li>
+                            ))}
+                        </ul>
+                    </Alert>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit(onSubmit)}>
                 <Card>
                     <CardHeader title="Expense Information" />
@@ -252,6 +272,7 @@ export const EditExpensePage: React.FC = () => {
                                 label="Date"
                                 type="date"
                                 error={errors.date?.message}
+                                helperText={useBikramSambat && expenseDate ? `BS: ${formatBSDate(expenseDate)}` : undefined}
                                 {...register('date')}
                             />
 
@@ -284,16 +305,6 @@ export const EditExpensePage: React.FC = () => {
                                     </span>
                                 </label>
                             </div>
-
-                            <FileUpload
-                                label="Receipt (Optional)"
-                                accept="image/*,application/pdf"
-                                maxSize={5}
-                                onFileSelect={setReceiptFile}
-                                currentFile={expense.receiptUrl || undefined}
-                                uploadType="receipt"
-                                disabled={uploadingReceipt}
-                            />
                         </div>
 
                         <Input
@@ -328,18 +339,66 @@ export const EditExpensePage: React.FC = () => {
                     </CardBody>
                 </Card>
 
+                <Card className="mt-6">
+                    <CardHeader title="Receipt" />
+                    <CardBody className="space-y-4">
+                        {requiresReceipt && !hasReceipt && (
+                            <Alert variant="warning" title="Receipt required">
+                                Company policy requires receipts for expenses over ₹5,000. Please attach a receipt.
+                            </Alert>
+                        )}
+
+                        {expense.receiptUrl && !uploadedReceiptUrl && (
+                            <div className="text-sm text-[var(--color-neutral-600)]">
+                                Current receipt:{' '}
+                                <a
+                                    href={expense.receiptUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[var(--color-primary-600)] hover:underline"
+                                >
+                                    View receipt
+                                </a>
+                            </div>
+                        )}
+
+                        <FileUpload
+                            accept="image/*,application/pdf"
+                            maxSize={5}
+                            onFileSelect={setReceiptFile}
+                            currentFile={uploadedReceiptUrl || expense.receiptUrl || undefined}
+                            uploadType="receipt"
+                            disabled={uploadingReceipt}
+                        />
+
+                        {receiptFile && (
+                            <div className="p-3 bg-success-50 border border-success-200 rounded-lg flex items-center gap-2">
+                                <span className="text-success-700 text-sm font-medium">
+                                    ✓ Receipt attached: {receiptFile.name}
+                                </span>
+                            </div>
+                        )}
+                    </CardBody>
+                </Card>
+
                 {/* Workflow Approval Section */}
-                {expense.workflowStatus && expense.workflowStatus !== 'NONE' && (
+                {expense.requiresApproval && (
                     <WorkflowApproval
-                        status={expense.workflowStatus}
+                        status={expense.status}
+                        requiresApproval={Boolean(expense.requiresApproval)}
+                        approvedAt={expense.approvedAt}
+                        approvedBy={expense.approver ? { name: expense.approver.name } : undefined}
+                        rejectedAt={expense.rejectedAt}
+                        rejectedBy={expense.rejector ? { name: expense.rejector.name } : undefined}
+                        rejectionReason={expense.rejectionReason}
                         onApprove={async () => { await approveMutation.mutateAsync(); }}
                         onReject={async (reason: string) => { await rejectMutation.mutateAsync(reason); }}
-                        canApprove={true}
+                        canApprove={expense.status === 'PENDING_APPROVAL'}
                     />
                 )}
 
                 {/* Submit for Approval Button */}
-                {(!expense.workflowStatus || expense.workflowStatus === 'NONE') && (
+                {expense.status === 'DRAFT' && (
                     <Card>
                         <CardBody>
                             <div className="flex items-center justify-between">

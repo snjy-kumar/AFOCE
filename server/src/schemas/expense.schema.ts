@@ -14,6 +14,7 @@ export const createExpenseSchema = z.object({
     amount: z.number().positive('Amount must be positive'),
     vatRate: z.number().min(0).max(100).default(13), // Nepal VAT is 13%
     isPaid: z.boolean().default(true),
+    receiptUrl: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
     notes: z.string().optional(),
 });
 
@@ -25,6 +26,7 @@ export const updateExpenseSchema = z.object({
     amount: z.number().positive().optional(),
     vatRate: z.number().min(0).max(100).optional(),
     isPaid: z.boolean().optional(),
+    receiptUrl: z.preprocess(emptyToUndefined, z.string().min(1).optional().nullable()),
     notes: z.string().optional(),
 });
 

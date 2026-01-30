@@ -75,6 +75,14 @@ export type InvoiceStatus =
     | 'OVERDUE' 
     | 'CANCELLED';
 
+export type ExpenseStatus =
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'PAID'
+    | 'CANCELLED';
+
 export interface InvoiceItem {
     id: string;
     accountId: string;
@@ -96,10 +104,12 @@ export interface Invoice {
     status: InvoiceStatus;
     requiresApproval?: boolean;
     workflowStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+    approvedBy?: string;
+    approver?: { id: string; name: string };
     approvedAt?: string;
-    approvedBy?: { id: string; name: string };
+    rejectedBy?: string;
+    rejector?: { id: string; name: string };
     rejectedAt?: string;
-    rejectedBy?: { id: string; name: string };
     rejectionReason?: string;
     subtotal: number;
     vatRate: number;
@@ -129,8 +139,22 @@ export interface Expense {
     vatRate: number;
     vatAmount: number;
     totalAmount: number;
-    workflowStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+    status: ExpenseStatus;
+    requiresApproval?: boolean;
+    approvedBy?: string;
+    approver?: { id: string; name: string };
+    approvedAt?: string;
+    rejectedBy?: string;
+    rejector?: { id: string; name: string };
+    rejectedAt?: string;
+    rejectionReason?: string;
     receiptUrl?: string;
+    policyViolations?: Array<{
+        ruleId: string;
+        ruleName: string;
+        severity: 'WARNING' | 'CRITICAL';
+        message: string;
+    }>;
     notes?: string;
     isPaid: boolean;
     createdAt: string;
@@ -173,9 +197,9 @@ export interface BankTransaction {
     date: string;
     description: string;
     amount: number;
-    type: 'DEBIT' | 'CREDIT';
+    type: 'debit' | 'credit';
     reference?: string;
-    isReconciled: boolean;
+    reconciled: boolean;
     reconciledAt?: string;
     invoiceId?: string;
     invoice?: Invoice;

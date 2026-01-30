@@ -5,23 +5,23 @@ export function AboutPage() {
     return (
         <div className="min-h-screen bg-white">
             {/* Navigation - Sticky with backdrop blur */}
-            <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-neutral-200 shadow-sm" role="navigation" aria-label="Main navigation">
+            <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-sm" role="navigation" aria-label="Main navigation">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
+                    <div className="flex justify-between items-center h-18">
                         <Link
                             to="/"
-                            className="flex items-center gap-2 transition-transform duration-300 hover:scale-105"
+                            className="flex items-center gap-3 group transition-transform duration-300 hover:scale-105"
                             aria-label="AFOCE home"
                         >
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-md">
-                                <span className="text-white font-bold text-lg">A</span>
+                            <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                                <span className="text-white font-bold text-xl">A</span>
                             </div>
-                            <span className="text-xl font-bold text-neutral-900">AFOCE</span>
+                            <span className="text-xl font-bold text-neutral-900 tracking-tight">AFOCE</span>
                         </Link>
                         <div className="flex items-center gap-8">
                             <Link
                                 to="/"
-                                className="inline-flex items-center text-neutral-700 hover:text-neutral-900 transition-all duration-300 font-medium"
+                                className="inline-flex items-center text-neutral-700 hover:text-neutral-900 transition-all duration-300 font-semibold text-[15px]"
                                 aria-label="Back to home page"
                             >
                                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -33,22 +33,63 @@ export function AboutPage() {
             </nav>
 
             {/* Hero Section - Enhanced with gradient background */}
-            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-neutral-50 relative overflow-hidden" aria-labelledby="hero-heading">
+            <section className="py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-neutral-50 relative overflow-hidden" aria-labelledby="hero-heading">
                 {/* Background pattern */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.05),transparent_50%)]"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.05),transparent_50%)]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.08),transparent_50%)]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.08),transparent_50%)]"></div>
 
                 <div className="max-w-4xl mx-auto text-center relative">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-800 rounded-full text-sm font-semibold mb-6 animate-fade-in shadow-sm">
+                    <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-100 text-primary-800 rounded-full text-[15px] font-bold mb-8 animate-fade-in shadow-sm">
                         <Building2 className="w-4 h-4" />
                         Adaptive Financial Operations & Compliance Engine
                     </div>
-                    <h1 id="hero-heading" className="text-5xl md:text-6xl font-bold text-neutral-900 mb-6 animate-slide-up">
+                    <h1 id="hero-heading" className="text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 mb-8 animate-slide-up tracking-tight leading-[1.1]">
                         About AFOCE
                     </h1>
                     <p className="text-xl md:text-2xl text-neutral-700 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                        Building Nepal's first workflow-intelligent financial platform that combines <strong className="text-neutral-900">user-friendly accounting</strong>, <strong className="text-neutral-900">smart automation</strong>, and <strong className="text-neutral-900">Nepal-specific compliance</strong> in one seamless solution.
+                        Building Nepal's first workflow-intelligent financial platform that combines <strong className="text-neutral-900 font-semibold">user-friendly accounting</strong>, <strong className="text-neutral-900 font-semibold">smart automation</strong>, and <strong className="text-neutral-900 font-semibold">Nepal-specific compliance</strong> in one seamless solution.
                     </p>
+                </div>
+            </section>
+
+            {/* Highlights */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white" aria-label="Company highlights">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-3 gap-7">
+                        <div className="p-7 rounded-2xl border-2 border-neutral-200 bg-gradient-to-br from-white to-neutral-50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                                    <Target className="w-6 h-6 text-primary-600" />
+                                </div>
+                                <h3 className="text-lg font-bold text-neutral-900">Workflow-first finance</h3>
+                            </div>
+                            <p className="text-neutral-700 text-[15px] leading-relaxed">
+                                Automate approvals, enforce policies, and keep every transaction audit‑ready.
+                            </p>
+                        </div>
+                        <div className="p-7 rounded-2xl border-2 border-neutral-200 bg-gradient-to-br from-white to-neutral-50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-success-100 rounded-xl flex items-center justify-center">
+                                    <Shield className="w-6 h-6 text-success-600" />
+                                </div>
+                                <h3 className="text-lg font-bold text-neutral-900">Nepal compliant</h3>
+                            </div>
+                            <p className="text-neutral-700 text-[15px] leading-relaxed">
+                                VAT (13%), PAN validation, and Bikram Sambat support built in by default.
+                            </p>
+                        </div>
+                        <div className="p-7 rounded-2xl border-2 border-neutral-200 bg-gradient-to-br from-white to-neutral-50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-warning-100 rounded-xl flex items-center justify-center">
+                                    <Users className="w-6 h-6 text-warning-600" />
+                                </div>
+                                <h3 className="text-lg font-bold text-neutral-900">Designed for SMEs</h3>
+                            </div>
+                            <p className="text-neutral-700 text-[15px] leading-relaxed">
+                                Clear UX, local support, and pricing that scales with growing teams.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </section>
 

@@ -1,4 +1,15 @@
 import { clsx, type ClassValue } from 'clsx';
+import { adToBS, formatBSDate, toNepaliNumeral } from './nepaliDate';
+
+function getStoredLanguage(): 'en' | 'ne' {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('language') : null;
+    return stored === 'ne' ? 'ne' : 'en';
+}
+
+function getUseBikramSambat(): boolean {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('useBikramSambat') : null;
+    return stored === 'true';
+}
 
 export function cn(...inputs: ClassValue[]) {
     return clsx(inputs);
@@ -6,26 +17,40 @@ export function cn(...inputs: ClassValue[]) {
 
 // Format currency in Nepali Rupees
 export function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-NP', {
-        style: 'currency',
-        currency: 'NPR',
+    const language = getStoredLanguage();
+    const formatted = new Intl.NumberFormat('en-NP', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     }).format(amount);
+
+    if (language === 'ne') {
+        return `रु ${toNepaliNumeral(formatted)}`;
+    }
+
+    return `NPR ${formatted}`;
 }
 
 // Format number with Nepali locale
 export function formatNumber(num: number): string {
-    return new Intl.NumberFormat('en-NP').format(num);
+    const language = getStoredLanguage();
+    const formatted = new Intl.NumberFormat('en-NP').format(num);
+    return language === 'ne' ? toNepaliNumeral(formatted) : formatted;
 }
 
 // Format date
 export function formatDate(date: string | Date, format: 'short' | 'long' | 'iso' = 'short'): string {
     const d = typeof date === 'string' ? new Date(date) : date;
+    const language = getStoredLanguage();
+    const useBikramSambat = getUseBikramSambat();
+
+    if (useBikramSambat) {
+        const bs = adToBS(d);
+        return formatBSDate(bs, format === 'long' ? 'long' : 'short', language);
+    }
 
     switch (format) {
         case 'long':
-            return d.toLocaleDateString('en-NP', {
+            return d.toLocaleDateString(language === 'ne' ? 'ne-NP' : 'en-NP', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
@@ -33,7 +58,7 @@ export function formatDate(date: string | Date, format: 'short' | 'long' | 'iso'
         case 'iso':
             return d.toISOString().split('T')[0];
         default:
-            return d.toLocaleDateString('en-NP', {
+            return d.toLocaleDateString(language === 'ne' ? 'ne-NP' : 'en-NP', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
