@@ -6,7 +6,7 @@
    ============================================ */
 
 :root {
-  /* Primary Colors - Modern Blue */
+  /* Primary Colors - Deep Blue (professional, trustworthy) */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -18,24 +18,41 @@
   --color-primary-800: #1e40af;
   --color-primary-900: #1e3a8a;
 
-  /* Success - Green */
+  /* Success - Emerald Green (growth, positive) */
   --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
   --color-success-500: #10b981;
   --color-success-600: #059669;
   --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
 
-  /* Warning - Amber */
+  /* Warning - Amber/Orange */
   --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
   --color-warning-500: #f59e0b;
   --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
 
   /* Danger - Red */
   --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
   --color-danger-500: #ef4444;
   --color-danger-600: #dc2626;
   --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
 
-  /* Neutral - Slate */
+  /* Neutral - Clean Gray Scale (light mode) */
   --color-neutral-50: #f8fafc;
   --color-neutral-100: #f1f5f9;
   --color-neutral-200: #e2e8f0;
@@ -70,6 +87,51 @@
   /* Font */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Background colors */
+  --color-background: #ffffff;
+  --color-background-alt: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  
+  /* Text colors */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748b;
+}
+
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  /* Neutral - Dark Mode Palette */
+  --color-neutral-50: #1e293b;
+  --color-neutral-100: #334155;
+  --color-neutral-200: #475569;
+  --color-neutral-300: #64748b;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #cbd5e1;
+  --color-neutral-600: #e2e8f0;
+  --color-neutral-700: #f1f5f9;
+  --color-neutral-800: #f8fafc;
+  --color-neutral-900: #ffffff;
+  
+  /* Background colors for dark mode */
+  --color-background: #0f172a;
+  --color-background-alt: #1e293b;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  
+  /* Text colors for dark mode */
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #94a3b8;
+  
+  /* Adjust shadows for dark mode */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+  --shadow-3xl: 0 35px 60px -15px rgb(0 0 0 / 0.6);
 }
 
 /* ============================================
@@ -93,8 +155,9 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--color-neutral-50);
-  color: var(--color-neutral-900);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {

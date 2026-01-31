@@ -22,7 +22,7 @@ import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
 // Dashboard Pages - Lazy load for code splitting
-const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const DashboardPage = lazy(() => import('./pages/dashboard/EnhancedDashboard').then(m => ({ default: m.EnhancedDashboard })));
 const CustomersPage = lazy(() => import('./pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 const VendorsPage = lazy(() => import('./pages/vendors/VendorsPage').then(m => ({ default: m.VendorsPage })));
 const InvoicesPage = lazy(() => import('./pages/invoices/InvoicesPage').then(m => ({ default: m.InvoicesPage })));

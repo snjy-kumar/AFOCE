@@ -16,54 +16,62 @@ import {
 
 export function LandingPage() {
     return (
-        <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
-            {/* Navigation */}
-            <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-sm" role="navigation" aria-label="Main navigation">
+        <div className="min-h-screen bg-gradient-to-b from-white via-neutral-50 to-white">
+            {/* Enhanced Navigation */}
+            <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-[0_8px_30px_rgba(15,23,42,0.08)]" role="navigation" aria-label="Main navigation">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-18">
+                    <div className="flex justify-between items-center h-20">
                         <Link to="/" className="flex items-center gap-3 group" aria-label="AFOCE Home">
-                            <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-                                <span className="text-white font-bold text-xl">A</span>
+                            <div className="relative w-12 h-12 rounded-2xl bg-white/80 border border-white/60 shadow-[0_6px_20px_rgba(37,99,235,0.18)] flex items-center justify-center transition-all duration-300 group-hover:shadow-[0_12px_30px_rgba(37,99,235,0.25)] group-hover:-translate-y-0.5">
+                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-primary-50/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span className="relative text-primary-700 font-black text-2xl tracking-tight">A</span>
                             </div>
-                            <span className="text-xl font-bold text-neutral-900 tracking-tight">AFOCE</span>
+                            <span className="text-2xl font-bold text-primary-800 tracking-tight group-hover:text-primary-900 transition-colors">AFOCE</span>
                         </Link>
                         <div className="hidden md:flex items-center gap-8">
                             <Link
                                 to="/about"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
+                                className="px-3 py-2 rounded-xl text-neutral-700 hover:text-primary-700 hover:bg-white/70 hover:shadow-[0_6px_16px_rgba(37,99,235,0.12)] transition-all font-semibold text-base"
                                 aria-label="Learn about AFOCE"
                             >
                                 About
                             </Link>
                             <Link
                                 to="/features"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
+                                className="px-3 py-2 rounded-xl text-neutral-700 hover:text-primary-700 hover:bg-white/70 hover:shadow-[0_6px_16px_rgba(37,99,235,0.12)] transition-all font-semibold text-base"
                                 aria-label="Explore features"
                             >
                                 Features
                             </Link>
                             <Link
                                 to="/pricing"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
+                                className="px-3 py-2 rounded-xl text-neutral-700 hover:text-primary-700 hover:bg-white/70 hover:shadow-[0_6px_16px_rgba(37,99,235,0.12)] transition-all font-semibold text-base"
                                 aria-label="View pricing plans"
                             >
                                 Pricing
                             </Link>
+                            <div className="h-8 w-px bg-neutral-300"></div>
                             <Link
                                 to="/login"
-                                className="text-neutral-700 hover:text-primary-600 transition-colors font-medium text-[15px]"
+                                className="px-4 py-2 rounded-2xl border border-white/60 bg-white/60 text-primary-800 hover:bg-white/80 hover:shadow-[0_8px_20px_rgba(37,99,235,0.18)] transition-all font-semibold text-base"
                                 aria-label="Sign in to your account"
                             >
                                 Login
                             </Link>
                             <Link
                                 to="/register"
-                                className="px-6 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg hover:scale-105 text-[15px]"
+                                className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 transition-all duration-300 font-bold shadow-[0_10px_25px_rgba(37,99,235,0.25)] hover:shadow-[0_14px_30px_rgba(37,99,235,0.32)] text-base"
                                 aria-label="Start your free trial"
                             >
                                 Start Free Trial
                             </Link>
                         </div>
+                        {/* Mobile menu button */}
+                        <button className="md:hidden p-2 rounded-lg hover:bg-neutral-100">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </nav>
@@ -198,8 +206,10 @@ export function LandingPage() {
                             { title: 'Track & file VAT', body: 'See VAT summaries and generate filings on time.' },
                         ].map((step, index) => (
                             <div key={step.title} className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-                                <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-700 flex items-center justify-center font-semibold mb-4">
-                                    {index + 1}
+                                <div className="inline-flex items-center justify-center mb-4">
+                                    <div className="w-10 h-10 rounded-lg bg-white/80 border border-white/60 shadow-[0_6px_18px_rgba(37,99,235,0.18)] backdrop-blur text-primary-800 text-base font-bold flex items-center justify-center">
+                                        {index + 1}
+                                    </div>
                                 </div>
                                 <h3 className="text-lg font-semibold text-neutral-900 mb-2">{step.title}</h3>
                                 <p className="text-neutral-700 text-sm leading-relaxed">{step.body}</p>
@@ -217,10 +227,12 @@ export function LandingPage() {
                         <h2 id="problems-title" className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
                             Stop Losing Money to Manual Processes
                         </h2>
-                        <p className="text-xl md:text-2xl text-neutral-700 max-w-3xl mx-auto leading-relaxed">
-                            Nepal's SMEs waste precious hours on spreadsheets, miss critical tax deadlines,
-                            and struggle with expense tracking—costing valuable time and money every single day.
-                        </p>
+                        <div className="flex justify-center">
+                            <p className="text-xl md:text-2xl text-neutral-700 max-w-2xl leading-relaxed text-center">
+                                Nepal's SMEs waste precious hours on spreadsheets, miss critical tax deadlines,
+                                and struggle with expense tracking—costing valuable time and money every single day.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
@@ -274,10 +286,12 @@ export function LandingPage() {
                         <h2 id="features-title" className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6 text-center">
                             Built for Nepal's Business Reality
                         </h2>
-                        <p className="text-xl md:text-2xl text-neutral-700 max-w-3xl mx-auto leading-relaxed text-center">
-                            Everything you need to run a compliant, efficient business—
-                            <span className="block mt-2 font-semibold text-neutral-900">designed specifically for Nepal's unique regulatory environment</span>
-                        </p>
+                        <div className="flex justify-center">
+                            <p className="text-xl md:text-2xl text-neutral-700 max-w-3xl leading-relaxed text-center">
+                                Everything you need to run a compliant, efficient business—
+                                <span className="block mt-2 font-semibold text-neutral-900">designed specifically for Nepal's unique regulatory environment</span>
+                            </p>
+                        </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -393,9 +407,11 @@ export function LandingPage() {
                         <h2 id="comparison-title" className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
                             Why Choose AFOCE?
                         </h2>
-                        <p className="text-xl text-neutral-700 max-w-2xl mx-auto">
-                            See how we compare to traditional methods and international accounting software
-                        </p>
+                        <div className="flex justify-center">
+                            <p className="text-xl text-neutral-700 max-w-2xl text-center">
+                                See how we compare to traditional methods and international accounting software
+                            </p>
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto rounded-2xl border-2 border-neutral-200 shadow-xl">
@@ -403,9 +419,15 @@ export function LandingPage() {
                             <thead className="bg-neutral-50">
                                 <tr className="border-b-2 border-neutral-200">
                                     <th scope="col" className="text-left py-6 px-6 text-neutral-900 font-bold text-lg">Feature</th>
-                                    <th scope="col" className="text-center py-6 px-4 text-neutral-800 font-semibold">Excel</th>
-                                    <th scope="col" className="text-center py-6 px-4 text-neutral-800 font-semibold">QuickBooks</th>
-                                    <th scope="col" className="text-center py-6 px-4 bg-primary-50 text-primary-800 font-bold">AFOCE</th>
+                                    <th scope="col" className="py-6 px-4 text-neutral-800 font-semibold">
+                                        <span className="inline-flex w-full justify-center pl-1">Excel</span>
+                                    </th>
+                                    <th scope="col" className="py-6 px-4 text-neutral-800 font-semibold">
+                                        <span className="inline-flex w-full justify-center pl-1">QuickBooks</span>
+                                    </th>
+                                    <th scope="col" className="py-6 px-4 bg-primary-50 text-primary-800 font-bold">
+                                        <span className="inline-flex w-full justify-center pl-1">AFOCE</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white">
@@ -498,9 +520,11 @@ export function LandingPage() {
                         <h2 id="testimonial-title" className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
                             Trusted by Nepal's Growing Businesses
                         </h2>
-                        <p className="text-xl text-neutral-700 max-w-2xl mx-auto">
-                            From startups to established enterprises, businesses across Nepal trust AFOCE
-                        </p>
+                        <div className="flex justify-center">
+                            <p className="text-xl text-neutral-700 max-w-2xl text-center">
+                                From startups to established enterprises, businesses across Nepal trust AFOCE
+                            </p>
+                        </div>
                     </div>
                     <div className="grid md:grid-cols-3 gap-8">
                         <article className="bg-white p-8 rounded-2xl border-2 border-neutral-200 shadow-lg hover:shadow-xl hover:border-primary-200 transition-all duration-300">
@@ -558,7 +582,7 @@ export function LandingPage() {
 
                 <div className="max-w-4xl mx-auto text-center relative">
                     <div className="inline-block mb-6">
-                        <span className="px-4 py-2 bg-white/20 text-white rounded-full text-sm font-semibold backdrop-blur-sm" role="status">
+                        <span className="px-5 py-2.5 bg-white/70 text-neutral-900 rounded-full text-base font-semibold border border-white/70 shadow-[0_12px_26px_rgba(15,23,42,0.22)] backdrop-blur-md" role="status">
                             🚀 Join 1000+ Nepal Businesses
                         </span>
                     </div>
@@ -569,10 +593,10 @@ export function LandingPage() {
                         Join Nepal's leading businesses using AFOCE to automate workflows,
                         maintain IRD compliance, and focus on what truly matters—sustainable growth.
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                         <Link
                             to="/register"
-                            className="group inline-flex items-center justify-center px-10 py-5 bg-white text-primary-600 rounded-xl hover:bg-neutral-50 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-3xl hover:scale-105"
+                            className="group inline-flex items-center justify-center px-6 py-3 bg-white/85 text-primary-700 rounded-lg border border-white/70 backdrop-blur-md shadow-[0_10px_22px_rgba(15,23,42,0.18)] transition-all duration-300 ease-out hover:bg-white hover:-translate-y-0.5 hover:scale-[1.03] active:translate-y-0 font-semibold text-base"
                             aria-label="Start your free trial now"
                         >
                             Start Your Free Trial
@@ -580,7 +604,7 @@ export function LandingPage() {
                         </Link>
                         <Link
                             to="/pricing"
-                            className="inline-flex items-center justify-center px-10 py-5 border-2 border-white text-white rounded-xl hover:bg-white/10 transition-all duration-300 font-bold text-lg backdrop-blur-sm"
+                            className="inline-flex items-center justify-center px-6 py-3 border border-white/60 bg-white/15 text-white rounded-lg backdrop-blur-md shadow-[0_10px_22px_rgba(15,23,42,0.18)] transition-all duration-300 ease-out hover:bg-white/25 hover:border-white/80 hover:-translate-y-0.5 hover:scale-[1.03] active:translate-y-0 font-semibold text-base"
                             aria-label="View our pricing plans"
                         >
                             View Pricing

@@ -224,10 +224,19 @@ export interface DashboardStats {
     pendingApprovalsValue?: number;
     overdueInvoices: number;
     missingReceipts: number;
+    // Additional stats for enhanced dashboard
+    activeCustomers?: number;
+    productCount?: number;
+    invoiceCountMTD?: number;
+    expenseCountMTD?: number;
+    averageInvoiceValue?: number;
+    vatCollected?: number;
+    pendingInvoiceCount?: number;
+    // Data arrays
     recentInvoices: Invoice[];
     recentExpenses: Expense[];
     monthlyRevenue: { month: string; amount: number }[];
-    expensesByCategory: { category: string; amount: number }[];
+    expensesByCategory: { category: string; amount: number; count?: number }[];
 }
 
 // Pagination

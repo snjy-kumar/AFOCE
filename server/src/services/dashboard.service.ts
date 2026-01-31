@@ -173,6 +173,24 @@ export const dashboardService = {
             }),
         ]);
 
+        // Get monthly revenue data for the last 6 months
+        const monthlyRevenueData = await this.getMonthlyRevenueData(userId, 6);
+        
+        // Get expense breakdown by category
+        const expensesByCategoryData = await this.getExpensesByCategory(userId, startOfMonth, endOfMonth);
+        
+        // Get additional stats
+        const [activeCustomers, productCount, invoiceCountMTD, expenseCountMTD] = await Promise.all([
+            prisma.customer.count({ where: { userId, isActive: true } }),
+            prisma.product.count({ where: { userId } }),
+            prisma.invoice.count({ where: { userId, issueDate: { gte: startOfMonth, lte: endOfMonth } } }),
+            prisma.expense.count({ where: { userId, date: { gte: startOfMonth, lte: endOfMonth } } }),
+        ]);
+        
+        // Calculate average invoice value
+        const avgInvoiceValue = monthlyRevenue._count > 0 ? monthlyRevenueAmount / monthlyRevenue._count : 0;
+        const vatCollected = Number(monthlyRevenue._sum.vatAmount ?? 0);
+
         // Calculate metrics
         const monthlyRevenueAmount = Number(monthlyRevenue._sum.total ?? 0);
         const monthlyExpenseAmount = Number(monthlyExpenses._sum.totalAmount ?? 0);
@@ -222,6 +240,15 @@ export const dashboardService = {
             pendingApprovalsValue: Number(pendingApprovals._sum.total ?? 0),
             overdueInvoices: overdueInvoices._count,
             missingReceipts,
+            
+            // Additional stats for enhanced dashboard
+            activeCustomers,
+            productCount,
+            invoiceCountMTD,
+            expenseCountMTD,
+            averageInvoiceValue: avgInvoiceValue,
+            vatCollected,
+            pendingInvoiceCount: outstandingInvoices._count,
 
             // Additional detailed data
             overview: {
@@ -272,12 +299,72 @@ export const dashboardService = {
                 totalAmount: Number(exp.totalAmount),
                 date: exp.date,
                 createdAt: exp.createdAt,
+                description: exp.description,
             })),
             
-            // Chart data (empty arrays for now - frontend handles gracefully)
-            monthlyRevenue: [],
-            expensesByCategory: [],
+            // Chart data with real data from queries
+            monthlyRevenue: monthlyRevenueData,
+            expensesByCategory: expensesByCategoryData,
         };
+    },
+    
+    /**
+     * Get monthly revenue data for charts
+     */
+    async getMonthlyRevenueData(userId: string, monthsBack: number = 6) {
+        const months = [];
+        const now = new Date();
+        
+        for (let i = monthsBack - 1; i >= 0; i--) {
+            const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+            
+            const revenue = await prisma.invoice.aggregate({
+                where: {
+                    userId,
+                    status: 'PAID',
+                    issueDate: { gte: monthStart, lte: monthEnd },
+                },
+                _sum: { total: true },
+            });
+            
+            months.push({
+                month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+                amount: Number(revenue._sum.total ?? 0),
+            });
+        }
+        
+        return months;
+    },
+    
+    /**
+     * Get expenses by category for charts
+     */
+    async getExpensesByCategory(userId: string, startDate: Date, endDate: Date) {
+        const expenses = await prisma.expense.groupBy({
+            by: ['accountId'],
+            where: {
+                userId,
+                date: { gte: startDate, lte: endDate },
+            },
+            _sum: { totalAmount: true },
+            _count: true,
+        });
+        
+        // Get account names
+        const accountIds = expenses.map(e => e.accountId).filter(Boolean) as string[];
+        const accounts = await prisma.account.findMany({
+            where: { id: { in: accountIds } },
+            select: { id: true, name: true },
+        });
+        
+        const accountMap = new Map(accounts.map(a => [a.id, a.name]));
+        
+        return expenses.map(e => ({
+            category: accountMap.get(e.accountId!) || 'Uncategorized',
+            amount: Number(e._sum.totalAmount ?? 0),
+            count: e._count,
+        })).filter(e => e.amount > 0).slice(0, 6); // Top 6 categories
     },
 
     /**

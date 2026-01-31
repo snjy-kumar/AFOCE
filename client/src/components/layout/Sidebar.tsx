@@ -8,6 +8,7 @@ import { Avatar } from '../ui/Common';
 import { NotificationCenter } from '../common/NotificationCenter';
 import { LanguageSwitcher } from '../common/LanguageSwitcher';
 import { CompanySelector } from '../common/CompanySelector';
+import { ThemeToggle } from '../common/ThemeToggle';
 import { apiGet } from '../../lib/api';
 import {
     LayoutDashboard,
@@ -147,19 +148,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
                 </nav>
 
                 {/* User section */}
-                <div className="p-3 border-t border-[var(--color-neutral-200)]">
-                    {/* Language Switcher for Desktop */}
-                    <div className="mb-2 hidden lg:block">
+                <div className="p-3 border-t border-[var(--color-neutral-200)] space-y-3">
+                    {/* Theme Toggle */}
+                    <div className="flex justify-center">
+                        <ThemeToggle />
+                    </div>
+
+                    {/* Language Switcher - Always visible */}
+                    <div className="p-2 bg-[var(--color-neutral-50)] rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-semibold text-[var(--color-neutral-600)]">Language</span>
+                        </div>
                         <LanguageSwitcher compact={false} />
                     </div>
 
+                    {/* Settings Quick Access */}
+                    <NavLink
+                        to="/settings"
+                        onClick={onClose}
+                        className="flex items-center gap-3 p-2 rounded-lg text-sm font-medium text-[var(--color-neutral-600)] hover:bg-[var(--color-neutral-100)] hover:text-[var(--color-neutral-900)] transition-all duration-200"
+                    >
+                        <Settings className="w-5 h-5" />
+                        <span>{t('nav.settings')}</span>
+                    </NavLink>
+
+                    {/* User Profile */}
                     <div className="relative">
                         <button
                             onClick={() => setShowUserMenu(!showUserMenu)}
                             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-neutral-100)] transition-colors"
                         >
                             <Avatar name={user?.businessName || 'User'} size="sm" />
-                            <div className="flex-1 text-left">
+                            <div className="flex-1 text-left min-w-0">
                                 <p className="text-sm font-medium text-[var(--color-neutral-900)] truncate">
                                     {user?.businessName || 'Business'}
                                 </p>
@@ -169,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
                             </div>
                             <ChevronDown
                                 className={cn(
-                                    'w-4 h-4 text-[var(--color-neutral-400)] transition-transform',
+                                    'w-4 h-4 text-[var(--color-neutral-400)] transition-transform flex-shrink-0',
                                     showUserMenu && 'rotate-180'
                                 )}
                             />
@@ -177,24 +197,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSearchClick
 
                         {/* User dropdown */}
                         {showUserMenu && (
-                            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-[var(--color-neutral-200)] py-1 animate-slide-up">
-                                <NavLink
-                                    to="/settings"
-                                    onClick={() => {
-                                        setShowUserMenu(false);
-                                        onClose();
-                                    }}
-                                    className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-neutral-600)] hover:bg-[var(--color-neutral-100)]"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                    {t('nav.settings')}
-                                </NavLink>
+                            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-[var(--color-neutral-200)] py-1 animate-slide-up z-50">
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-danger-600)] hover:bg-[var(--color-danger-50)]"
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-danger-600)] hover:bg-[var(--color-danger-50)] transition-colors"
                                 >
                                     <LogOut className="w-4 h-4" />
-                                    {t('nav.logout')}
+                                    <span>{t('nav.logout')}</span>
                                 </button>
                             </div>
                         )}

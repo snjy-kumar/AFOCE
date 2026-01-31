@@ -99,28 +99,30 @@ export function AboutPage() {
                     {/* Stats Bar */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16 animate-fade-in">
                         <div className="text-center p-6 bg-gradient-to-br from-primary-50 to-white rounded-2xl border border-primary-100 shadow-sm">
-                            <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-700 mb-2">400K+</div>
-                            <div className="text-sm font-medium text-neutral-700">Registered Businesses</div>
+                            <div className="text-4xl font-bold text-neutral-900 mb-2">400K+</div>
+                            <div className="text-sm font-medium text-neutral-900">Registered Businesses</div>
                         </div>
                         <div className="text-center p-6 bg-gradient-to-br from-success-50 to-white rounded-2xl border border-success-100 shadow-sm">
-                            <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-success-600 to-success-700 mb-2">70%</div>
-                            <div className="text-sm font-medium text-neutral-700">SMEs Using Excel</div>
+                            <div className="text-4xl font-bold text-neutral-900 mb-2">70%</div>
+                            <div className="text-sm font-medium text-neutral-900">SMEs Using Excel</div>
                         </div>
                         <div className="text-center p-6 bg-gradient-to-br from-warning-50 to-white rounded-2xl border border-warning-100 shadow-sm">
-                            <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-warning-600 to-warning-700 mb-2">13%</div>
-                            <div className="text-sm font-medium text-neutral-700">VAT Automation</div>
+                            <div className="text-4xl font-bold text-neutral-900 mb-2">13%</div>
+                            <div className="text-sm font-medium text-neutral-900">VAT Automation</div>
                         </div>
                         <div className="text-center p-6 bg-gradient-to-br from-danger-50 to-white rounded-2xl border border-danger-100 shadow-sm">
-                            <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-danger-600 to-danger-700 mb-2">100%</div>
-                            <div className="text-sm font-medium text-neutral-700">IRD Compliant</div>
+                            <div className="text-4xl font-bold text-neutral-900 mb-2">100%</div>
+                            <div className="text-sm font-medium text-neutral-900">IRD Compliant</div>
                         </div>
                     </div>
 
                     <div className="mb-16 animate-slide-up">
                         <h2 id="mission-heading" className="text-4xl font-bold text-neutral-900 mb-6 text-center">Our Mission</h2>
-                        <p className="text-xl text-neutral-800 leading-relaxed max-w-4xl mx-auto text-center">
-                            We're building <strong className="text-primary-600">Nepal's first workflow-intelligent financial operations platform</strong> that combines user-friendly invoicing with business process automation and Nepal-specific compliance. Our goal is to <strong className="text-neutral-900">eliminate manual spreadsheet work</strong> and bring <strong className="text-neutral-900">enterprise-grade automation</strong> to Nepal's growing SMEs.
-                        </p>
+                        <div className="flex justify-center">
+                            <p className="text-xl text-neutral-800 leading-relaxed max-w-4xl text-center">
+                                We're building <strong className="text-primary-600">Nepal's first workflow-intelligent financial operations platform</strong> that combines user-friendly invoicing with business process automation and Nepal-specific compliance. Our goal is to <strong className="text-neutral-900">eliminate manual spreadsheet work</strong> and bring <strong className="text-neutral-900">enterprise-grade automation</strong> to Nepal's growing SMEs.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="mb-16 animate-slide-up" style={{ animationDelay: '0.1s' }}>
@@ -130,8 +132,8 @@ export function AboutPage() {
                         </p>
                         <div className="grid md:grid-cols-3 gap-6">
                             <div className="p-8 bg-gradient-to-br from-danger-50 to-white rounded-2xl border-2 border-danger-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
-                                <div className="w-16 h-16 bg-gradient-to-br from-danger-500 to-danger-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-md">
-                                    <Globe className="w-8 h-8 text-white" />
+                                <div className="w-16 h-16 bg-white/80 backdrop-blur rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                                    <Globe className="w-8 h-8 text-danger-600" />
                                 </div>
                                 <h3 className="text-xl font-bold text-neutral-900 mb-3">Global SaaS</h3>
                                 <p className="text-neutral-800 leading-relaxed mb-3">
@@ -140,8 +142,8 @@ export function AboutPage() {
                                 <p className="text-danger-700 font-semibold">₹2,000+/month • No local compliance</p>
                             </div>
                             <div className="p-8 bg-gradient-to-br from-warning-50 to-white rounded-2xl border-2 border-warning-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
-                                <div className="w-16 h-16 bg-gradient-to-br from-warning-500 to-warning-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-md">
-                                    <Shield className="w-8 h-8 text-white" />
+                                <div className="w-16 h-16 bg-white/80 backdrop-blur rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                                    <Shield className="w-8 h-8 text-warning-600" />
                                 </div>
                                 <h3 className="text-xl font-bold text-neutral-900 mb-3">Desktop Software</h3>
                                 <p className="text-neutral-800 leading-relaxed mb-3">
@@ -150,8 +152,8 @@ export function AboutPage() {
                                 <p className="text-warning-700 font-semibold">No cloud access • Legacy UX</p>
                             </div>
                             <div className="p-8 bg-gradient-to-br from-neutral-100 to-white rounded-2xl border-2 border-neutral-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
-                                <div className="w-16 h-16 bg-gradient-to-br from-neutral-600 to-neutral-700 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-md">
-                                    <TrendingUp className="w-8 h-8 text-white" />
+                                <div className="w-16 h-16 bg-white/80 backdrop-blur rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                                    <TrendingUp className="w-8 h-8 text-neutral-700" />
                                 </div>
                                 <h3 className="text-xl font-bold text-neutral-900 mb-3">Excel Spreadsheets</h3>
                                 <p className="text-neutral-800 leading-relaxed mb-3">
