@@ -1,15 +1,17 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
 /**
- * Progress bar component for visual feedback
+ * Progress - Linear progress indicator with animations.
  */
 
 interface ProgressProps {
     value: number; // 0-100
     size?: 'sm' | 'md' | 'lg';
-    variant?: 'default' | 'success' | 'warning' | 'danger';
+    variant?: 'default' | 'success' | 'warning' | 'destructive';
     showLabel?: boolean;
+    animated?: boolean;
     className?: string;
 }
 
@@ -18,6 +20,7 @@ export const Progress: React.FC<ProgressProps> = ({
     size = 'md',
     variant = 'default',
     showLabel = false,
+    animated = true,
     className,
 }) => {
     const clampedValue = Math.min(Math.max(value, 0), 100);
@@ -29,31 +32,35 @@ export const Progress: React.FC<ProgressProps> = ({
     };
 
     const variants = {
-        default: 'bg-[var(--color-primary-600)]',
-        success: 'bg-[var(--color-success-600)]',
-        warning: 'bg-[var(--color-warning-600)]',
-        danger: 'bg-[var(--color-danger-600)]',
+        default: 'bg-[hsl(var(--primary))]',
+        success: 'bg-[hsl(var(--success))]',
+        warning: 'bg-[hsl(var(--warning))]',
+        destructive: 'bg-[hsl(var(--destructive))]',
     };
 
     return (
         <div className={cn('w-full', className)}>
             {showLabel && (
                 <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-[var(--color-neutral-700)]">
+                    <span className="text-sm font-medium text-[hsl(var(--foreground))]">
                         Progress
                     </span>
-                    <span className="text-sm font-medium text-[var(--color-neutral-700)]">
+                    <span className="text-sm font-medium text-[hsl(var(--foreground))]">
                         {clampedValue}%
                     </span>
                 </div>
             )}
-            <div className={cn('w-full bg-[var(--color-neutral-200)] rounded-full overflow-hidden', sizes[size])}>
-                <div
-                    className={cn(
-                        'h-full rounded-full transition-all duration-500 ease-out',
-                        variants[variant]
-                    )}
-                    style={{ width: `${clampedValue}%` }}
+            <div
+                className={cn(
+                    'w-full bg-[hsl(var(--muted))] rounded-full overflow-hidden',
+                    sizes[size]
+                )}
+            >
+                <motion.div
+                    className={cn('h-full rounded-full', variants[variant])}
+                    initial={animated ? { width: 0 } : false}
+                    animate={{ width: `${clampedValue}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
                     role="progressbar"
                     aria-valuenow={clampedValue}
                     aria-valuemin={0}
@@ -65,14 +72,15 @@ export const Progress: React.FC<ProgressProps> = ({
 };
 
 /**
- * Circular progress indicator
+ * CircularProgress - Circular/ring progress indicator.
  */
 interface CircularProgressProps {
     value: number;
     size?: number;
     strokeWidth?: number;
-    variant?: 'default' | 'success' | 'warning' | 'danger';
+    variant?: 'default' | 'success' | 'warning' | 'destructive';
     showLabel?: boolean;
+    animated?: boolean;
     className?: string;
 }
 
@@ -82,6 +90,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
     strokeWidth = 8,
     variant = 'default',
     showLabel = true,
+    animated = true,
     className,
 }) => {
     const clampedValue = Math.min(Math.max(value, 0), 100);
@@ -89,43 +98,61 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
     const circumference = radius * 2 * Math.PI;
     const offset = circumference - (clampedValue / 100) * circumference;
 
-    const variants = {
-        default: 'stroke-[var(--color-primary-600)]',
-        success: 'stroke-[var(--color-success-600)]',
-        warning: 'stroke-[var(--color-warning-600)]',
-        danger: 'stroke-[var(--color-danger-600)]',
+    const getStrokeColor = () => {
+        switch (variant) {
+            case 'success':
+                return 'hsl(var(--success))';
+            case 'warning':
+                return 'hsl(var(--warning))';
+            case 'destructive':
+                return 'hsl(var(--destructive))';
+            default:
+                return 'hsl(var(--primary))';
+        }
     };
 
     return (
-        <div className={cn('relative inline-flex items-center justify-center', className)}>
+        <div
+            className={cn(
+                'relative inline-flex items-center justify-center',
+                className
+            )}
+        >
             <svg width={size} height={size} className="transform -rotate-90">
                 {/* Background circle */}
                 <circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    stroke="var(--color-neutral-200)"
+                    stroke="hsl(var(--muted))"
                     strokeWidth={strokeWidth}
                     fill="none"
                 />
                 {/* Progress circle */}
-                <circle
+                <motion.circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    className={cn('transition-all duration-500 ease-out', variants[variant])}
+                    stroke={getStrokeColor()}
                     strokeWidth={strokeWidth}
                     fill="none"
                     strokeDasharray={circumference}
-                    strokeDashoffset={offset}
+                    initial={animated ? { strokeDashoffset: circumference } : false}
+                    animate={{ strokeDashoffset: offset }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
                     strokeLinecap="round"
                 />
             </svg>
             {showLabel && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xl font-bold text-[var(--color-neutral-900)]">
+                    <motion.span
+                        className="text-xl font-bold text-[hsl(var(--foreground))]"
+                        initial={animated ? { opacity: 0 } : false}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                    >
                         {clampedValue}%
-                    </span>
+                    </motion.span>
                 </div>
             )}
         </div>

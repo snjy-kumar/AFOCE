@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { adToBS, formatBSDate, toNepaliNumeral } from './nepaliDate';
 
 function getStoredLanguage(): 'en' | 'ne' {
@@ -11,8 +12,12 @@ function getUseBikramSambat(): boolean {
     return stored === 'true';
 }
 
+/**
+ * Merge class names with Tailwind CSS conflict resolution.
+ * This is the standard shadcn/ui pattern.
+ */
 export function cn(...inputs: ClassValue[]) {
-    return clsx(inputs);
+    return twMerge(clsx(inputs));
 }
 
 // Format currency in Nepali Rupees

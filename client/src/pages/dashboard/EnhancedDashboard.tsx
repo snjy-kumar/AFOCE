@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -697,37 +698,42 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, subtitle, ico
     };
 
     return (
-        <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-neutral-300">
-            <CardBody>
-                <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${colorClasses[color].bg} shadow-lg`}>
-                        <div className="text-white">{icon}</div>
+        <motion.div
+            whileHover={{ scale: 1.02, y: -4 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        >
+            <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-neutral-300">
+                <CardBody>
+                    <div className="flex items-start justify-between mb-4">
+                        <div className={`p-3 rounded-xl ${colorClasses[color].bg} shadow-lg`}>
+                            <div className="text-white">{icon}</div>
+                        </div>
+                        {change !== undefined && (
+                            <TooltipUI content={`${change >= 0 ? 'Increase' : 'Decrease'} from last period`}>
+                                <div
+                                    className={`flex items-center gap-0.5 text-sm font-bold px-2 py-1 rounded-full ${change >= 0 ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'
+                                        }`}
+                                >
+                                    {change >= 0 ? (
+                                        <ArrowUpRight className="w-4 h-4" />
+                                    ) : (
+                                        <ArrowDownRight className="w-4 h-4" />
+                                    )}
+                                    {Math.abs(change)}%
+                                </div>
+                            </TooltipUI>
+                        )}
                     </div>
-                    {change !== undefined && (
-                        <TooltipUI content={`${change >= 0 ? 'Increase' : 'Decrease'} from last period`}>
-                            <div
-                                className={`flex items-center gap-0.5 text-sm font-bold px-2 py-1 rounded-full ${change >= 0 ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'
-                                    }`}
-                            >
-                                {change >= 0 ? (
-                                    <ArrowUpRight className="w-4 h-4" />
-                                ) : (
-                                    <ArrowDownRight className="w-4 h-4" />
-                                )}
-                                {Math.abs(change)}%
-                            </div>
-                        </TooltipUI>
-                    )}
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-neutral-600 mb-1">{title}</p>
-                    <p className="text-2xl font-bold text-neutral-900">{value}</p>
-                    {subtitle && (
-                        <p className="text-xs text-neutral-500 mt-1">{subtitle}</p>
-                    )}
-                </div>
-            </CardBody>
-        </Card>
+                    <div>
+                        <p className="text-sm font-medium text-neutral-600 mb-1">{title}</p>
+                        <p className="text-2xl font-bold text-neutral-900">{value}</p>
+                        {subtitle && (
+                            <p className="text-xs text-neutral-500 mt-1">{subtitle}</p>
+                        )}
+                    </div>
+                </CardBody>
+            </Card>
+        </motion.div>
     );
 };
 
@@ -748,13 +754,17 @@ const QuickStatItem: React.FC<QuickStatItemProps> = ({ icon, label, value, color
     };
 
     return (
-        <div className="p-4 rounded-xl border-2 border-neutral-100 hover:border-neutral-200 hover:shadow-md transition-all duration-200">
+        <motion.div
+            whileHover={{ scale: 1.03, y: -2 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            className="p-4 rounded-xl border-2 border-neutral-100 hover:border-neutral-200 hover:shadow-md transition-colors duration-200 cursor-pointer"
+        >
             <div className={`w-10 h-10 rounded-lg ${colorClasses[color]} flex items-center justify-center mb-3`}>
                 {icon}
             </div>
             <p className="text-xs text-neutral-600 mb-1">{label}</p>
             <p className="text-xl font-bold text-neutral-900">{value}</p>
-        </div>
+        </motion.div>
     );
 };
 

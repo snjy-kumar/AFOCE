@@ -1,107 +1,210 @@
 import React from 'react';
-import { cn } from '../../lib/utils';
+import * as Dialog from '@radix-ui/react-dialog';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { cn } from '../../lib/utils';
+
+// Animation variants
+const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+};
+
+const contentVariants = {
+    hidden: {
+        opacity: 0,
+        scale: 0.95,
+        y: 10,
+    },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: {
+            type: 'spring',
+            damping: 25,
+            stiffness: 300,
+        },
+    },
+    exit: {
+        opacity: 0,
+        scale: 0.95,
+        y: 10,
+        transition: {
+            duration: 0.15,
+        },
+    },
+};
 
 interface ModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    // New API (Radix-style)
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    // Legacy API (backwards compatibility)
+    isOpen?: boolean;
+    onClose?: () => void;
+    // Common props
     title?: string;
     size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
     children: React.ReactNode;
+    className?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({
+const sizeClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+    full: 'max-w-[90vw]',
+};
+
+/**
+ * Modal - Accessible dialog component with smooth animations.
+ * Built on Radix UI Dialog + Framer Motion.
+ * 
+ * Supports both:
+ * - New API: open, onOpenChange
+ * - Legacy API: isOpen, onClose (for backwards compatibility)
+ */
+export function Modal({
+    open,
+    onOpenChange,
     isOpen,
     onClose,
     title,
     size = 'md',
     children,
-}) => {
-    // Close on escape key
-    React.useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-
-        if (isOpen) {
-            document.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden';
+    className,
+}: ModalProps) {
+    // Support both APIs
+    const isModalOpen = open ?? isOpen ?? false;
+    const handleOpenChange = (value: boolean) => {
+        if (onOpenChange) {
+            onOpenChange(value);
+        } else if (onClose && !value) {
+            onClose();
         }
-
-        return () => {
-            document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen, onClose]);
-
-    if (!isOpen) return null;
-
-    const sizes = {
-        sm: 'max-w-md',
-        md: 'max-w-lg',
-        lg: 'max-w-2xl',
-        xl: 'max-w-4xl',
-        full: 'max-w-[90vw]',
     };
 
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
-                onClick={onClose}
-            />
-
-            {/* Modal */}
-            <div
-                className={cn(
-                    'relative w-full bg-white rounded-xl shadow-xl animate-slide-up',
-                    sizes[size]
+        <Dialog.Root open={isModalOpen} onOpenChange={handleOpenChange}>
+            <AnimatePresence>
+                {isModalOpen && (
+                    <Dialog.Portal forceMount>
+                        <Dialog.Overlay asChild>
+                            <motion.div
+                                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                                initial="hidden"
+                                animate="visible"
+                                exit="hidden"
+                                variants={overlayVariants}
+                                transition={{ duration: 0.2 }}
+                            />
+                        </Dialog.Overlay>
+                        <Dialog.Content asChild>
+                            <motion.div
+                                className={cn(
+                                    'fixed left-1/2 top-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2',
+                                    sizeClasses[size],
+                                    'bg-[hsl(var(--card))] rounded-xl shadow-2xl border border-[hsl(var(--border))]',
+                                    'focus:outline-none max-h-[85vh] overflow-y-auto',
+                                    className
+                                )}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                variants={contentVariants}
+                            >
+                                {title ? (
+                                    <>
+                                        <ModalHeader>{title}</ModalHeader>
+                                        <ModalBody>{children}</ModalBody>
+                                    </>
+                                ) : (
+                                    children
+                                )}
+                            </motion.div>
+                        </Dialog.Content>
+                    </Dialog.Portal>
                 )}
-            >
-                {/* Header */}
-                {title && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-neutral-200)]">
-                        <h2 className="text-lg font-semibold text-[var(--color-neutral-900)]">{title}</h2>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-lg hover:bg-[var(--color-neutral-100)] transition-colors"
-                        >
-                            <X className="w-5 h-5 text-[var(--color-neutral-500)]" />
-                        </button>
-                    </div>
-                )}
+            </AnimatePresence>
+        </Dialog.Root>
+    );
+}
 
-                {/* Body */}
-                <div className="max-h-[calc(100vh-200px)] overflow-y-auto">{children}</div>
-            </div>
+interface ModalHeaderProps {
+    children: React.ReactNode;
+    className?: string;
+    showCloseButton?: boolean;
+}
+
+export function ModalHeader({
+    children,
+    className,
+    showCloseButton = true,
+}: ModalHeaderProps) {
+    return (
+        <div
+            className={cn(
+                'flex items-center justify-between px-6 py-4 border-b border-[hsl(var(--border))]',
+                className
+            )}
+        >
+            <Dialog.Title className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                {children}
+            </Dialog.Title>
+            {showCloseButton && (
+                <Dialog.Close asChild>
+                    <button
+                        className={cn(
+                            'rounded-lg p-2 text-[hsl(var(--muted-foreground))]',
+                            'hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]',
+                            'transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]'
+                        )}
+                        aria-label="Close"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </Dialog.Close>
+            )}
         </div>
     );
-};
+}
 
 interface ModalBodyProps {
     children: React.ReactNode;
     className?: string;
 }
 
-export const ModalBody: React.FC<ModalBodyProps> = ({ children, className }) => {
-    return <div className={cn('p-6', className)}>{children}</div>;
-};
+export function ModalBody({ children, className }: ModalBodyProps) {
+    return (
+        <div className={cn('px-6 py-4', className)}>
+            <Dialog.Description asChild>
+                <div>{children}</div>
+            </Dialog.Description>
+        </div>
+    );
+}
 
 interface ModalFooterProps {
     children: React.ReactNode;
     className?: string;
 }
 
-export const ModalFooter: React.FC<ModalFooterProps> = ({ children, className }) => {
+export function ModalFooter({ children, className }: ModalFooterProps) {
     return (
         <div
             className={cn(
-                'flex items-center justify-end gap-3 px-6 py-4 bg-[var(--color-neutral-50)] border-t border-[var(--color-neutral-200)]',
+                'flex items-center justify-end gap-3 px-6 py-4',
+                'border-t border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50',
                 className
             )}
         >
             {children}
         </div>
     );
-};
+}
+
+// Re-export Dialog primitives for advanced usage
+export { Dialog };
