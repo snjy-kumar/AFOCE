@@ -1,4 +1,7 @@
-import { Link } from 'react-router-dom';
+
+import { PublicNav } from '../components/public/PublicNav';
+import { PublicCTA } from '../components/public/PublicCTA';
+import { PublicFooter } from '../components/public/PublicFooter';
 import { motion, useInView } from 'framer-motion';
 import { useRef, type ReactNode, type ElementType } from 'react';
 import {
@@ -152,39 +155,7 @@ export function FeaturesPage() {
     return (
         <div className="min-h-screen bg-white overflow-hidden">
             {/* Navigation */}
-            <motion.nav
-                initial={{ y: -100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-                className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-neutral-200/80 shadow-sm"
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-18">
-                        <Link to="/" className="flex items-center gap-3 group">
-                            <motion.div
-                                whileHover={{ scale: 1.05, rotate: -3 }}
-                                className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md"
-                            >
-                                <span className="text-white font-bold text-xl">A</span>
-                            </motion.div>
-                            <span className="text-xl font-bold text-neutral-900 tracking-tight">AFOCE</span>
-                        </Link>
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 }}
-                        >
-                            <Link
-                                to="/"
-                                className="inline-flex items-center text-neutral-700 hover:text-neutral-900 transition-all duration-300 font-semibold text-[15px]"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Back to Home
-                            </Link>
-                        </motion.div>
-                    </div>
-                </div>
-            </motion.nav>
+            <PublicNav />
 
             {/* Hero Section */}
             <section className="py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-neutral-50 relative overflow-hidden">
@@ -782,99 +753,10 @@ export function FeaturesPage() {
             </section>
 
             {/* CTA Section */}
-            <motion.section
-                className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 relative overflow-hidden"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-            >
-                {/* Animated background */}
-                <motion.div
-                    className="absolute inset-0"
-                    animate={{
-                        backgroundPosition: ['0% 0%', '100% 100%'],
-                    }}
-                    transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        repeatType: 'reverse',
-                        ease: 'linear'
-                    }}
-                    style={{
-                        background: 'radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent 50%), radial-gradient(circle at bottom left, rgba(255,255,255,0.1), transparent 50%)',
-                    }}
-                />
-
-                <div className="max-w-4xl mx-auto text-center relative">
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="text-4xl md:text-5xl font-bold text-white mb-6"
-                    >
-                        Experience the Difference
-                    </motion.h2>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="text-xl md:text-2xl text-primary-100 mb-10 leading-relaxed"
-                    >
-                        See how AFOCE can <strong className="text-white">transform your business operations</strong>.
-                        Join hundreds of Nepal businesses already saving time and money.
-                    </motion.p>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <Link
-                            to="/register"
-                            className="inline-flex items-center justify-center px-10 py-5 bg-white text-primary-700 rounded-xl hover:bg-neutral-50 transition-all duration-300 font-bold text-lg shadow-2xl"
-                        >
-                            Start Free Trial
-                            <ArrowRight className="ml-3 w-5 h-5" />
-                        </Link>
-                    </motion.div>
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.4 }}
-                        className="text-primary-100 mt-6 text-lg"
-                    >
-                        14 days free • No credit card required • Full feature access
-                    </motion.p>
-                </div>
-            </motion.section>
+            <PublicCTA />
 
             {/* Footer */}
-            <footer className="bg-neutral-900 text-neutral-400 py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-6">
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            className="flex items-center justify-center gap-2 mb-4"
-                        >
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-md">
-                                <span className="text-white font-bold text-lg">A</span>
-                            </div>
-                            <span className="text-xl font-bold text-white">AFOCE</span>
-                        </motion.div>
-                        <p className="text-neutral-300 text-lg mb-2">Everything you need to run your business</p>
-                        <p className="text-neutral-500">© 2026 AFOCE. Built for Nepal's SMEs with ❤️</p>
-                    </div>
-                    <div className="flex justify-center gap-8 text-sm">
-                        <Link to="/about" className="text-neutral-400 hover:text-white transition-colors">About</Link>
-                        <Link to="/pricing" className="text-neutral-400 hover:text-white transition-colors">Pricing</Link>
-                        <Link to="/features" className="text-neutral-400 hover:text-white transition-colors">Features</Link>
-                    </div>
-                </div>
-            </footer>
+            <PublicFooter />
         </div>
     );
 }

@@ -1,36 +1,14 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Check, X, Zap, Star, Crown } from 'lucide-react';
+import { PublicNav } from '../components/public/PublicNav';
+import { PublicCTA } from '../components/public/PublicCTA';
+import { PublicFooter } from '../components/public/PublicFooter';
+import { Check, X, Zap, Star, Crown } from 'lucide-react';
 
 export function PricingPage() {
     return (
         <div className="min-h-screen bg-white">
-            {/* Navigation - Sticky with backdrop blur */}
-            <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 shadow-sm" role="navigation" aria-label="Main navigation">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-18">
-                        <Link
-                            to="/"
-                            className="flex items-center gap-3 group transition-transform duration-300 hover:scale-105"
-                            aria-label="AFOCE home"
-                        >
-                            <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                                <span className="text-white font-bold text-xl">A</span>
-                            </div>
-                            <span className="text-xl font-bold text-neutral-900 tracking-tight">AFOCE</span>
-                        </Link>
-                        <div className="flex items-center gap-8">
-                            <Link
-                                to="/"
-                                className="inline-flex items-center text-neutral-700 hover:text-neutral-900 transition-all duration-300 font-semibold text-[15px]"
-                                aria-label="Back to home page"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Back to Home
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            {/* Navigation */}
+            <PublicNav />
 
             {/* Hero Section - Enhanced with gradient */}
             <section className="py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-neutral-50 relative overflow-hidden" aria-labelledby="hero-heading">
@@ -412,50 +390,11 @@ export function PricingPage() {
                 </div>
             </section>
 
-            {/* CTA Section - Enhanced with gradient and pattern */}
-            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 relative overflow-hidden" aria-labelledby="cta-heading">
-                {/* Background pattern */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent_50%)]"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.1),transparent_50%)]"></div>
+            {/* CTA Section */}
+            <PublicCTA />
 
-                <div className="max-w-4xl mx-auto text-center relative animate-fade-in">
-                    <h2 id="cta-heading" className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Ready to Get Started?
-                    </h2>
-                    <p className="text-xl md:text-2xl text-primary-100 mb-10 leading-relaxed">
-                        Start your 14-day free trial today. <strong className="text-white">No credit card required.</strong> Experience the power of workflow automation.
-                    </p>
-                    <Link
-                        to="/register"
-                        className="inline-flex items-center justify-center px-10 py-5 bg-white text-primary-700 rounded-xl hover:bg-neutral-50 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-3xl hover:scale-105"
-                        aria-label="Start your free trial"
-                    >
-                        Start Free Trial
-                    </Link>
-                    <p className="text-primary-100 mt-6 text-lg">All features • Cancel anytime • Support included</p>
-                </div>
-            </section>
-
-            {/* Footer - Enhanced with better contrast */}
-            <footer className="bg-neutral-900 text-neutral-400 py-12 px-4 sm:px-6 lg:px-8" role="contentinfo">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-6">
-                        <div className="flex items-center justify-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-md">
-                                <span className="text-white font-bold text-lg">A</span>
-                            </div>
-                            <span className="text-xl font-bold text-white">AFOCE</span>
-                        </div>
-                        <p className="text-neutral-300 text-lg mb-2">Workflow-intelligent financial operations</p>
-                        <p className="text-neutral-500">© 2026 AFOCE. Built for Nepal's SMEs with ❤️</p>
-                    </div>
-                    <div className="flex justify-center gap-8 text-sm">
-                        <Link to="/about" className="text-neutral-400 hover:text-white transition-colors" aria-label="About AFOCE">About</Link>
-                        <Link to="/pricing" className="text-neutral-400 hover:text-white transition-colors" aria-label="View pricing">Pricing</Link>
-                        <Link to="/features" className="text-neutral-400 hover:text-white transition-colors" aria-label="View features">Features</Link>
-                    </div>
-                </div>
-            </footer>
+            {/* Footer */}
+            <PublicFooter />
 
             <style>{`
                 @keyframes fade-in {

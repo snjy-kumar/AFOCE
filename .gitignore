@@ -39,3 +39,8 @@ client/playwright-report/
 
 # Uploads (local storage)
 server/uploads/
+
+#.agent ignore
+.agents/
+.claude/
+skills-lock.json

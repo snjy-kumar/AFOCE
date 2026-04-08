@@ -195,117 +195,115 @@
   --shadow-3xl: 0 35px 60px -15px rgb(0 0 0 / 0.6);
 }
 
-/* ============================================
-   GLOBAL STYLES
-   ============================================ */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+  html {
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
-html {
-  font-family: var(--font-sans);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+  /* ============================================
+     TYPOGRAPHY
+     ============================================ */
 
-/* ============================================
-   TYPOGRAPHY
-   ============================================ */
+  h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.25;
+    color: hsl(var(--foreground));
+  }
 
-h1, h2, h3, h4, h5, h6 {
-  margin: 0;
-  font-weight: 600;
-  line-height: 1.25;
-  color: hsl(var(--foreground));
-}
+  h1 { font-size: 2.25rem; }
+  h2 { font-size: 1.875rem; }
+  h3 { font-size: 1.5rem; }
+  h4 { font-size: 1.25rem; }
+  h5 { font-size: 1.125rem; }
+  h6 { font-size: 1rem; }
 
-h1 { font-size: 2.25rem; }
-h2 { font-size: 1.875rem; }
-h3 { font-size: 1.5rem; }
-h4 { font-size: 1.25rem; }
-h5 { font-size: 1.125rem; }
-h6 { font-size: 1rem; }
+  p {
+    margin: 0;
+    color: hsl(var(--muted-foreground));
+  }
 
-p {
-  margin: 0;
-  color: hsl(var(--muted-foreground));
-}
+  a {
+    color: hsl(var(--primary));
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
 
-a {
-  color: hsl(var(--primary));
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
+  a:hover {
+    color: hsl(var(--primary) / 0.8);
+  }
 
-a:hover {
-  color: hsl(var(--primary) / 0.8);
-}
+  /* ============================================
+     FORM ELEMENTS
+     ============================================ */
 
-/* ============================================
-   FORM ELEMENTS
-   ============================================ */
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
 
-input,
-textarea,
-select {
-  font-family: inherit;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+  }
 
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-}
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  background: none;
-}
+  /* ============================================
+     SCROLLBAR
+     ============================================ */
 
-/* ============================================
-   SCROLLBAR
-   ============================================ */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: var(--radius-full);
+  }
 
-::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: var(--radius-full);
-}
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: var(--radius-full);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
 }
 
 /* ============================================

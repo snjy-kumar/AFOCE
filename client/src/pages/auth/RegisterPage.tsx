@@ -9,10 +9,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardBody } from '../../components/ui/Card';
 import {
-    Calculator,
     Mail,
     Lock,
-    Building2,
     FileText,
     Eye,
     EyeOff,
@@ -20,7 +18,8 @@ import {
     ArrowRight,
     Shield,
     Zap,
-    BarChart3
+    BarChart3,
+    Building2
 } from 'lucide-react';
 
 const registerSchema = z.object({
@@ -62,7 +61,6 @@ export const RegisterPage: React.FC = () => {
 
     const password = watch('password', '');
 
-    // Password strength calculation
     const getPasswordStrength = (pwd: string) => {
         let strength = 0;
         if (pwd.length >= 8) strength++;
@@ -70,12 +68,11 @@ export const RegisterPage: React.FC = () => {
         if (/[a-z]/.test(pwd)) strength++;
         if (/[0-9]/.test(pwd)) strength++;
         if (/[^A-Za-z0-9]/.test(pwd)) strength++;
-        return strength;
+        return strength <= 5 ? strength : 5;
     };
 
     const passwordStrength = getPasswordStrength(password);
-    const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Excellent'];
-    const strengthColors = ['', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
+    const strengthColors = ['bg-slate-200', 'bg-red-500', 'bg-orange-500', 'bg-amber-400', 'bg-emerald-400', 'bg-emerald-600'];
 
     const onSubmit = async (data: RegisterFormData) => {
         try {
@@ -94,274 +91,267 @@ export const RegisterPage: React.FC = () => {
     };
 
     return (
-        <div className="animate-fade-in min-h-screen flex">
-            {/* Left side - Branding (hidden on mobile) */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 p-12 flex-col justify-between relative overflow-hidden">
-                {/* Background pattern */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
+        <div className="h-screen w-full flex overflow-hidden bg-white">
+            {/* Left side - Fixed Content Area (Minimal White Design) */}
+            <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between overflow-hidden h-full border-r border-slate-100 bg-white">
 
-                <div className="relative z-10">
-                    <Link to="/" className="flex items-center gap-3 mb-12 group">
-                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
-                            <Calculator className="w-7 h-7 text-white" />
+                <div className="space-y-12 max-h-full overflow-hidden flex flex-col pt-8">
+                    <Link to="/" className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                            <span className="font-bold text-lg text-white">A</span>
                         </div>
-                        <span className="text-2xl font-bold text-white">AFOCE</span>
+                        <span className="text-xl font-bold text-slate-900 tracking-tight">AFOCE</span>
                     </Link>
 
-                    <div className="space-y-4 max-w-lg">
-                        <h1 className="text-5xl font-bold text-white mb-3 leading-[1.1] tracking-tight">
-                            Start your journey with
-                            <span className="block text-primary-100 mt-2">Nepal's Smart Business OS</span>
+                    <div className="space-y-4 max-w-[420px]">
+                        <h1 className="text-3xl font-black text-slate-900 leading-tight">
+                            Start your journey with Nepal's Smart Business OS
                         </h1>
-                        <p className="text-lg text-primary-100/90 leading-relaxed">
+                        <p className="text-base text-slate-500 font-medium leading-relaxed">
                             Join thousands of Nepal businesses already automating their finances with AFOCE.
                         </p>
                     </div>
-                </div>
 
-                <div className="relative z-10">
-                    <h3 className="text-white/90 font-medium text-base mb-6">What you'll get:</h3>
-                    <div className="space-y-4">
-                        <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
-                            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
-                                <CheckCircle2 className="w-5 h-5" />
+                    <div className="relative z-10 w-full pt-4 max-w-sm">
+                        <h3 className="text-slate-900 font-bold mb-4">What you'll get:</h3>
+                        <div className="space-y-6">
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-1 text-sm bg-white">13% VAT Automation</h4>
+                                    <p className="text-[0.8rem] text-slate-500 font-medium leading-relaxed">Automatic IRD-compliant calculations</p>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-white mb-1.5">13% VAT Automation</h4>
-                                <p className="text-sm text-primary-100/80 leading-relaxed">Automatic IRD-compliant calculations</p>
-                            </div>
-                        </div>
 
-                        <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
-                            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Shield className="w-5 h-5" />
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <Shield className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-1 text-sm bg-white">Smart Approval Workflows</h4>
+                                    <p className="text-[0.8rem] text-slate-500 font-medium leading-relaxed">Enforce business policies automatically</p>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-white mb-1.5">Smart Approval Workflows</h4>
-                                <p className="text-sm text-primary-100/80 leading-relaxed">Enforce business policies automatically</p>
-                            </div>
-                        </div>
 
-                        <div className="flex items-start gap-4 text-white/95 hover:bg-white/5 p-3 rounded-lg transition-all duration-200 -ml-3">
-                            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
-                                <BarChart3 className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-white mb-1.5">Real-Time Analytics</h4>
-                                <p className="text-sm text-primary-100/80 leading-relaxed">Track cash flow, invoices & expenses</p>
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900 mb-1 text-sm bg-white">Real-Time Analytics</h4>
+                                    <p className="text-[0.8rem] text-slate-500 font-medium leading-relaxed">Track cash flow, invoices & expenses</p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div className="flex items-start gap-4 text-white/90">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Zap className="w-5 h-5" />
+                <div className="flex items-center justify-between mt-auto pb-4 pt-12">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Zap className="w-4 h-4 text-blue-600" />
                         </div>
                         <div>
-                            <h4 className="font-semibold mb-1">Bikram Sambat Native</h4>
-                            <p className="text-sm text-primary-200">Full Nepali calendar support</p>
+                            <p className="text-[0.8rem] font-bold text-slate-900 leading-none">Bikram Sambat Native</p>
                         </div>
                     </div>
-                </div>
-
-                <div className="relative z-10 text-primary-200 text-sm">
-                    © 2026 AFOCE. Built for Nepal's SMEs.
                 </div>
             </div>
 
-            {/* Right side - Register Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-gradient-to-br from-neutral-50 to-white overflow-y-auto">
-                <div className="w-full max-w-lg">
-                    {/* Mobile logo */}
-                    <div className="lg:hidden text-center mb-6">
-                        <Link to="/" className="inline-flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
-                                <Calculator className="w-7 h-7 text-white" />
-                            </div>
-                            <span className="text-2xl font-bold text-neutral-900">AFOCE</span>
-                        </Link>
-                    </div>
-
-                    <div className="text-center mb-8">
-                        <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-3 tracking-tight">Create your account</h2>
-                        <p className="text-base text-neutral-600 leading-relaxed">
-                            Start your 14-day free trial. No credit card required.
-                        </p>
-                    </div>
-
-                    <Card className="shadow-2xl border-0 overflow-hidden">
-                        <CardBody className="p-6 sm:p-8">
-                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                                {error && (
-                                    <div className="p-4 rounded-xl bg-danger-50 border border-danger-200 text-danger-700 text-sm flex items-start gap-3">
-                                        <div className="w-5 h-5 rounded-full bg-danger-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            <span className="text-danger-600 text-xs font-bold">!</span>
-                                        </div>
-                                        <span>{error}</span>
-                                    </div>
-                                )}
-
-                                <Input
-                                    label="Business Name"
-                                    placeholder="Your Business Pvt. Ltd."
-                                    leftIcon={<Building2 className="w-4 h-4" />}
-                                    error={errors.businessName?.message}
-                                    {...register('businessName')}
-                                    onFocus={clearError}
-                                />
-
-                                <Input
-                                    label="Email Address"
-                                    type="email"
-                                    placeholder="you@business.com"
-                                    leftIcon={<Mail className="w-4 h-4" />}
-                                    error={errors.email?.message}
-                                    {...register('email')}
-                                    onFocus={clearError}
-                                />
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="relative">
-                                        <Input
-                                            label="Password"
-                                            type={showPassword ? 'text' : 'password'}
-                                            placeholder="••••••••"
-                                            leftIcon={<Lock className="w-4 h-4" />}
-                                            error={errors.password?.message}
-                                            {...register('password')}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-9 text-neutral-400 hover:text-neutral-600 transition-colors"
-                                            tabIndex={-1}
-                                        >
-                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-
-                                    <div className="relative">
-                                        <Input
-                                            label="Confirm Password"
-                                            type={showConfirmPassword ? 'text' : 'password'}
-                                            placeholder="••••••••"
-                                            leftIcon={<Lock className="w-4 h-4" />}
-                                            error={errors.confirmPassword?.message}
-                                            {...register('confirmPassword')}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-3 top-9 text-neutral-400 hover:text-neutral-600 transition-colors"
-                                            tabIndex={-1}
-                                        >
-                                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                    </div>
+            {/* Right side - Form Area */}
+            <div className="w-full lg:w-1/2 h-full overflow-y-auto bg-slate-50/50">
+                <div className="min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-8">
+                    <div className="w-full max-w-[460px] my-auto">
+                        {/* Mobile logo */}
+                        <div className="lg:hidden text-center mb-4">
+                            <Link to="/" className="inline-flex items-center gap-2">
+                                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                                    <span className="font-bold text-lg text-white">A</span>
                                 </div>
-
-                                {/* Password Strength */}
-                                {password && (
-                                    <div className="space-y-2">
-                                        <div className="flex gap-1">
-                                            {[1, 2, 3, 4, 5].map((level) => (
-                                                <div
-                                                    key={level}
-                                                    className={`h-1.5 flex-1 rounded-full transition-colors ${level <= passwordStrength
-                                                        ? strengthColors[passwordStrength]
-                                                        : 'bg-neutral-200'
-                                                        }`}
-                                                />
-                                            ))}
-                                        </div>
-                                        <p className="text-xs text-neutral-500">
-                                            Password strength: <span className="font-medium">{strengthLabels[passwordStrength]}</span>
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <Input
-                                        label="PAN Number"
-                                        placeholder="Optional"
-                                        leftIcon={<FileText className="w-4 h-4" />}
-                                        {...register('panNumber')}
-                                        helperText="Permanent Account Number"
-                                    />
-
-                                    <Input
-                                        label="VAT Number"
-                                        placeholder="Optional"
-                                        leftIcon={<FileText className="w-4 h-4" />}
-                                        {...register('vatNumber')}
-                                        helperText="VAT Registration Number"
-                                    />
-                                </div>
-
-                                {/* Terms Checkbox */}
-                                <div className="pt-2">
-                                    <label className="flex items-start gap-3 cursor-pointer group">
-                                        <input
-                                            type="checkbox"
-                                            {...register('agreeToTerms')}
-                                            className="w-4 h-4 mt-0.5 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
-                                        />
-                                        <span className="text-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">
-                                            I agree to the{' '}
-                                            <a href="#" className="text-primary-600 hover:underline">Terms of Service</a>
-                                            {' '}and{' '}
-                                            <a href="#" className="text-primary-600 hover:underline">Privacy Policy</a>
-                                        </span>
-                                    </label>
-                                    {errors.agreeToTerms && (
-                                        <p className="text-danger-600 text-xs mt-1 ml-7">{errors.agreeToTerms.message}</p>
-                                    )}
-                                </div>
-
-                                <Button
-                                    type="submit"
-                                    className="w-full"
-                                    size="lg"
-                                    isLoading={isLoading}
-                                >
-                                    Create Account
-                                    <ArrowRight className="w-4 h-4 ml-2" />
-                                </Button>
-                            </form>
-
-                            {/* Divider */}
-                            <div className="relative my-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-neutral-200"></div>
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-4 bg-white text-neutral-500">Already have an account?</span>
-                                </div>
-                            </div>
-
-                            <Link to="/login">
-                                <Button variant="outline" className="w-full" size="lg">
-                                    Sign in instead
-                                </Button>
+                                <span className="text-xl font-bold text-slate-900">AFOCE</span>
                             </Link>
-                        </CardBody>
-                    </Card>
+                        </div>
 
-                    {/* Trust indicators */}
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-neutral-600">
-                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
-                            <CheckCircle2 className="w-4 h-4 text-success-500" />
-                            <span className="font-medium">14-day free trial</span>
-                        </span>
-                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
-                            <Shield className="w-4 h-4 text-primary-500" />
-                            <span className="font-medium">No credit card required</span>
-                        </span>
-                        <span className="flex items-center gap-2 hover:text-neutral-900 transition-colors">
-                            <Lock className="w-4 h-4 text-primary-500" />
-                            <span className="font-medium">Bank-grade security</span>
-                        </span>
-                    </div>
+                        <div className="text-center mb-6">
+                            <h2 className="text-2xl font-black text-slate-900 mb-1.5 tracking-tight">Create your account</h2>
+                            <p className="text-[0.9rem] text-slate-500 font-medium">
+                                Start your 14-day free trial.
+                            </p>
+                        </div>
+
+                        <Card className="shadow-xl shadow-slate-200/50 border-0 rounded-2xl overflow-hidden mb-6">
+                            <CardBody className="p-6">
+                                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+                                    {error && (
+                                        <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold flex items-center gap-2">
+                                            <span>{error}</span>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-[0.7rem] font-bold text-slate-700 mb-1">Business Name</label>
+                                        <Input
+                                            type="text"
+                                            placeholder="Your Business Pvt. Ltd."
+                                            leftIcon={<Building2 className="w-4 h-4 text-slate-400" />}
+                                            error={errors.businessName?.message}
+                                            {...register('businessName')}
+                                            onFocus={clearError}
+                                            className="h-10 rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[0.7rem] font-bold text-slate-700 mb-1">Email Address</label>
+                                        <Input
+                                            type="email"
+                                            placeholder="you@business.com"
+                                            leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
+                                            error={errors.email?.message}
+                                            {...register('email')}
+                                            onFocus={clearError}
+                                            className="h-10 rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[0.7rem] font-bold text-slate-700 mb-1">Password</label>
+                                            <div className="relative">
+                                                <Input
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    placeholder="••••••••"
+                                                    leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+                                                    error={errors.password?.message}
+                                                    {...register('password')}
+                                                    className="h-10 rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                                                    tabIndex={-1}
+                                                >
+                                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-[0.7rem] font-bold text-slate-700 mb-1">Confirm Password</label>
+                                            <div className="relative">
+                                                <Input
+                                                    type={showConfirmPassword ? 'text' : 'password'}
+                                                    placeholder="••••••••"
+                                                    leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+                                                    error={errors.confirmPassword?.message}
+                                                    {...register('confirmPassword')}
+                                                    className="h-10 rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                                                    tabIndex={-1}
+                                                >
+                                                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Password Strength */}
+                                    {password && password.length > 0 && (
+                                        <div className="space-y-1.5 pt-1">
+                                            <div className="flex gap-1.5">
+                                                {[1, 2, 3, 4, 5].map((level) => (
+                                                    <div
+                                                        key={level}
+                                                        className={`h-1.5 flex-1 rounded-full transition-colors ${level <= passwordStrength ? strengthColors[passwordStrength] : 'bg-slate-200'}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0">
+                                        <div>
+                                            <label className="block text-[0.7rem] font-bold text-slate-700 mb-1">PAN Number</label>
+                                            <Input
+                                                placeholder="Optional"
+                                                leftIcon={<FileText className="w-4 h-4 text-slate-400" />}
+                                                {...register('panNumber')}
+                                                className="h-10 rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-[0.7rem] font-bold text-slate-700 mb-1">VAT Number</label>
+                                            <Input
+                                                placeholder="Optional"
+                                                leftIcon={<FileText className="w-4 h-4 text-slate-400" />}
+                                                {...register('vatNumber')}
+                                                className="h-10 rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Terms Checkbox */}
+                                    <div className="pt-1 pb-1">
+                                        <label className="flex items-start gap-2.5 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                {...register('agreeToTerms')}
+                                                className="w-4 h-4 mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm font-medium text-slate-600">
+                                                I agree to the <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold">Terms of Service</a> and <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold">Privacy Policy</a>
+                                            </span>
+                                        </label>
+                                        {errors.agreeToTerms && (
+                                            <p className="text-red-500 text-xs font-semibold mt-1 ml-6">{errors.agreeToTerms.message}</p>
+                                        )}
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        className="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm"
+                                        isLoading={isLoading}
+                                    >
+                                        Create Account
+                                        <ArrowRight className="w-4 h-4 ml-1.5" />
+                                    </Button>
+                                </form>
+                                <div className="relative my-4">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-slate-100"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-xs">
+                                        <span className="px-3 bg-white text-slate-400 font-medium tracking-wide">Already have an account?</span>
+                                    </div>
+                                </div>
+
+                                <Link to="/login" className="w-full">
+                                    <Button variant="outline" className="w-full h-10 rounded-lg border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 text-sm">
+                                        Sign in instead
+                                    </Button>
+                                </Link>
+                            </CardBody>
+                        </Card>
+
+                        {/* Trust indicators */}
+                        <div className="flex flex-wrap items-center justify-center gap-5 text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest pb-4">
+                            <span className="flex items-center gap-1.5">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                14-day trial
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <Shield className="w-4 h-4 text-blue-500" />
+                                No credit card required
+                            </span>
+                        </div>                 </div>
                 </div>
             </div>
         </div>
