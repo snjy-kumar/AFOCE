@@ -1,46 +1,41 @@
-# Markdown files
-*.md
-!README.md
-!README.MD
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Dependencies
-node_modules/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-.env.*
+# testing
+/coverage
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+# next.js
+/.next/
+/out/
 
-# OS
+# production
+/build
+
+# misc
 .DS_Store
-Thumbs.db
+*.pem
 
-# Build output
-dist/
-build/
-*.log
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Coverage
-coverage/
+# env files (can opt-in for committing if needed)
+.env*
 
-# Vite cache
-client/.vite/
+# vercel
+.vercel
 
-# Playwright
-client/test-results/
-client/playwright-report/
-
-# Uploads (local storage)
-server/uploads/
-
-#.agent ignore
-.agents/
-.claude/
-skills-lock.json
+# typescript
+*.tsbuildinfo
+next-env.d.ts
