@@ -4,13 +4,13 @@ import Sidebar from "@/components/dashboard/Sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="dashboard-shell">
+    <div className="dashboard-shell min-h-screen">
       <Sidebar />
       <CommandPalette />
-      <div className="xl:pl-[112px]">
+      <div className="pl-[72px] transition-all duration-300 lg:pl-64">
         <DashboardHeader />
-        <main className="px-4 pb-8 sm:px-6 xl:px-10">
-          <div className="mx-auto max-w-[1500px]">{children}</div>
+        <main className="px-6 pb-8 pt-6">
+          <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

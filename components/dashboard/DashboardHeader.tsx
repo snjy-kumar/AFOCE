@@ -1,16 +1,20 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Command, Plus } from "lucide-react";
+import { Bell, Command, Download, Plus } from "lucide-react";
 
 const pathTitles: Record<string, string> = {
   "/dashboard": "Command Center",
-  "/dashboard/invoices": "Smart Invoicing",
-  "/dashboard/expenses": "Expense Policy Engine",
-  "/dashboard/reconciliation": "Bank Reconciliation",
-  "/dashboard/reports": "Reports & VAT",
-  "/dashboard/queues": "Action Queues",
-  "/dashboard/settings": "Workspace Settings",
+  "/dashboard/invoices": "Invoices",
+  "/dashboard/expenses": "Expenses",
+  "/dashboard/reconciliation": "Reconciliation",
+  "/dashboard/reports": "Reports",
+  "/dashboard/queues": "Approvals",
+  "/dashboard/clients": "Clients & Vendors",
+  "/dashboard/team": "Team Members",
+  "/dashboard/policies": "Policy Rules",
+  "/dashboard/analytics": "Analytics",
+  "/dashboard/settings": "Settings",
 };
 
 export default function DashboardHeader() {
@@ -18,37 +22,46 @@ export default function DashboardHeader() {
   const title = pathTitles[pathname] ?? "Dashboard";
 
   return (
-    <header className="sticky top-0 z-30 px-4 py-4 sm:px-6 xl:px-10">
-      <div className="dashboard-panel mx-auto flex max-w-[1500px] items-center justify-between gap-4 rounded-[1.5rem] border px-5 py-3.5">
+    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--panel)]">
+      <div className="flex h-16 items-center justify-between px-6">
         <div className="min-w-0">
-          <div className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--ink-soft)]">
-            FY 2081/82
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold text-[var(--ink)]">{title}</h1>
+            <span className="rounded-full bg-[var(--brand-2)]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--brand-2)]">
+              FY 2081/82
+            </span>
           </div>
-          <div className="mt-1 truncate text-sm font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            {title} | Baisakh close in progress
-          </div>
+          <p className="text-sm text-[var(--ink-soft)]">Baisakh close in progress</p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--bg-elevated)] lg:inline-flex"
+            className="hidden items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)] md:inline-flex"
           >
-            <Command className="h-4 w-4 text-[var(--brand)]" />
-            Search
+            <Command className="h-4 w-4" />
+            <span>Search</span>
           </button>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--ink)]"
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]"
           >
             <Bell className="h-4 w-4" />
+            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--danger)]" />
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--panel-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-dark)]"
+            className="hidden items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--bg-elevated)] sm:inline-flex"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#111f36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f]"
           >
             <Plus className="h-4 w-4" />
-            Quick add
+            <span className="hidden sm:inline">Quick Add</span>
           </button>
         </div>
       </div>

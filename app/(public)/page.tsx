@@ -47,7 +47,7 @@ export default function LandingPage() {
             <h1 className="display mt-6 max-w-4xl text-5xl leading-[0.92] tracking-[-0.06em] text-[var(--ink)] sm:text-6xl lg:text-7xl">
               Enterprise-grade finance control designed for Nepali operators.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-[var(--ink-soft)] sm:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-8 text-[var(--ink)] sm:text-lg sm:text-[var(--ink-soft)]">
               AFOCE merges premium cloud-product design with local accounting reality:
               Bikram Sambat workflows, IRD-aligned invoicing, approval policy logic, and
               real-time visibility for founders and finance teams.
@@ -56,14 +56,14 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--brand-dark)]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1a3a8f] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#152d73]"
               >
                 Start free trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white/60 px-6 py-3.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white"
+                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[var(--ink)]/20 bg-white px-6 py-3.5 text-sm font-semibold text-[var(--ink)] shadow-sm transition hover:border-[var(--ink)]/30 hover:bg-slate-50"
               >
                 Explore product preview
               </Link>
@@ -73,7 +73,7 @@ export default function LandingPage() {
               {trustBadges.map((badge) => (
                 <div
                   key={badge}
-                  className="rounded-full border border-[var(--border)] bg-white/66 px-4 py-2 text-sm text-[var(--ink-soft)]"
+                  className="rounded-full border border-[var(--border-strong)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] shadow-sm"
                 >
                   <BadgeCheck className="mr-2 inline h-4 w-4 text-[var(--brand-2)]" />
                   {badge}
@@ -87,34 +87,34 @@ export default function LandingPage() {
               <div className="rounded-[1.6rem] surface-dark p-5 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/55">
+                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-[#8ba3c7]">
                       AFOCE workspace
                     </div>
                     <div className="mt-2 text-2xl font-semibold tracking-[-0.04em]">
                       FY 2081/82 | Baisakh close
                     </div>
                   </div>
-                  <div className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-white/78">
+                  <div className="rounded-full border border-[#4a6b96] bg-[#1e3a5f] px-4 py-2 text-xs font-medium text-[#a8c5e8]">
                     IRD workflow active
                   </div>
                 </div>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-3">
                   {landingHeroStats.map((stat) => (
-                    <div key={stat.label} className="rounded-[1.5rem] border border-white/10 bg-white/6 p-4">
-                      <div className="text-xs uppercase tracking-[0.24em] text-white/52">{stat.label}</div>
+                    <div key={stat.label} className="rounded-[1.5rem] border border-[#3a5a80]/50 bg-[#162d4a] p-4">
+                      <div className="text-xs font-medium uppercase tracking-[0.24em] text-[#7a9bc4]">{stat.label}</div>
                       <div className="mt-3 text-3xl font-semibold tracking-[-0.05em]">{stat.value}</div>
-                      <div className="mt-2 text-sm leading-6 text-white/64">{stat.detail}</div>
+                      <div className="mt-2 text-sm leading-6 text-[#8fb3d9]">{stat.detail}</div>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/6 p-5">
+                  <div className="rounded-[1.5rem] border border-[#3a5a80]/50 bg-[#162d4a] p-5">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-semibold">Approval queue</div>
-                        <div className="mt-1 text-sm text-white/60">
+                        <div className="mt-1 text-sm text-[#7a9bc4]">
                           Enforced before ledger posting
                         </div>
                       </div>
@@ -126,46 +126,46 @@ export default function LandingPage() {
                         "Vendor invoice missing PAN blocked from issue",
                         "Office purchase without receipt stopped automatically",
                       ].map((item) => (
-                        <div key={item} className="rounded-2xl border border-white/8 bg-[rgba(255,255,255,0.05)] px-4 py-3 text-sm text-white/78">
+                        <div key={item} className="rounded-2xl border border-[#3a5a80]/30 bg-[#1a3454] px-4 py-3 text-sm text-[#c5d8ed]">
                           {item}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="rounded-[1.5rem] border border-white/10 bg-[rgba(255,255,255,0.04)] p-5">
+                  <div className="rounded-[1.5rem] border border-[#3a5a80]/50 bg-[#162d4a] p-5">
                     <div className="text-sm font-semibold">Live finance signal</div>
                     <div className="mt-5 space-y-5">
                       <div>
-                        <div className="flex items-center justify-between text-sm text-white/58">
+                        <div className="flex items-center justify-between text-sm text-[#7a9bc4]">
                           <span>Cash position</span>
                           <span>Rs. 8.45M</span>
                         </div>
-                        <div className="mt-2 h-2 rounded-full bg-white/10">
+                        <div className="mt-2 h-2 rounded-full bg-[#1a3454]">
                           <div className="h-2 w-[78%] rounded-full bg-[linear-gradient(90deg,#c89d53,#1f7a68)]" />
                         </div>
                       </div>
                       <div>
-                        <div className="flex items-center justify-between text-sm text-white/58">
+                        <div className="flex items-center justify-between text-sm text-[#7a9bc4]">
                           <span>Receivables at risk</span>
                           <span>Rs. 450K</span>
                         </div>
-                        <div className="mt-2 h-2 rounded-full bg-white/10">
+                        <div className="mt-2 h-2 rounded-full bg-[#1a3454]">
                           <div className="h-2 w-[46%] rounded-full bg-[linear-gradient(90deg,#1f7a68,#15307d)]" />
                         </div>
                       </div>
                       <div>
-                        <div className="flex items-center justify-between text-sm text-white/58">
+                        <div className="flex items-center justify-between text-sm text-[#7a9bc4]">
                           <span>Net VAT payable</span>
                           <span>Rs. 125.7K</span>
                         </div>
-                        <div className="mt-2 h-2 rounded-full bg-white/10">
+                        <div className="mt-2 h-2 rounded-full bg-[#1a3454]">
                           <div className="h-2 w-[32%] rounded-full bg-[linear-gradient(90deg,#c89d53,#b14d41)]" />
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-6 rounded-[1.4rem] border border-white/10 bg-[rgba(255,255,255,0.05)] p-4 text-sm leading-7 text-white/70">
+                    <div className="mt-6 rounded-[1.4rem] border border-[#3a5a80]/30 bg-[#1a3454] p-4 text-sm leading-7 text-[#b8d0e8]">
                       The product acts like an operating system, not a passive ledger. The
                       workflow layer is where the value starts.
                     </div>
@@ -183,8 +183,8 @@ export default function LandingPage() {
             {productCards.map((card) => (
               <div key={card.title} className="metric-card">
                 <card.icon className="h-5 w-5 text-[var(--brand)]" />
-                <div className="mt-5 text-lg font-semibold tracking-[-0.03em]">{card.title}</div>
-                <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--ink-soft)]">
+                <div className="mt-5 text-lg font-semibold tracking-[-0.03em] text-[var(--ink)]">{card.title}</div>
+                <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--ink)]">
                   {card.description}
                 </p>
               </div>
@@ -198,10 +198,10 @@ export default function LandingPage() {
           <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
             <div>
               <div className="eyebrow">Why it feels different</div>
-              <h2 className="display mt-5 text-4xl leading-none tracking-[-0.05em]">
+              <h2 className="display mt-5 text-4xl leading-none tracking-[-0.05em] text-[var(--ink)]">
                 Designed with the confidence of top-tier finance software, but localized from the core.
               </h2>
-              <p className="mt-5 text-base leading-8 text-[var(--ink-soft)]">
+              <p className="mt-5 text-base leading-8 text-[var(--ink)]">
                 The structure borrows from the best payment, software, and release-story
                 interfaces: editorial hierarchy, dense product proof, and interaction-driven
                 storytelling. The logic is tuned for Nepal from day one.
@@ -210,21 +210,21 @@ export default function LandingPage() {
 
             <div className="space-y-4">
               {featureStories.map((story) => (
-                <div key={story.title} className="rounded-[1.9rem] border border-[var(--border)] bg-white/72 p-6">
+                <div key={story.title} className="rounded-[1.9rem] border border-[var(--border)] bg-white p-6 shadow-sm">
                   <div className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--brand-2)]">
                     {story.eyebrow}
                   </div>
                   <h3 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">
                     {story.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
+                  <p className="mt-3 text-sm leading-7 text-[var(--ink)]">
                     {story.description}
                   </p>
                   <div className="mt-5 grid gap-2 sm:grid-cols-3">
                     {story.bullets.map((bullet) => (
                       <div
                         key={bullet}
-                        className="rounded-[1.25rem] border border-[var(--border)] bg-[rgba(246,241,231,0.66)] px-4 py-3 text-sm leading-6 text-[var(--ink)]"
+                        className="rounded-[1.25rem] border border-[var(--border)] bg-[#f8f4ec] px-4 py-3 text-sm font-medium leading-6 text-[var(--ink)]"
                       >
                         {bullet}
                       </div>
@@ -256,10 +256,10 @@ export default function LandingPage() {
               icon: ChartNoAxesCombined,
             },
           ].map((item) => (
-            <div key={item.title} className="rounded-[2rem] surface p-7">
+            <div key={item.title} className="rounded-[2rem] surface p-7 shadow-sm">
               <item.icon className="h-5 w-5 text-[var(--accent)]" />
-              <div className="mt-5 text-2xl font-semibold tracking-[-0.04em]">{item.title}</div>
-              <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">{item.body}</p>
+              <div className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]">{item.title}</div>
+              <p className="mt-3 text-sm leading-7 text-[var(--ink)]">{item.body}</p>
             </div>
           ))}
         </div>

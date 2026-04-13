@@ -9,28 +9,24 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
 
   return (
-    <div className="animated-rise">
-      <div className="eyebrow">Password recovery</div>
-      <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-        Reset access without losing workflow continuity.
-      </h1>
-      <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-        This mock flow simulates secure reset initiation and leads into a token-based reset
-        screen.
+    <div className="w-full">
+      <h1 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--ink)]">Forgot password</h1>
+      <p className="mt-2 text-sm text-[var(--ink-soft)]">
+        Enter your email to receive a reset link.
       </p>
 
-      <div className="mt-5 rounded-[1.75rem] surface p-5">
+      <div className="mt-6 space-y-4">
         {!sent ? (
           <>
             <label className="block">
-              <div className="mb-2 text-sm font-semibold text-[var(--ink)]">Work email</div>
+              <div className="mb-2 text-sm font-medium text-[var(--ink)]">Work email</div>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-soft)]" />
                 <input
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className="w-full rounded-[1rem] border border-[var(--border)] bg-white px-11 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
+                  className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
                 />
               </div>
             </label>
@@ -38,33 +34,30 @@ export default function ForgotPasswordPage() {
             <button
               type="button"
               onClick={() => setSent(true)}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--panel-strong)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-dark)]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--panel-strong)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-dark)]"
             >
               Send reset link
               <ArrowRight className="h-4 w-4" />
             </button>
           </>
         ) : (
-          <div className="space-y-4">
-            <div className="rounded-[1.2rem] border border-[var(--border)] bg-white/75 p-4 text-sm leading-7 text-[var(--ink-soft)]">
-              A reset link was generated for <span className="font-semibold text-[var(--ink)]">{email}</span>.
-              In a real flow, this would be emailed securely.
-            </div>
+          <div className="rounded-lg border border-[var(--border)] bg-white p-4 text-sm text-[var(--ink-soft)]">
+            Reset link sent to <span className="font-medium text-[var(--ink)]">{email}</span>.
             <Link
               href="/reset-password"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand)]"
+              className="mt-3 inline-flex items-center gap-1.5 font-medium text-[var(--brand)]"
             >
-              Continue to reset screen
-              <ArrowRight className="h-4 w-4" />
+              Continue to reset
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         )}
       </div>
 
-      <p className="mt-4 text-sm text-[var(--ink-soft)]">
+      <p className="mt-6 text-center text-sm text-[var(--ink-soft)]">
         Remembered it?{" "}
-        <Link href="/login" className="font-semibold text-[var(--brand)]">
-          Return to sign in
+        <Link href="/login" className="font-medium text-[var(--brand)]">
+          Sign in
         </Link>
       </p>
     </div>

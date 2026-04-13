@@ -7,11 +7,11 @@ export default function CTA() {
       <div className="mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] surface-dark px-8 py-10 text-white md:px-12 md:py-14">
         <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="animated-rise">
-            <div className="eyebrow text-white/75 before:bg-white/35">Rollout Ready</div>
+            <div className="eyebrow text-[#a8c5e8] before:bg-white/35">Rollout Ready</div>
             <h2 className="display mt-5 max-w-3xl text-4xl leading-none tracking-[-0.04em] sm:text-5xl">
               Replace fragmented finance ops with one deliberate control surface.
             </h2>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/72">
+            <p className="mt-5 max-w-2xl text-base leading-8 text-[#b8d0e8]">
               Launch with guided invoicing, policy enforcement, reconciliation review,
               VAT visibility, and leadership-grade dashboards. The current build uses
               mock data, but the product surface is already structured like a real system.
@@ -20,14 +20,14 @@ export default function CTA() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[var(--panel-strong)] transition hover:bg-[var(--panel)]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[#1a3a8f] shadow-lg transition hover:bg-slate-100"
               >
                 Start free trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/6"
+                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#4a6b96] bg-[#1e3a5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#2a4a6f]"
               >
                 Preview dashboard
               </Link>
@@ -42,7 +42,7 @@ export default function CTA() {
             ].map((item) => (
               <div
                 key={item}
-                className="rounded-[1.75rem] border border-white/10 bg-white/6 p-5 text-sm leading-7 text-white/80"
+                className="rounded-[1.75rem] border border-[#3a5a80]/50 bg-[#162d4a] p-5 text-sm leading-7 text-[#c5d8ed]"
               >
                 <BadgeCheck className="mr-3 inline h-4 w-4 text-[var(--accent)]" />
                 {item}

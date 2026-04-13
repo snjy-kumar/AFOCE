@@ -25,8 +25,8 @@ export default function Header() {
         className={[
           "mx-auto max-w-7xl rounded-[1.75rem] border px-5 py-4 transition-all duration-300 lg:px-7",
           scrolled
-            ? "surface border-[var(--border-strong)]"
-            : "border-transparent bg-transparent",
+            ? "surface border-[var(--border-strong)] shadow-sm"
+            : "border-transparent bg-white/50 backdrop-blur-sm",
         ].join(" ")}
       >
         <div className="flex items-center justify-between gap-4">
@@ -37,7 +37,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-[var(--ink-soft)] transition hover:bg-white/60 hover:text-[var(--ink)]"
+                className="rounded-full px-4 py-2 text-sm font-medium text-[var(--ink)] transition hover:bg-white hover:text-[var(--brand)]"
               >
                 {item.label}
               </Link>
@@ -47,13 +47,13 @@ export default function Header() {
           <div className="hidden items-center gap-3 lg:flex">
             <Link
               href="/login"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-[var(--ink-soft)] transition hover:text-[var(--ink)]"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--brand)]"
             >
               Sign in
             </Link>
             <Link
               href="/register"
-              className="rounded-full bg-[var(--panel-strong)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand)]"
+              className="rounded-full bg-[#1a3a8f] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#152d73]"
             >
               Start free trial
             </Link>
@@ -63,14 +63,14 @@ export default function Header() {
             type="button"
             aria-label="Toggle menu"
             onClick={() => setOpen((value) => !value)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-white/70 text-[var(--ink)] lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--ink)] shadow-sm lg:hidden"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
         {open ? (
-          <div className="mt-4 rounded-[1.5rem] border border-[var(--border)] bg-white/90 p-3 lg:hidden">
+          <div className="mt-4 rounded-[1.5rem] border border-[var(--border)] bg-white p-3 shadow-lg lg:hidden">
             <div className="space-y-1">
               {publicNav.map((item) => (
                 <Link
@@ -80,7 +80,7 @@ export default function Header() {
                   className="block rounded-2xl px-4 py-3"
                 >
                   <div className="text-sm font-semibold text-[var(--ink)]">{item.label}</div>
-                  <div className="mt-1 text-sm text-[var(--ink-soft)]">{item.description}</div>
+                  <div className="mt-1 text-sm text-[var(--ink)]">{item.description}</div>
                 </Link>
               ))}
             </div>
@@ -88,14 +88,14 @@ export default function Header() {
               <Link
                 href="/login"
                 onClick={() => setOpen(false)}
-                className="rounded-2xl border border-[var(--border)] px-4 py-3 text-center text-sm font-semibold text-[var(--ink)]"
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-center text-sm font-semibold text-[var(--ink)]"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
                 onClick={() => setOpen(false)}
-                className="rounded-2xl bg-[var(--panel-strong)] px-4 py-3 text-center text-sm font-semibold text-white"
+                className="rounded-2xl bg-[#1a3a8f] px-4 py-3 text-center text-sm font-semibold text-white"
               >
                 Start free trial
               </Link>
