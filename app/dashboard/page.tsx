@@ -5,47 +5,68 @@ import { useEffect, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
-  ArrowUpRight,
   Clock,
   DollarSign,
   FileWarning,
   Receipt,
   TrendingUp,
-  Users,
   Wallet,
   Building2,
   CreditCard,
   BarChart3,
 } from "lucide-react";
 
-import { actionQueues, timelineEvents } from "@/lib/mock-data";
-import { getDashboardSnapshot, getInvoices } from "@/lib/services/mock-finance-service";
+import { actionQueues, timelineEvents, vatSummary } from "@/lib/mock-data";
+import { getDashboardSnapshot, getInvoices, getExpenses, type ExpenseStatus } from "@/lib/services/mock-finance-service";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { MetricChart } from "@/components/dashboard/MetricChart";
+import { VATWidget } from "@/components/dashboard/VATWidget";
+import { ExpenseRow } from "@/components/dashboard/ExpenseRow";
+import { CardSkeleton, TableSkeleton } from "@/components/dashboard/Skeleton";
 
 export default function DashboardHomePage() {
+  const [loading, setLoading] = useState(true);
   const [snapshot, setSnapshot] = useState({
     overdue: 0,
     pendingApprovals: 0,
     blocked: 0,
     unmatched: 0,
   });
-  const [topInvoices, setTopInvoices] = useState<
+  const [invoices, setInvoices] = useState<
     Array<{ id: string; client: string; amount: string; status: string }>
+  >([]);
+  const [expenses, setExpenses] = useState<
+    Array<{
+      id: string;
+      employee: string;
+      category: string;
+      amount: string;
+      bsDate: string;
+      status: ExpenseStatus;
+      policy: string;
+      receipt: "Attached" | "Missing";
+    }>
   >([]);
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
-      const [nextSnapshot, nextInvoices] = await Promise.all([
+      setLoading(true);
+      const [nextSnapshot, nextInvoices, nextExpenses] = await Promise.all([
         getDashboardSnapshot(),
         getInvoices(),
+        getExpenses(),
       ]);
       if (!active) {
         return;
       }
 
       setSnapshot(nextSnapshot);
-      setTopInvoices(nextInvoices.slice(0, 5));
+      setInvoices(nextInvoices.slice(0, 5));
+      setExpenses(nextExpenses.slice(0, 3));
+      setLoading(false);
     };
 
     load();
@@ -54,43 +75,51 @@ export default function DashboardHomePage() {
     };
   }, []);
 
-  const metrics = [
-    {
-      label: "Cash Position",
-      value: "Rs. 8.45M",
-      change: "+8.2% this month",
-      trend: "up" as const,
-      icon: Wallet,
-      color: "text-[var(--brand-2)]",
-      bg: "bg-[var(--brand-2)]/10",
-    },
-    {
-      label: "Total Receivables",
-      value: "Rs. 1.24M",
-      change: "5 invoices overdue",
-      trend: "warning" as const,
-      icon: DollarSign,
-      color: "text-[var(--accent)]",
-      bg: "bg-[var(--accent)]/10",
-    },
-    {
-      label: "Total Payables",
-      value: "Rs. 430.5K",
-      change: "Due in 4 days",
-      trend: "neutral" as const,
-      icon: CreditCard,
-      color: "text-[var(--brand)]",
-      bg: "bg-[var(--brand)]/10",
-    },
-    {
-      label: "Net VAT Payable",
-      value: "Rs. 125.7K",
-      change: "This month",
-      trend: "neutral" as const,
-      icon: Receipt,
-      color: "text-[var(--ink-soft)]",
-      bg: "bg-[var(--ink-soft)]/10",
-    },
+  const metrics = loading
+    ? []
+    : [
+        {
+          label: "Cash Position",
+          value: "Rs. 8.45M",
+          change: "+8.2%",
+          trend: "up" as const,
+          icon: Wallet,
+          color: "text-[var(--brand-2)]",
+          bg: "bg-[var(--brand-2)]/10",
+        },
+        {
+          label: "Receivables",
+          value: "Rs. 1.24M",
+          change: "5 overdue",
+          trend: "warning" as const,
+          icon: DollarSign,
+          color: "text-[var(--accent)]",
+          bg: "bg-[var(--accent)]/10",
+        },
+        {
+          label: "Payables",
+          value: "Rs. 430.5K",
+          change: "Due 4 days",
+          trend: "neutral" as const,
+          icon: CreditCard,
+          color: "text-[var(--brand)]",
+          bg: "bg-[var(--brand)]/10",
+        },
+        {
+          label: "VAT Payable",
+          value: "Rs. 125.7K",
+          change: "This month",
+          trend: "neutral" as const,
+          icon: Receipt,
+          color: "text-[var(--ink-soft)]",
+          bg: "bg-[var(--ink-soft)]/10",
+        },
+      ];
+
+  const revenueBreakdown = [
+    { label: "Jan", value: 850000, color: "bg-[var(--brand)]" },
+    { label: "Feb", value: 720000, color: "bg-[var(--brand)]" },
+    { label: "Mar", value: 980000, color: "bg-[var(--brand)]" },
   ];
 
   const quickActions = [
@@ -130,29 +159,20 @@ export default function DashboardHomePage() {
 
       {/* Key Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="rounded-2xl border border-[var(--border)] bg-white p-5 transition hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${metric.bg}`}>
-                <metric.icon className={`h-5 w-5 ${metric.color}`} />
-              </div>
-              {metric.trend === "up" && (
-                <span className="flex items-center gap-1 rounded-full bg-[var(--brand-2)]/10 px-2 py-0.5 text-xs font-medium text-[var(--brand-2)]">
-                  <TrendingUp className="h-3 w-3" />
-                  {metric.change.split(" ")[0]}
-                </span>
-              )}
-            </div>
-            <div className="mt-4 text-2xl font-semibold text-[var(--ink)]">{metric.value}</div>
-            <div className="mt-1 text-sm text-[var(--ink-soft)]">{metric.label}</div>
-            {metric.trend !== "up" && (
-              <div className="mt-2 text-xs text-[var(--ink-soft)]">{metric.change}</div>
-            )}
-          </div>
-        ))}
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+          : metrics.map((metric) => (
+              <StatCard
+                key={metric.label}
+                label={metric.label}
+                value={metric.value}
+                change={metric.change}
+                trend={metric.trend}
+                icon={metric.icon}
+                color={metric.color}
+                bgColor={metric.bg}
+              />
+            ))}
       </div>
 
       {/* Main Content Grid */}
@@ -249,38 +269,60 @@ export default function DashboardHomePage() {
         </div>
       </div>
 
-      {/* Quick Access & Recent Invoices */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Quick Access & Recent Invoices & VAT */}
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Quick Access */}
-        <div className="rounded-2xl border border-[var(--border)] bg-white p-6">
-          <h2 className="font-semibold text-[var(--ink)]">Quick Access</h2>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {actionQueues.map((item) => (
-              <Link
-                key={item.title}
-                href={item.href}
-                className="flex flex-col rounded-xl border border-[var(--border)] p-4 transition hover:border-[var(--brand)] hover:bg-[var(--bg-elevated)]"
-              >
-                <span className="text-sm font-medium text-[var(--ink)]">{item.title}</span>
-                <span className="mt-1 text-xs text-[var(--ink-soft)]">{item.count}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Invoices Table */}
-        <div className="rounded-2xl border border-[var(--border)] bg-white">
-          <div className="border-b border-[var(--border)] px-6 py-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-[var(--ink)]">Recent Invoices</h2>
-              <Link
-                href="/dashboard/invoices"
-                className="text-sm font-medium text-[var(--brand)] hover:text-[var(--brand-dark)]"
-              >
-                View all
-              </Link>
+        <DashboardCard title="Quick Access" subtitle="Key action areas">
+          <div className="p-6">
+            <div className="grid grid-cols-2 gap-3">
+              {actionQueues.map((item) => (
+                <Link
+                  key={item.title}
+                  href={item.href}
+                  className="flex flex-col rounded-xl border border-[var(--border)] p-4 transition hover:border-[var(--brand)] hover:bg-[var(--bg-elevated)]"
+                >
+                  <span className="text-sm font-medium text-[var(--ink)]">{item.title}</span>
+                  <span className="mt-1 text-xs text-[var(--ink-soft)]">{item.count}</span>
+                </Link>
+              ))}
             </div>
           </div>
+        </DashboardCard>
+
+        {/* Revenue Chart */}
+        <DashboardCard title="Revenue Trend" subtitle="Last 3 months">
+          <div className="p-6">
+            <MetricChart data={revenueBreakdown} height={100} />
+          </div>
+        </DashboardCard>
+
+        {/* VAT Widget */}
+        <VATWidget
+          outputTax={vatSummary.outputTax}
+          inputTax={vatSummary.inputTax}
+          netPayable={vatSummary.netPayable}
+          month={vatSummary.month}
+          dueDays={4}
+          loading={loading}
+        />
+      </div>
+
+      {/* Recent Invoices & Expenses */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Invoices Table */}
+        <DashboardCard
+          title="Recent Invoices"
+          subtitle="Latest issued invoices"
+          action={
+            <Link
+              href="/dashboard/invoices"
+              className="text-sm font-medium text-[var(--brand)] hover:text-[var(--brand-dark)]"
+            >
+              View all
+            </Link>
+          }
+          noPadding
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
@@ -291,21 +333,61 @@ export default function DashboardHomePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
-                {topInvoices.map((invoice) => (
-                  <tr key={invoice.id} className="transition hover:bg-[var(--bg-elevated)]">
-                    <td className="px-6 py-3">
-                      <span className="font-medium text-[var(--ink)]">{invoice.id}</span>
-                    </td>
-                    <td className="px-6 py-3 text-[var(--ink-soft)]">{invoice.client}</td>
-                    <td className="px-6 py-3 text-right font-medium text-[var(--ink)]">
-                      {invoice.amount}
-                    </td>
-                  </tr>
-                ))}
+                {loading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <tr key={i}>
+                        <td className="px-6 py-3">
+                          <div className="h-4 w-20 animate-pulse rounded bg-[var(--border)]" />
+                        </td>
+                        <td className="px-6 py-3">
+                          <div className="h-4 w-28 animate-pulse rounded bg-[var(--border)]" />
+                        </td>
+                        <td className="px-6 py-3 text-right">
+                          <div className="h-4 w-16 ml-auto animate-pulse rounded bg-[var(--border)]" />
+                        </td>
+                      </tr>
+                    ))
+                  : invoices.map((invoice) => (
+                      <tr key={invoice.id} className="transition hover:bg-[var(--bg-elevated)]">
+                        <td className="px-6 py-3">
+                          <span className="font-medium text-[var(--ink)]">{invoice.id}</span>
+                        </td>
+                        <td className="px-6 py-3 text-[var(--ink-soft)]">{invoice.client}</td>
+                        <td className="px-6 py-3 text-right font-medium text-[var(--ink)]">
+                          {invoice.amount}
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </DashboardCard>
+
+        {/* Recent Expenses */}
+        <DashboardCard
+          title="Recent Expenses"
+          subtitle="Awaiting approval"
+          action={
+            <Link
+              href="/dashboard/expenses"
+              className="text-sm font-medium text-[var(--brand)] hover:text-[var(--brand-dark)]"
+            >
+              View all
+            </Link>
+          }
+        >
+          {loading ? (
+            <TableSkeleton rows={2} />
+          ) : expenses.length === 0 ? (
+            <div className="px-6 py-8 text-center text-sm text-[var(--ink-soft)]">
+              No pending expenses
+            </div>
+          ) : (
+            expenses.map((expense) => (
+              <ExpenseRow key={expense.id} expense={expense} />
+            ))
+          )}
+        </DashboardCard>
       </div>
     </div>
   );

@@ -242,3 +242,21 @@ select {
     background-size: 44px 44px;
   }
 }
+
+:root {
+  --sidebar-collapsed: 0;
+}
+
+.sidebar-collapsed {
+  --sidebar-collapsed: 1;
+}
+
+.sidebar-content {
+  padding-left: 72px;
+}
+
+@media (min-width: 1024px) {
+  .sidebar-content {
+    padding-left: calc(72px + (1 - var(--sidebar-collapsed)) * (256px - 72px));
+  }
+}
