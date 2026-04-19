@@ -62,6 +62,7 @@ export default function ProfileSettingsPage() {
         return
       }
 
+      const supabase = createClient()
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -153,8 +154,8 @@ export default function ProfileSettingsPage() {
     const { error } = await res.json()
     setSaving(false)
 
-    if (error) {
-      setStatus({ type: 'error', message: error.message })
+    if (!res.ok || error) {
+      setStatus({ type: 'error', message: error?.message || 'Failed to save profile' })
       return
     }
 

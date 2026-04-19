@@ -24,9 +24,18 @@ import { MetricChart } from "@/components/dashboard/MetricChart";
 import { VATWidget } from "@/components/dashboard/VATWidget";
 import { ExpenseRow } from "@/components/dashboard/ExpenseRow";
 import { CardSkeleton, TableSkeleton } from "@/components/dashboard/Skeleton";
+import { createClient } from "@/utils/supabase/client";
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function DashboardHomePage() {
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("User");
   const [snapshot, setSnapshot] = useState({
     overdue: 0,
     pendingApprovals: 0,
@@ -52,6 +61,46 @@ export default function DashboardHomePage() {
   useEffect(() => {
     let active = true;
 
+    const loadUser = async () => {
+      const supabase = createClient();
+      const isDemo =
+        typeof window !== "undefined" &&
+        localStorage.getItem("demo_session") === "true";
+
+      if (isDemo) {
+        const demoData = localStorage.getItem("demo_data");
+        if (demoData) {
+          try {
+            const parsed = JSON.parse(demoData);
+            setUserName("Demo User");
+          } catch {
+            setUserName("Demo User");
+          }
+        } else {
+          setUserName("Demo User");
+        }
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.full_name) {
+          setUserName(profile.full_name);
+        } else if (user.email) {
+          setUserName(user.email.split("@")[0]);
+        }
+      }
+    };
+
     const load = async () => {
       setLoading(true);
       const [nextSnapshot, nextInvoices, nextExpenses] = await Promise.all([
@@ -69,6 +118,7 @@ export default function DashboardHomePage() {
       setLoading(false);
     };
 
+    loadUser();
     load();
     return () => {
       active = false;
@@ -136,7 +186,7 @@ export default function DashboardHomePage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Good morning, Sanjay
+              {getGreeting()}, {userName}
             </h1>
             <p className="mt-1 text-white/70">
               Here&apos;s what&apos;s happening with your finances today.
