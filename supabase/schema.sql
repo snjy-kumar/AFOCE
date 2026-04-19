@@ -100,6 +100,7 @@ CREATE TABLE public.expenses (
   employee    TEXT NOT NULL,
   category    TEXT NOT NULL,
   amount      NUMERIC(18,2) NOT NULL,
+  vat         NUMERIC(18,2) NOT NULL DEFAULT 0,
   bs_date     TEXT NOT NULL,
   ad_date     DATE NOT NULL,
   status      TEXT NOT NULL DEFAULT 'pending_approval'
@@ -120,6 +121,7 @@ CREATE TABLE public.bank_lines (
   date                DATE NOT NULL,
   description         TEXT,
   amount              NUMERIC(18,2) NOT NULL,
+  source              TEXT,
   matched_invoice_id  TEXT REFERENCES public.invoices(id),
   matched_expense_id  TEXT REFERENCES public.expenses(id),
   confidence         NUMERIC(5,2),
@@ -288,29 +290,42 @@ RETURNS TRIGGER AS $$
 DECLARE
   workspace_id UUID;
   org_name TEXT;
+  invited_org_id UUID;
 BEGIN
-  -- Create workspace for new user
-  org_name := COALESCE(
-    NEW.raw_user_meta_data->>'full_name',
-    split_part(NEW.email, '@', 1)
-  ) || '''s Workspace';
+  invited_org_id := NULLIF(NEW.raw_user_meta_data->>'org_id', '')::UUID;
 
-  INSERT INTO public.workspaces (name, created_by)
-  VALUES (org_name, NEW.id)
-  RETURNING id INTO workspace_id;
+  IF invited_org_id IS NOT NULL THEN
+    workspace_id := invited_org_id;
+  ELSE
+    -- Create workspace for new user
+    org_name := COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      split_part(NEW.email, '@', 1)
+    ) || '''s Workspace';
+
+    INSERT INTO public.workspaces (name, created_by)
+    VALUES (org_name, NEW.id)
+    RETURNING id INTO workspace_id;
+
+    -- Create ID sequences only for newly created workspaces
+    INSERT INTO public.id_sequences (org_id)
+    VALUES (workspace_id);
+  END IF;
 
   -- Create profile
-  INSERT INTO public.profiles (id, email, full_name, org_id)
+  INSERT INTO public.profiles (id, email, full_name, role, department, status, org_id)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+    COALESCE(NULLIF(NEW.raw_user_meta_data->>'role', ''), 'team_member'),
+    NULLIF(NEW.raw_user_meta_data->>'department', ''),
+    CASE
+      WHEN invited_org_id IS NOT NULL THEN 'pending'
+      ELSE 'active'
+    END,
     workspace_id
   );
-
-  -- Create ID sequences
-  INSERT INTO public.id_sequences (org_id)
-  VALUES (workspace_id);
 
   RETURN NEW;
 END;
@@ -335,7 +350,8 @@ CREATE TABLE public.notifications (
   data        JSONB,
   read        BOOLEAN NOT NULL DEFAULT false,
   read_at     TIMESTAMPTZ,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================

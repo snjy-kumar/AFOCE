@@ -1,110 +1,137 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { PaginatedResponse, TeamMember } from "@/lib/types";
+import {
+  createAdminClient,
+  createAuthClient,
+  forbiddenResponse,
+  getCurrentOrgId,
+  getCurrentUser,
+  unauthorizedResponse,
+} from "@/lib/supabase/server";
 import { auditLog } from "@/lib/utils/audit";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "20");
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "20", 10);
   const role = searchParams.get("role");
   const status = searchParams.get("status");
 
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  );
+  const supabase = await createAuthClient();
+  const { user, error: userError } = await getCurrentUser(supabase);
 
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return unauthorizedResponse(userError || "Unauthorized");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("org_id")
-    .eq("id", user.id)
-    .single();
+  const { orgId, error: orgError } = await getCurrentOrgId(supabase, user.id);
 
-  if (!profile?.org_id) {
-    return NextResponse.json({ data: null, error: { message: "No workspace found" } }, { status: 403 });
+  if (!orgId) {
+    return forbiddenResponse(orgError || "No workspace found");
   }
 
   let query = supabase
     .from("profiles")
-    .select("*")
-    .eq("org_id", profile.org_id)
+    .select("*", { count: "exact" })
+    .eq("org_id", orgId)
     .order("created_at", { ascending: false })
     .range((page - 1) * pageSize, page * pageSize - 1);
 
   if (role) query = query.eq("role", role);
   if (status) query = query.eq("status", status);
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
-    return NextResponse.json({ data: null, error: { message: error.message } }, { status: 500 });
+    return NextResponse.json(
+      { data: null, error: { message: error.message } },
+      { status: 500 },
+    );
   }
 
   const response: PaginatedResponse<TeamMember> = {
-    data: data as TeamMember[],
-    pagination: { page, pageSize, total: data?.length || 0 },
+    data: (data || []) as TeamMember[],
+    pagination: {
+      page,
+      pageSize,
+      total: count ?? data?.length ?? 0,
+    },
   };
 
   return NextResponse.json({ data: response, error: null });
 }
 
 export async function POST(request: Request) {
-  // Invite team member: creates auth user + profile with pending status
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  );
+  const supabase = await createAuthClient();
+  const { user, error: userError } = await getCurrentUser(supabase);
 
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return unauthorizedResponse(userError || "Unauthorized");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("org_id")
-    .eq("id", user.id)
-    .single();
+  const { orgId, error: orgError } = await getCurrentOrgId(supabase, user.id);
 
-  if (!profile?.org_id) {
-    return NextResponse.json({ data: null, error: { message: "No workspace found" } }, { status: 403 });
+  if (!orgId) {
+    return forbiddenResponse(orgError || "No workspace found");
   }
 
   const body = await request.json();
-  const { email, full_name, role = "team_member", department } = body;
+  const {
+    email,
+    full_name,
+    role = "team_member",
+    department,
+    redirectTo,
+  } = body ?? {};
 
-  if (!email) {
-    return NextResponse.json({ data: null, error: { message: "Email is required" } }, { status: 400 });
+  if (!email || typeof email !== "string") {
+    return NextResponse.json(
+      { data: null, error: { message: "Email is required" } },
+      { status: 400 },
+    );
   }
 
-  // Invite user via Supabase Auth
-  const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: full_name || "", org_id: profile.org_id, role },
-  });
+  const adminSupabase = createAdminClient();
+
+  const inviteOptions: {
+    data: Record<string, string>;
+    redirectTo?: string;
+  } = {
+    data: {
+      full_name: typeof full_name === "string" ? full_name : "",
+      org_id: orgId,
+      role: typeof role === "string" ? role : "team_member",
+      department: typeof department === "string" ? department : "",
+    },
+  };
+
+  if (typeof redirectTo === "string" && redirectTo.length > 0) {
+    inviteOptions.redirectTo = redirectTo;
+  }
+
+  const { data: inviteData, error: inviteError } =
+    await adminSupabase.auth.admin.inviteUserByEmail(email, inviteOptions);
 
   if (inviteError) {
-    return NextResponse.json({ data: null, error: { message: inviteError.message } }, { status: 500 });
+    return NextResponse.json(
+      { data: null, error: { message: inviteError.message } },
+      { status: 500 },
+    );
   }
 
   await auditLog({
     supabase,
     actorId: user.id,
-    orgId: profile.org_id,
+    orgId,
     action: "create",
     entityType: "team",
     entityId: email,
-    detail: { email, role },
+    detail: {
+      email,
+      role,
+      department: department || null,
+      invited_user_id: inviteData.user?.id ?? null,
+    },
   });
 
   return NextResponse.json({ data: inviteData, error: null }, { status: 201 });

@@ -28,6 +28,7 @@ export interface NotificationPayload {
 export async function createInAppNotification({
   supabase,
   userId,
+  orgId,
   type,
   title,
   message,
@@ -36,6 +37,7 @@ export async function createInAppNotification({
 }: {
   supabase: ReturnType<typeof createServerClient>;
   userId: string;
+  orgId: string;
   type: string;
   title: string;
   message: string;
@@ -44,6 +46,7 @@ export async function createInAppNotification({
 }) {
   const { error } = await supabase.from("notifications").insert({
     user_id: userId,
+    org_id: orgId,
     type,
     title,
     message,
@@ -62,7 +65,7 @@ export async function createInAppNotification({
 // Get unread notifications count
 export async function getUnreadNotificationsCount(
   supabase: ReturnType<typeof createServerClient>,
-  userId: string
+  userId: string,
 ): Promise<number> {
   const { count, error } = await supabase
     .from("notifications")
@@ -78,7 +81,7 @@ export async function getUnreadNotificationsCount(
 export async function markNotificationAsRead(
   supabase: ReturnType<typeof createServerClient>,
   notificationId: string,
-  userId: string
+  userId: string,
 ) {
   const { error } = await supabase
     .from("notifications")
@@ -92,7 +95,7 @@ export async function markNotificationAsRead(
 // Mark all notifications as read
 export async function markAllNotificationsAsRead(
   supabase: ReturnType<typeof createServerClient>,
-  userId: string
+  userId: string,
 ) {
   const { error } = await supabase
     .from("notifications")
@@ -133,6 +136,7 @@ export async function sendNotification({
     await createInAppNotification({
       supabase,
       userId,
+      orgId,
       type,
       title,
       message,
@@ -171,7 +175,10 @@ function getNotificationTitle(type: NotificationType): string {
 }
 
 // Get notification message based on type and data
-function getNotificationMessage(type: NotificationType, data: Record<string, unknown>): string {
+function getNotificationMessage(
+  type: NotificationType,
+  data: Record<string, unknown>,
+): string {
   switch (type) {
     case "expense_submitted":
       return `${data.employee} submitted an expense of NPR ${data.amount} for approval.`;
@@ -199,7 +206,7 @@ function getNotificationMessage(type: NotificationType, data: Record<string, unk
 // Build email content based on notification type
 function buildEmailContent(
   type: NotificationType,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
 ): { subject: string; html: string } | null {
   switch (type) {
     case "expense_submitted":
@@ -208,40 +215,40 @@ function buildEmailContent(
         Number(data.amount),
         String(data.employee),
         String(data.category),
-        String(data.approveUrl)
+        String(data.approveUrl),
       );
     case "expense_approved":
       return emailTemplates.expenseApproved(
         String(data.expenseId),
         Number(data.amount),
-        String(data.approvedBy)
+        String(data.approvedBy),
       );
     case "invoice_created":
       return emailTemplates.invoiceCreated(
         String(data.invoiceNumber),
         Number(data.amount),
         String(data.clientName),
-        String(data.viewUrl)
+        String(data.viewUrl),
       );
     case "invoice_overdue":
       return emailTemplates.invoiceOverdue(
         String(data.invoiceNumber),
         Number(data.amount),
         Number(data.daysOverdue),
-        String(data.viewUrl)
+        String(data.viewUrl),
       );
     case "bank_match_found":
       return emailTemplates.bankMatchFound(
         String(data.transactionId),
         Number(data.amount),
         String(data.entityType),
-        Number(data.confidence)
+        Number(data.confidence),
       );
     case "welcome":
       return emailTemplates.welcome(
         String(data.userName),
         String(data.workspaceName),
-        String(data.loginUrl)
+        String(data.loginUrl),
       );
     default:
       return null;
@@ -257,7 +264,7 @@ export async function bulkSendNotifications({
   notifications: NotificationPayload[];
 }): Promise<{ successful: number; failed: number }> {
   const results = await Promise.allSettled(
-    notifications.map((payload) => sendNotification({ supabase, payload }))
+    notifications.map((payload) => sendNotification({ supabase, payload })),
   );
 
   const successful = results.filter((r) => r.status === "fulfilled").length;

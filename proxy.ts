@@ -1,10 +1,13 @@
 // ============================================================
-// Next.js Middleware - Auth, Security, and Rate Limiting
+// Next.js Proxy - Auth, Security, and Rate Limiting
 // ============================================================
 
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { checkRateLimitMemory, rateLimitResponse } from "@/lib/utils/rate-limit";
+import {
+  checkRateLimitMemory,
+  rateLimitResponse,
+} from "@/lib/utils/rate-limit";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
@@ -17,7 +20,8 @@ const securityHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co;",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co;",
 };
 
 // Check if request is from demo user
@@ -26,9 +30,15 @@ function isDemoUser(request: NextRequest): boolean {
 }
 
 // Check if user is rate limited (memory-based for edge)
-async function checkMiddlewareRateLimit(request: NextRequest): Promise<{ allowed: boolean; response?: NextResponse }> {
+async function checkMiddlewareRateLimit(
+  request: NextRequest,
+): Promise<{ allowed: boolean; response?: NextResponse }> {
   // Skip rate limiting for static assets
-  if (request.nextUrl.pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+  if (
+    request.nextUrl.pathname.match(
+      /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/,
+    )
+  ) {
     return { allowed: true };
   }
 
@@ -38,6 +48,7 @@ async function checkMiddlewareRateLimit(request: NextRequest): Promise<{ allowed
     "/register",
     "/forgot-password",
     "/reset-password",
+    "/auth",
     "/api/auth",
   ].some((path) => request.nextUrl.pathname.startsWith(path));
 
@@ -78,17 +89,20 @@ export async function proxy(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
         supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options));
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options),
+        );
       },
     },
   });
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Get current user via JWT claims (Next.js 16 SSR pattern — no network round-trip)
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
 
   const demoUser = isDemoUser(request);
   const isAuthenticated = user || demoUser;
@@ -96,16 +110,20 @@ export async function proxy(request: NextRequest) {
   // Define protected routes
   const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
   const isApiRoute = request.nextUrl.pathname.startsWith("/api");
+
+  // Auth pages: login, register, forgot/reset password, and all /auth/* routes
+  // (email confirm, verify-email, etc.) — accessible without authentication
   const isAuthPage = [
     "/login",
     "/register",
     "/forgot-password",
     "/reset-password",
+    "/auth",
   ].some((path) => request.nextUrl.pathname.startsWith(path));
 
   // Check if API route needs auth (exclude health and docs)
   const isPublicApi = ["/api/health", "/api/docs"].some((path) =>
-    request.nextUrl.pathname.startsWith(path)
+    request.nextUrl.pathname.startsWith(path),
   );
 
   // Redirect unauthenticated users from dashboard
@@ -128,7 +146,10 @@ export async function proxy(request: NextRequest) {
   // Protect API routes (except public ones)
   if (isApiRoute && !isPublicApi && !isAuthenticated) {
     return applySecurityHeaders(
-      NextResponse.json({ error: { message: "Unauthorized" } }, { status: 401 })
+      NextResponse.json(
+        { error: { message: "Unauthorized" } },
+        { status: 401 },
+      ),
     );
   }
 
@@ -136,8 +157,14 @@ export async function proxy(request: NextRequest) {
   if (request.method === "OPTIONS") {
     const response = new NextResponse(null, { status: 204 });
     response.headers.set("Access-Control-Allow-Origin", "*");
-    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    response.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    );
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization",
+    );
     return response;
   }
 
@@ -149,13 +176,14 @@ export const config = {
   matcher: [
     // Dashboard routes
     "/dashboard/:path*",
-    // Auth pages
+    // Auth pages (login, register, forgot/reset password)
     "/login",
     "/register",
     "/forgot-password",
     "/reset-password",
+    // Public auth flow routes (confirm, verify-email, etc.)
+    "/auth/:path*",
     // API routes (for auth check)
     "/api/:path*",
-    // Exclude static files and _next
   ],
 };

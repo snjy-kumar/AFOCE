@@ -1,36 +1,38 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  createAuthClient,
+  forbiddenResponse,
+  getCurrentUser,
+  getUserProfile,
+  unauthorizedResponse,
+} from "@/lib/supabase/server";
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  );
+  const supabase = await createAuthClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const { user, error: userError } = await getCurrentUser(supabase);
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return unauthorizedResponse(userError || "Unauthorized");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  const { data: workspace } = profile?.org_id
-    ? await supabase.from("workspaces").select("*").eq("id", profile.org_id).single()
-    : { data: null };
+  const { profile, error: profileError } = await getUserProfile(
+    supabase,
+    user.id,
+  );
+  if (!profile) {
+    return forbiddenResponse(profileError || "Profile not found");
+  }
 
   return NextResponse.json({
     data: {
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email ?? null },
       profile,
-      workspace,
+      workspace:
+        typeof profile === "object" &&
+        profile !== null &&
+        "workspace" in profile
+          ? ((profile as { workspace?: unknown }).workspace ?? null)
+          : null,
     },
     error: null,
   });

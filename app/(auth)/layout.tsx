@@ -1,26 +1,33 @@
-import { LockKeyhole, ScrollText, ShieldCheck, Sparkles } from "lucide-react";
+import { ScrollText, ShieldCheck, Sparkles } from "lucide-react";
 
 import Logo from "@/components/brand/Logo";
 
 const trustRows = [
   {
     title: "Workflow-led security",
-    detail: "Approval routes, role states, and immutable action trails are treated as product defaults.",
+    detail:
+      "Approval routes, role states, and immutable action trails are treated as product defaults.",
     icon: ShieldCheck,
   },
   {
     title: "Local compliance context",
-    detail: "BS periods, IRD-ready invoice flows, VAT visibility, and finance-grade operating detail.",
+    detail:
+      "BS periods, IRD-ready invoice flows, VAT visibility, and finance-grade operating detail.",
     icon: ScrollText,
   },
   {
     title: "Built for fast rollout",
-    detail: "This prototype already carries a production-style shell with mock product behavior.",
+    detail:
+      "This prototype already carries a production-style shell with mock product behavior.",
     icon: Sparkles,
   },
 ];
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid h-screen overflow-hidden lg:grid-cols-[1fr_1fr]">
       <aside className="surface-dark relative hidden h-screen overflow-hidden px-10 py-8 text-white lg:flex lg:flex-col lg:justify-between">
@@ -32,7 +39,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <div className="relative z-10 max-w-md">
-          <div className="eyebrow text-white/72 before:bg-white/24">Secure Entry</div>
+          <div className="eyebrow text-white/72 before:bg-white/24">
+            Secure Entry
+          </div>
           <h2 className="mt-4 text-3xl font-semibold leading-snug tracking-[-0.04em]">
             Finance operations deserve a calmer way in.
           </h2>
@@ -47,20 +56,20 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   <row.icon className="h-4.5 w-4.5 text-[var(--accent)]" />
                 </div>
                 <div>
-                  <div className="text-[15px] font-semibold tracking-[-0.03em]">{row.title}</div>
-                  <p className="mt-1 text-sm leading-relaxed text-white/64">{row.detail}</p>
+                  <div className="text-[15px] font-semibold tracking-[-0.03em]">
+                    {row.title}
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-white/64">
+                    {row.detail}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center justify-between text-sm text-white/50">
+        <div className="relative z-10 text-sm text-white/50">
           <span>Encrypted workspace access</span>
-          <span className="inline-flex items-center gap-2">
-            <LockKeyhole className="h-4 w-4 text-[var(--accent)]" />
-            Mock auth flow
-          </span>
         </div>
       </aside>
 

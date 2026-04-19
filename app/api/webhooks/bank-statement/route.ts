@@ -3,9 +3,8 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { findMatchCandidates, calculateMatchConfidence } from "@/lib/utils/workflow";
+import { createAdminClient } from "@/lib/supabase/server";
+import { findMatchCandidates } from "@/lib/utils/workflow";
 import { applySecurityHeaders } from "@/lib/utils/security";
 
 // Bank statement line format
@@ -16,61 +15,73 @@ interface BankStatementLine {
   reference?: string;
 }
 
+interface WebhookBody {
+  orgId?: string;
+  source?: string;
+  lines?: BankStatementLine[];
+}
+
 export async function POST(request: Request) {
-  // Verify webhook signature if provided
-  const signature = request.headers.get("x-webhook-signature");
   const apiKey = request.headers.get("x-api-key");
 
   if (process.env.WEBHOOK_API_KEY && apiKey !== process.env.WEBHOOK_API_KEY) {
     return NextResponse.json(
       { error: { message: "Invalid API key" } },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-    );
-
-    const body = await request.json();
+    const supabase = createAdminClient();
+    const body = (await request.json()) as WebhookBody;
     const { orgId, lines, source } = body;
 
     if (!orgId || !lines || !Array.isArray(lines)) {
       return NextResponse.json(
         { error: { message: "orgId and lines array required" } },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Get pending invoices and expenses for matching
-    const { data: invoices } = await supabase
+    const { data: invoices, error: invoicesError } = await supabase
       .from("invoices")
       .select("id, amount, ad_date, status")
       .eq("org_id", orgId)
       .in("status", ["pending", "overdue"]);
 
-    const { data: expenses } = await supabase
+    if (invoicesError) {
+      return NextResponse.json(
+        { error: { message: invoicesError.message } },
+        { status: 500 },
+      );
+    }
+
+    const { data: expenses, error: expensesError } = await supabase
       .from("expenses")
       .select("id, amount, ad_date, status")
       .eq("org_id", orgId)
       .in("status", ["approved", "pending_approval"]);
 
-    // Process each line
-    const processedLines = [];
+    if (expensesError) {
+      return NextResponse.json(
+        { error: { message: expensesError.message } },
+        { status: 500 },
+      );
+    }
 
-    for (const line of lines as BankStatementLine[]) {
-      // Find match candidates
+    const processedLines: Array<Record<string, unknown>> = [];
+
+    for (const line of lines) {
       const candidates = findMatchCandidates(
-        { amount: line.amount, date: line.date, description: line.description },
+        {
+          amount: line.amount,
+          date: line.date,
+          description: line.description,
+        },
         invoices || [],
-        expenses || []
+        expenses || [],
       );
 
-      // Determine state based on matches
       let state: "matched" | "needs_review" | "unmatched" = "unmatched";
       let matchedInvoiceId: string | null = null;
       let matchedExpenseId: string | null = null;
@@ -79,6 +90,7 @@ export async function POST(request: Request) {
       if (candidates.length > 0 && candidates[0].confidence >= 90) {
         state = "matched";
         confidence = candidates[0].confidence;
+
         if (candidates[0].type === "invoice") {
           matchedInvoiceId = candidates[0].id;
         } else {
@@ -89,24 +101,25 @@ export async function POST(request: Request) {
         confidence = candidates[0].confidence;
       }
 
-      // Create bank line record
+      const insertPayload = {
+        org_id: orgId,
+        date: line.date,
+        description: line.description,
+        amount: line.amount,
+        matched_invoice_id: matchedInvoiceId,
+        matched_expense_id: matchedExpenseId,
+        confidence,
+        state,
+        source: source || null,
+      };
+
       const { data: bankLine, error } = await supabase
         .from("bank_lines")
-        .insert({
-          org_id: orgId,
-          date: line.date,
-          description: line.description,
-          amount: line.amount,
-          matched_invoice_id: matchedInvoiceId,
-          matched_expense_id: matchedExpenseId,
-          confidence,
-          state,
-          source,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
-      if (!error) {
+      if (!error && bankLine) {
         processedLines.push({
           ...bankLine,
           match_candidates: candidates.slice(0, 3),
@@ -118,19 +131,24 @@ export async function POST(request: Request) {
       NextResponse.json({
         data: {
           processed: processedLines.length,
-          matched: processedLines.filter((l) => l.state === "matched").length,
-          needs_review: processedLines.filter((l) => l.state === "needs_review").length,
-          unmatched: processedLines.filter((l) => l.state === "unmatched").length,
+          matched: processedLines.filter((line) => line.state === "matched")
+            .length,
+          needs_review: processedLines.filter(
+            (line) => line.state === "needs_review",
+          ).length,
+          unmatched: processedLines.filter((line) => line.state === "unmatched")
+            .length,
           lines: processedLines,
         },
         error: null,
-      })
+      }),
     );
   } catch (error) {
     console.error("Webhook error:", error);
+
     return NextResponse.json(
       { error: { message: "Failed to process bank statement" } },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -143,7 +161,6 @@ export async function GET() {
     headers: {
       "Content-Type": "application/json",
       "X-API-Key": "Your API key (if configured)",
-      "X-Webhook-Signature": "Optional signature for verification",
     },
     body: {
       orgId: "Organization UUID",
@@ -152,7 +169,7 @@ export async function GET() {
         {
           date: "YYYY-MM-DD",
           description: "Transaction description",
-          amount: 1000.00,
+          amount: 1000.0,
           reference: "Optional reference number",
         },
       ],

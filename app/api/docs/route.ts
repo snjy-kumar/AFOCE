@@ -9,7 +9,8 @@ export async function GET() {
   const docs = {
     name: "AFOCE Accounting API",
     version: "1.0.0",
-    description: "Complete accounting API for invoicing, expenses, and financial management",
+    description:
+      "Complete accounting API for invoicing, expenses, and financial management",
     baseUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
     authentication: {
@@ -30,7 +31,7 @@ export async function GET() {
 
     endpoints: {
       // Auth
-      "POST /api/auth/session": {
+      "GET /api/auth/session": {
         description: "Get current session",
         auth: true,
       },
@@ -64,12 +65,32 @@ export async function GET() {
       "GET /api/invoices": {
         description: "List invoices",
         auth: true,
-        query: ["page", "pageSize", "status", "clientId", "from", "to", "minAmount", "maxAmount", "search", "sortBy", "sortOrder"],
+        query: [
+          "page",
+          "pageSize",
+          "status",
+          "clientId",
+          "from",
+          "to",
+          "minAmount",
+          "maxAmount",
+          "search",
+          "sortBy",
+          "sortOrder",
+        ],
       },
       "POST /api/invoices": {
         description: "Create invoice",
         auth: true,
-        body: ["client_id", "bs_date", "ad_date", "amount", "due_days", "status", "items"],
+        body: [
+          "client_id",
+          "bs_date",
+          "ad_date",
+          "amount",
+          "due_days",
+          "status",
+          "items",
+        ],
       },
       "GET /api/invoices/:id": {
         description: "Get invoice details",
@@ -94,12 +115,32 @@ export async function GET() {
       "GET /api/expenses": {
         description: "List expenses",
         auth: true,
-        query: ["page", "pageSize", "status", "category", "employee", "minAmount", "maxAmount", "from", "to", "sortBy", "sortOrder"],
+        query: [
+          "page",
+          "pageSize",
+          "status",
+          "category",
+          "employee",
+          "minAmount",
+          "maxAmount",
+          "from",
+          "to",
+          "sortBy",
+          "sortOrder",
+        ],
       },
       "POST /api/expenses": {
         description: "Create expense",
         auth: true,
-        body: ["employee", "category", "amount", "bs_date", "ad_date", "receipt_url", "description"],
+        body: [
+          "employee",
+          "category",
+          "amount",
+          "bs_date",
+          "ad_date",
+          "receipt_url",
+          "description",
+        ],
       },
       "GET /api/expenses/:id": {
         description: "Get expense details",
@@ -132,8 +173,16 @@ export async function GET() {
         auth: true,
         body: ["lines"],
       },
-      "POST /api/bank-lines/:id/match": {
-        description: "Match transaction to invoice/expense",
+      "GET /api/bank-lines/:id": {
+        description: "Get bank transaction details",
+        auth: true,
+      },
+      "PATCH /api/bank-lines/:id": {
+        description: "Update bank transaction match state",
+        auth: true,
+      },
+      "DELETE /api/bank-lines/:id": {
+        description: "Delete bank transaction",
         auth: true,
       },
 
@@ -158,7 +207,7 @@ export async function GET() {
         description: "List team members",
         auth: true,
       },
-      "POST /api/team/invite": {
+      "POST /api/team": {
         description: "Invite team member",
         auth: true,
         role: "finance_admin",
@@ -281,7 +330,5 @@ export async function GET() {
     },
   };
 
-  return applySecurityHeaders(
-    NextResponse.json(docs, { status: 200 })
-  );
+  return applySecurityHeaders(NextResponse.json(docs, { status: 200 }));
 }

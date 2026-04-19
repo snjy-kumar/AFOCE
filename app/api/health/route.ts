@@ -3,68 +3,91 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createPublicClient } from "@/lib/supabase/server";
 import { applySecurityHeaders } from "@/lib/utils/security";
 
-export async function GET() {
-  const checks: Record<string, { status: string; responseTime?: number; error?: string }> = {};
-  let overallStatus = "healthy";
+type CheckStatus = {
+  status: "healthy" | "unhealthy" | "configured" | "not_configured";
+  responseTime?: number;
+  error?: string;
+};
 
-  // Check Supabase connection
-  try {
-    const start = Date.now();
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-    );
-
-    const { error } = await supabase.from("workspaces").select("count").single();
-    checks.database = {
-      status: error ? "unhealthy" : "healthy",
-      responseTime: Date.now() - start,
-      error: error?.message,
-    };
-
-    if (error) overallStatus = "degraded";
-  } catch (error) {
-    checks.database = {
-      status: "unhealthy",
-      error: (error as Error).message,
-    };
-    overallStatus = "unhealthy";
-  }
-
-  // Check environment variables
+function getMissingEnvVars() {
   const requiredEnvVars = [
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   ];
 
-  const missingEnvVars = requiredEnvVars.filter((v) => !process.env[v]);
+  return requiredEnvVars.filter((name) => !process.env[name]);
+}
+
+export async function GET() {
+  const checks: Record<string, CheckStatus> = {};
+  let overallStatus: "healthy" | "degraded" | "unhealthy" = "healthy";
+
+  const missingEnvVars = getMissingEnvVars();
+
   checks.environment = {
     status: missingEnvVars.length > 0 ? "unhealthy" : "healthy",
-    error: missingEnvVars.length > 0 ? `Missing: ${missingEnvVars.join(", ")}` : undefined,
+    error:
+      missingEnvVars.length > 0
+        ? `Missing: ${missingEnvVars.join(", ")}`
+        : undefined,
   };
 
-  if (missingEnvVars.length > 0) overallStatus = "unhealthy";
-
-  // Check optional services
-  if (process.env.RESEND_API_KEY) {
-    checks.email = { status: "configured" };
-  } else {
-    checks.email = { status: "not_configured" };
+  if (missingEnvVars.length > 0) {
+    overallStatus = "unhealthy";
   }
 
-  if (process.env.UPSTASH_REDIS_REST_URL) {
-    checks.redis = { status: "configured" };
+  if (overallStatus !== "unhealthy") {
+    try {
+      const start = Date.now();
+      const supabase = createPublicClient();
+
+      const { error } = await supabase
+        .from("workspaces")
+        .select("id", { head: true, count: "exact" });
+
+      checks.database = {
+        status: error ? "unhealthy" : "healthy",
+        responseTime: Date.now() - start,
+        error: error?.message,
+      };
+
+      if (error) {
+        overallStatus = "degraded";
+      }
+    } catch (error) {
+      checks.database = {
+        status: "unhealthy",
+        error:
+          error instanceof Error ? error.message : "Unknown database error",
+      };
+      overallStatus = "unhealthy";
+    }
   } else {
-    checks.redis = { status: "not_configured" };
+    checks.database = {
+      status: "unhealthy",
+      error: "Skipped because required environment variables are missing",
+    };
   }
 
-  const statusCode = overallStatus === "healthy" ? 200 : overallStatus === "degraded" ? 503 : 500;
+  checks.email = {
+    status: process.env.RESEND_API_KEY ? "configured" : "not_configured",
+  };
+
+  checks.redis = {
+    status: process.env.UPSTASH_REDIS_REST_URL
+      ? "configured"
+      : "not_configured",
+  };
+
+  const statusCode =
+    overallStatus === "healthy"
+      ? 200
+      : overallStatus === "degraded"
+        ? 503
+        : 500;
 
   return applySecurityHeaders(
     NextResponse.json(
@@ -74,7 +97,7 @@ export async function GET() {
         version: process.env.npm_package_version || "0.1.0",
         checks,
       },
-      { status: statusCode }
-    )
+      { status: statusCode },
+    ),
   );
 }

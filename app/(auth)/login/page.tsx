@@ -1,25 +1,93 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ArrowRight, Eye, EyeOff, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Mail,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 const DEMO_EMAIL = "demo@afoce.com";
 
 function generateDemoData() {
-  const NepaliMonths = ["Baisakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin", "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"];
-  const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const randItem = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+  const NepaliMonths = [
+    "Baisakh",
+    "Jestha",
+    "Ashadh",
+    "Shrawan",
+    "Bhadra",
+    "Ashwin",
+    "Kartik",
+    "Mangsir",
+    "Poush",
+    "Magh",
+    "Falgun",
+    "Chaitra",
+  ];
+  const rand = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+  const randItem = <T,>(arr: T[]): T =>
+    arr[Math.floor(Math.random() * arr.length)];
   const randDate = () => `${randItem(NepaliMonths)} 2081`;
-  const randAdDate = () => new Date(2024, rand(3, 11), rand(1, 28)).toISOString().split("T")[0];
-  
-  const clientNames = ["Nexa Trading", "Himal Retail", "Mountain View", "Kathmandu Electronics", "Everest Solutions", "Buddha Air", "S琪琪 Grocery", "Pashupatinath", "Lakeside Hospitality", "Summit Tech", "City Center Mall", "Royal Academy", "Adventure Travel", "Green Valley", "Sunrise Industries", "Temple View", "Dragon Restaurant", "Himalayan Airlines", "Nepal Trade", "Alpine Services"];
-  const clientPans = Array.from({ length: 20 }, () => `${rand(100000, 999999)}${rand(100, 999)}`);
-  const employeeNames = ["Ram Sharma", "Shyam KC", "Hari Bhatta", "Kiran Tamang", "Bikram Sth", "Nabin Joshi", "Santosh", "Prakash Rai", "Rajesh Mahar", "Dipesh Lama"];
-  const expenseCategories = ["Travel", "Office Supplies", "Equipment", "Marketing", "Software", "Utilities", "Training", "Meals"];
-  
+  const randAdDate = () =>
+    new Date(2024, rand(3, 11), rand(1, 28)).toISOString().split("T")[0];
+
+  const clientNames = [
+    "Nexa Trading",
+    "Himal Retail",
+    "Mountain View",
+    "Kathmandu Electronics",
+    "Everest Solutions",
+    "Buddha Air",
+    "Grocery",
+    "Pashupatinath",
+    "Lakeside Hospitality",
+    "Summit Tech",
+    "City Center Mall",
+    "Royal Academy",
+    "Adventure Travel",
+    "Green Valley",
+    "Sunrise Industries",
+    "Temple View",
+    "Dragon Restaurant",
+    "Himalayan Airlines",
+    "Nepal Trade",
+    "Alpine Services",
+  ];
+  const clientPans = Array.from(
+    { length: 20 },
+    () => `${rand(100000, 999999)}${rand(100, 999)}`,
+  );
+  const employeeNames = [
+    "Ram Sharma",
+    "Shyam KC",
+    "Hari Bhatta",
+    "Kiran Tamang",
+    "Bikram Sth",
+    "Nabin Joshi",
+    "Santosh",
+    "Prakash Rai",
+    "Rajesh Mahar",
+    "Dipesh Lama",
+  ];
+  const expenseCategories = [
+    "Travel",
+    "Office Supplies",
+    "Equipment",
+    "Marketing",
+    "Software",
+    "Utilities",
+    "Training",
+    "Meals",
+  ];
+
   return {
     clients: Array.from({ length: 20 }, (_, i) => ({
       id: `CL-${String(i + 1).padStart(4, "0")}`,
@@ -69,24 +137,34 @@ function generateDemoData() {
   };
 }
 
-export default function LoginPage() {
+// ── Inner component — uses useSearchParams, must be inside Suspense ──
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URL-level error codes (e.g. bounced back from /auth/confirm)
+  const urlError = searchParams.get("error");
+  const urlRedirectTo = searchParams.get("redirectTo");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Whether the sign-in error was specifically "email not confirmed"
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
 
   async function handleDemoLogin(event: React.MouseEvent) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setEmailNotConfirmed(false);
 
     const demoCookie = "demo_user=true; path=/; max-age=86400";
     document.cookie = demoCookie;
     localStorage.setItem("demo_session", "true");
     const demoData = generateDemoData();
-      localStorage.setItem("demo_data", JSON.stringify(demoData));
+    localStorage.setItem("demo_data", JSON.stringify(demoData));
     router.push("/dashboard");
   }
 
@@ -94,9 +172,10 @@ export default function LoginPage() {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setEmailNotConfirmed(false);
 
     if (!email || !password) {
-      setError("Please enter email and password");
+      setError("Please enter your email and password.");
       setLoading(false);
       return;
     }
@@ -109,9 +188,10 @@ export default function LoginPage() {
 
     if (signInError) {
       if (signInError.message.includes("Invalid login")) {
-        setError("Invalid email or password");
+        setError("Invalid email or password.");
       } else if (signInError.message.includes("Email not confirmed")) {
-        setError("Please verify your email first. Check your inbox for the confirmation link.");
+        setEmailNotConfirmed(true);
+        setError("Please verify your email before signing in.");
       } else {
         setError(signInError.message);
       }
@@ -119,19 +199,73 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(urlRedirectTo ?? "/dashboard");
   }
 
   return (
     <div className="w-full">
-      <h1 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--ink)]">Sign in</h1>
+      {/* ── URL-level error banners ─────────────────────────── */}
+      {urlError === "invalid_token" && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-[var(--danger)]/25 bg-[var(--danger)]/8 px-4 py-3">
+          <ShieldAlert className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[var(--danger)]" />
+          <div className="text-sm">
+            <p className="font-medium text-[var(--danger)]">
+              Verification link invalid or expired
+            </p>
+            <p className="mt-0.5 text-[var(--ink-soft)]">
+              The link you followed has already been used or has expired.{" "}
+              <Link
+                href="/register"
+                className="font-medium text-[var(--brand)] hover:underline"
+              >
+                Register again
+              </Link>{" "}
+              or{" "}
+              <Link
+                href="/forgot-password"
+                className="font-medium text-[var(--brand)] hover:underline"
+              >
+                reset your password
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
+      )}
+
+      {urlError === "email_not_confirmed" && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/8 px-4 py-3">
+          <ShieldAlert className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[var(--accent)]" />
+          <div className="text-sm">
+            <p className="font-medium text-[var(--ink)]">
+              Email not yet verified
+            </p>
+            <p className="mt-0.5 text-[var(--ink-soft)]">
+              Check your inbox for the confirmation link, or{" "}
+              <Link
+                href={`/auth/verify-email${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+                className="font-medium text-[var(--brand)] hover:underline"
+              >
+                enter your 6-digit code
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
+      )}
+
+      <h1 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
+        Sign in
+      </h1>
       <p className="mt-2 text-sm text-[var(--ink-soft)]">
         Enter your credentials to access your workspace.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <label className="block">
-          <div className="mb-2 text-sm font-medium text-[var(--ink)]">Work email</div>
+          <div className="mb-2 text-sm font-medium text-[var(--ink)]">
+            Work email
+          </div>
           <div className="relative">
             <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-soft)]" />
             <input
@@ -139,6 +273,7 @@ export default function LoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@company.com"
+              autoComplete="email"
               className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
             />
           </div>
@@ -147,7 +282,10 @@ export default function LoginPage() {
         <label className="block">
           <div className="mb-2 flex items-center justify-between text-sm font-medium text-[var(--ink)]">
             <span>Password</span>
-            <Link href="/forgot-password" className="text-xs text-[var(--brand)]">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-normal text-[var(--brand)]"
+            >
               Forgot?
             </Link>
           </div>
@@ -157,14 +295,19 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
+              autoComplete="current-password"
               className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pr-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
             />
             <button
               type="button"
-              onClick={() => setVisible((value) => !value)}
+              onClick={() => setVisible((v) => !v)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]"
             >
-              {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {visible ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </label>
@@ -174,21 +317,37 @@ export default function LoginPage() {
           disabled={loading}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--panel-strong)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-dark)] disabled:opacity-70"
         >
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Signing in…" : "Sign in"}
           <ArrowRight className="h-4 w-4" />
         </button>
 
+        {/* Sign-in error */}
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+            <p>{error}</p>
+            {/* When email isn't confirmed, offer a shortcut to OTP entry */}
+            {emailNotConfirmed && email && (
+              <p className="mt-1.5">
+                <Link
+                  href={`/auth/verify-email?email=${encodeURIComponent(email)}`}
+                  className="inline-flex items-center gap-1 font-medium text-[var(--brand)] hover:underline"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Enter verification code
+                </Link>
+              </p>
+            )}
           </div>
         )}
       </form>
 
+      {/* Demo login */}
       <div className="mt-6 rounded-xl border-2 border-dashed border-[var(--brand)]/30 bg-[var(--brand)]/5 p-4">
         <div className="flex items-center justify-center gap-2">
           <Sparkles className="h-5 w-5 text-[var(--brand)]" />
-          <span className="font-medium text-[var(--ink)]">Want to try AFOCE first?</span>
+          <span className="font-medium text-[var(--ink)]">
+            Want to try AFOCE first?
+          </span>
         </div>
         <p className="mt-1 text-center text-sm text-[var(--ink-soft)]">
           Experience the full features with sample data
@@ -200,7 +359,7 @@ export default function LoginPage() {
           className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand)]/90 disabled:opacity-70"
         >
           <Sparkles className="h-4 w-4" />
-          Try Demo - No Account Required
+          Try Demo — No Account Required
         </button>
       </div>
 
@@ -211,5 +370,24 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+// ── Page — wraps inner component in Suspense ─────────────────
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full space-y-4">
+          <div className="h-8 w-32 animate-pulse rounded-lg bg-[var(--ink)]/10" />
+          <div className="h-5 w-64 animate-pulse rounded bg-[var(--ink)]/6" />
+          <div className="h-12 w-full animate-pulse rounded-xl bg-[var(--ink)]/6" />
+          <div className="h-12 w-full animate-pulse rounded-xl bg-[var(--ink)]/6" />
+          <div className="h-12 w-full animate-pulse rounded-xl bg-[var(--ink)]/10" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

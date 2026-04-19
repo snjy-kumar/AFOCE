@@ -2,7 +2,17 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Command, Download, Plus, LogOut, User } from "lucide-react";
+import {
+  Bell,
+  Command,
+  Download,
+  Plus,
+  LogOut,
+  User,
+  Shield,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 
 const pathTitles: Record<string, string> = {
@@ -17,11 +27,15 @@ const pathTitles: Record<string, string> = {
   "/dashboard/policies": "Policy Rules",
   "/dashboard/analytics": "Analytics",
   "/dashboard/settings": "Settings",
+  "/dashboard/settings/profile": "Profile Settings",
+  "/dashboard/settings/security": "Security Settings",
 };
 
 interface UserData {
   email?: string;
   user?: { id: string; email: string };
+  full_name?: string | null;
+  avatar_url?: string | null;
 }
 
 export default function DashboardHeader() {
@@ -31,28 +45,62 @@ export default function DashboardHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
 
-  const isDemo = typeof window !== "undefined" && localStorage.getItem("demo_session") === "true";
+  const isDemo =
+    typeof window !== "undefined" &&
+    localStorage.getItem("demo_session") === "true";
 
   useEffect(() => {
     if (isDemo) {
-      setUser({ user: { id: "demo", email: "demo@afoce.com" } });
+      setUser({
+        user: { id: "demo", email: "demo@afoce.com" },
+        full_name: "Demo User",
+        avatar_url: null,
+      });
       return;
     }
+
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUser({ user: { id: data.user.id, email: data.user.email || "" } });
-      }
+      if (!data.user) return;
+
+      const authUser = { id: data.user.id, email: data.user.email || "" };
+      setUser({ user: authUser });
+
+      // Load profile data for display name and avatar
+      supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", data.user.id)
+        .single()
+        .then(({ data: profile }) => {
+          setUser({
+            user: authUser,
+            full_name: profile?.full_name ?? null,
+            avatar_url: profile?.avatar_url ?? null,
+          });
+        });
     });
   }, [supabase, isDemo]);
 
   async function handleLogout() {
     if (isDemo) {
       localStorage.removeItem("demo_session");
+      localStorage.removeItem("demo_data");
+      document.cookie = "demo_user=; path=/; max-age=0";
     } else {
       await supabase.auth.signOut();
     }
     window.location.href = "/login";
   }
+
+  const displayName =
+    user?.full_name || user?.user?.email?.split("@")[0] || "User";
+
+  const initials = (user?.full_name || user?.user?.email || "U")
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--panel)]">
@@ -64,7 +112,9 @@ export default function DashboardHeader() {
               FY 2081/82
             </span>
           </div>
-          <p className="text-sm text-[var(--ink-soft)]">Baisakh close in progress</p>
+          <p className="text-sm text-[var(--ink-soft)]">
+            Baisakh close in progress
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -97,30 +147,92 @@ export default function DashboardHeader() {
             <span className="hidden sm:inline">Quick Add</span>
           </button>
 
+          {/* Avatar + Dropdown */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--brand)] text-white transition hover:opacity-90"
+              className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--brand)] text-white transition hover:opacity-90"
             >
-              <User className="h-5 w-5" />
+              {user?.avatar_url ? (
+                <Image
+                  src={user.avatar_url}
+                  alt={displayName}
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                />
+              ) : (
+                <span className="text-sm font-bold">{initials}</span>
+              )}
             </button>
+
             {menuOpen && (
-              <div className="absolute right-0 top-12 w-56 rounded-xl border border-[var(--border)] bg-white py-2 shadow-lg">
-                <div className="border-b border-[var(--border)] px-4 py-2">
-                  <p className="text-sm font-medium text-[var(--ink)]">
-                    {user?.user?.email || "User"}
-                  </p>
+              <>
+                {/* Backdrop to close menu on outside click */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setMenuOpen(false)}
+                />
+                <div className="absolute right-0 top-12 z-50 w-64 rounded-xl border border-[var(--border)] bg-white py-2 shadow-lg">
+                  {/* User info */}
+                  <div className="border-b border-[var(--border)] px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--brand)] text-white">
+                        {user?.avatar_url ? (
+                          <Image
+                            src={user.avatar_url}
+                            alt={displayName}
+                            fill
+                            className="object-cover"
+                            sizes="36px"
+                          />
+                        ) : (
+                          <span className="text-xs font-bold">{initials}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[var(--ink)]">
+                          {displayName}
+                        </p>
+                        <p className="truncate text-xs text-[var(--ink-soft)]">
+                          {user?.user?.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Navigation links */}
+                  <Link
+                    href="/dashboard/settings/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--ink-soft)] transition hover:bg-[var(--bg)] hover:text-[var(--ink)]"
+                  >
+                    <User className="h-4 w-4 shrink-0" />
+                    Profile Settings
+                  </Link>
+                  <Link
+                    href="/dashboard/settings/security"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--ink-soft)] transition hover:bg-[var(--bg)] hover:text-[var(--ink)]"
+                  >
+                    <Shield className="h-4 w-4 shrink-0" />
+                    Security Settings
+                  </Link>
+
+                  {/* Sign out */}
+                  <div className="mt-1 border-t border-[var(--border)] pt-1">
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[var(--ink-soft)] transition hover:bg-[var(--bg)] hover:text-[var(--ink)]"
+                    >
+                      <LogOut className="h-4 w-4 shrink-0" />
+                      Sign out
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              </div>
+              </>
             )}
           </div>
         </div>

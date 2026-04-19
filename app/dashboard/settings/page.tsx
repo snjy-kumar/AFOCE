@@ -1,17 +1,32 @@
 "use client";
 
+import Link from "next/link";
 import {
   Building2,
   Calendar,
   CreditCard,
   FileText,
   Globe,
+  Lock,
   ShieldCheck,
+  UserCircle,
   Users,
   Wallet,
 } from "lucide-react";
 
 const settingsSections = [
+  {
+    title: "Profile Settings",
+    description: "Update your name, photo, company and personal information",
+    icon: UserCircle,
+    href: "/dashboard/settings/profile",
+  },
+  {
+    title: "Security & Password",
+    description: "Change password, manage sessions and account security",
+    icon: Lock,
+    href: "/dashboard/settings/security",
+  },
   {
     title: "Business Profile",
     description: "Business PAN, legal entity, and contact information",
@@ -68,25 +83,31 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-[var(--ink)]">Settings</h1>
-        <p className="mt-1 text-sm text-[var(--ink-soft)]">Manage workspace configuration</p>
+        <p className="mt-1 text-sm text-[var(--ink-soft)]">
+          Manage workspace configuration
+        </p>
       </div>
 
       {/* Settings Sections */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {settingsSections.map((section) => (
-          <button
+          <Link
             key={section.title}
-            type="button"
+            href={section.href}
             className="flex items-start gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 text-left transition hover:border-[var(--brand)] hover:shadow-md"
           >
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--brand)]/10">
               <section.icon className="h-5 w-5 text-[var(--brand)]" />
             </div>
             <div className="min-w-0">
-              <div className="font-semibold text-[var(--ink)]">{section.title}</div>
-              <div className="mt-1 text-sm text-[var(--ink-soft)]">{section.description}</div>
+              <div className="font-semibold text-[var(--ink)]">
+                {section.title}
+              </div>
+              <div className="mt-1 text-sm text-[var(--ink-soft)]">
+                {section.description}
+              </div>
             </div>
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -96,19 +117,27 @@ export default function SettingsPage() {
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="text-sm text-[var(--ink-soft)]">Workspace Name</div>
-            <div className="mt-1 font-semibold text-[var(--ink)]">AFOCE Advisory Labs</div>
+            <div className="mt-1 font-semibold text-[var(--ink)]">
+              AFOCE Advisory Labs
+            </div>
           </div>
           <div>
-            <div className="text-sm text-[var(--ink-soft)]">Current Fiscal Year</div>
+            <div className="text-sm text-[var(--ink-soft)]">
+              Current Fiscal Year
+            </div>
             <div className="mt-1 font-semibold text-[var(--ink)]">2081/82</div>
           </div>
           <div>
             <div className="text-sm text-[var(--ink-soft)]">Active Period</div>
-            <div className="mt-1 font-semibold text-[var(--ink)]">Baisakh 2081</div>
+            <div className="mt-1 font-semibold text-[var(--ink)]">
+              Baisakh 2081
+            </div>
           </div>
           <div>
             <div className="text-sm text-[var(--ink-soft)]">Base Currency</div>
-            <div className="mt-1 font-semibold text-[var(--ink)]">NPR (Rs.)</div>
+            <div className="mt-1 font-semibold text-[var(--ink)]">
+              NPR (Rs.)
+            </div>
           </div>
         </div>
       </div>
