@@ -1,0 +1,490 @@
+openapi: 3.0.0
+info:
+  title: AFOCE Accounting API
+  description: |
+    Complete accounting API for invoicing, expenses, and financial management.
+    Supports multi-tenant workspaces with role-based access control.
+  version: 1.0.0
+  contact:
+    name: AFOCE Support
+    email: support@afoce.app
+
+servers:
+  - url: https://api.afoce.app
+    description: Production server
+  - url: http://localhost:3000
+    description: Local development
+
+security:
+  - cookieAuth: []
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Check API and database health status
+      operationId: healthCheck
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/docs:
+    get:
+      summary: API Documentation
+      description: Get API documentation
+      operationId: getDocs
+      security: []
+      responses:
+        "200":
+          description: API documentation
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/clients:
+    get:
+      summary: List clients
+      operationId: listClients
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [client, vendor]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+    post:
+      summary: Create client
+      operationId: createClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClientRequest"
+      responses:
+        "201":
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /api/clients/{id}:
+    get:
+      summary: Get client
+      operationId: getClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Client details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+    patch:
+      summary: Update client
+      operationId: updateClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClientRequest"
+      responses:
+        "200":
+          description: Client updated
+    delete:
+      summary: Delete client
+      operationId: deleteClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Client deleted
+
+  /api/invoices:
+    get:
+      summary: List invoices
+      operationId: listInvoices
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, pending, paid, overdue, rejected]
+        - name: clientId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of invoices
+    post:
+      summary: Create invoice
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceRequest"
+      responses:
+        "201":
+          description: Invoice created
+
+  /api/invoices/{id}/status:
+    patch:
+      summary: Update invoice status
+      operationId: updateInvoiceStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+
+  /api/expenses:
+    get:
+      summary: List expenses
+      operationId: listExpenses
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending_approval, manager_review, blocked, approved, rejected]
+      responses:
+        "200":
+          description: List of expenses
+    post:
+      summary: Create expense
+      operationId: createExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseRequest"
+      responses:
+        "201":
+          description: Expense created
+
+  /api/expenses/{id}/approve:
+    post:
+      summary: Approve/reject expense
+      operationId: approveExpense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject, request_review]
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Expense processed
+
+  /api/batch:
+    post:
+      summary: Batch operations
+      operationId: batchOperation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchRequest"
+      responses:
+        "200":
+          description: Batch operation completed
+    patch:
+      summary: Batch status update
+      operationId: batchStatusUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+
+  /api/export:
+    get:
+      summary: Export data
+      operationId: exportData
+      parameters:
+        - name: entity
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [invoices, expenses, clients, bank_lines]
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [csv, pdf, xlsx]
+      responses:
+        "200":
+          description: Exported file
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/pdf:
+              schema:
+                type: string
+
+  /api/upload:
+    post:
+      summary: Upload file
+      operationId: uploadFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+                  enum: [receipt, avatar, invoice, general]
+      responses:
+        "200":
+          description: File uploaded
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: supabase-auth-token
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            pageSize:
+              type: integer
+            total:
+              type: integer
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        pan:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        type:
+          type: string
+          enum: [client, vendor]
+
+    CreateClientRequest:
+      type: object
+      required:
+        - name
+        - pan
+      properties:
+        name:
+          type: string
+        pan:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        type:
+          type: string
+
+    UpdateClientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+
+    CreateInvoiceRequest:
+      type: object
+      required:
+        - client_id
+        - bs_date
+        - ad_date
+        - amount
+      properties:
+        client_id:
+          type: string
+        bs_date:
+          type: string
+        ad_date:
+          type: string
+        amount:
+          type: number
+        due_days:
+          type: integer
+        status:
+          type: string
+
+    CreateExpenseRequest:
+      type: object
+      required:
+        - employee
+        - category
+        - amount
+        - bs_date
+        - ad_date
+      properties:
+        employee:
+          type: string
+        category:
+          type: string
+        amount:
+          type: number
+        bs_date:
+          type: string
+        ad_date:
+          type: string
+        receipt_url:
+          type: string
+
+    UpdateStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        reason:
+          type: string
+
+    BatchRequest:
+      type: object
+      properties:
+        operation:
+          type: string
+          enum: [create, update, delete]
+        entity:
+          type: string
+        items:
+          type: array
+
+    BatchStatusRequest:
+      type: object
+      properties:
+        entity:
+          type: string
+        ids:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        reason:
+          type: string

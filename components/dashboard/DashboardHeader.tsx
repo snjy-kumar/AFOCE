@@ -1,7 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Command, Download, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, Command, Download, Plus, LogOut, User } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 const pathTitles: Record<string, string> = {
   "/dashboard": "Command Center",
@@ -17,9 +19,40 @@ const pathTitles: Record<string, string> = {
   "/dashboard/settings": "Settings",
 };
 
+interface UserData {
+  email?: string;
+  user?: { id: string; email: string };
+}
+
 export default function DashboardHeader() {
   const pathname = usePathname();
   const title = pathTitles[pathname] ?? "Dashboard";
+  const [user, setUser] = useState<UserData | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const supabase = createClient();
+
+  const isDemo = typeof window !== "undefined" && localStorage.getItem("demo_session") === "true";
+
+  useEffect(() => {
+    if (isDemo) {
+      setUser({ user: { id: "demo", email: "demo@afoce.com" } });
+      return;
+    }
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUser({ user: { id: data.user.id, email: data.user.email || "" } });
+      }
+    });
+  }, [supabase, isDemo]);
+
+  async function handleLogout() {
+    if (isDemo) {
+      localStorage.removeItem("demo_session");
+    } else {
+      await supabase.auth.signOut();
+    }
+    window.location.href = "/login";
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--panel)]">
@@ -63,6 +96,33 @@ export default function DashboardHeader() {
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Quick Add</span>
           </button>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--brand)] text-white transition hover:opacity-90"
+            >
+              <User className="h-5 w-5" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-12 w-56 rounded-xl border border-[var(--border)] bg-white py-2 shadow-lg">
+                <div className="border-b border-[var(--border)] px-4 py-2">
+                  <p className="text-sm font-medium text-[var(--ink)]">
+                    {user?.user?.email || "User"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

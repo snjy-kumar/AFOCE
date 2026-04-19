@@ -71,9 +71,9 @@ export default function Sidebar() {
         collapsed ? "w-[72px]" : "w-64"
       )}
     >
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] px-4">
+<div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] px-4">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <Logo href="/dashboard" compact />
+          <Logo href="/dashboard" compact asChild />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-xs font-semibold text-[var(--ink)]">AFOCE</span>

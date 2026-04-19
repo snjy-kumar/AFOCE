@@ -3,10 +3,30 @@
 import Link from "next/link";
 import { ArrowRight, Mail } from "lucide-react";
 import { useState } from "react";
+import { createClient } from "@/utils/supabase/client";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("finance@afoce.demo");
+  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSendReset() {
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setSent(true);
+    }
+    setLoading(false);
+  }
 
   return (
     <div className="w-full">
@@ -33,12 +53,19 @@ export default function ForgotPasswordPage() {
 
             <button
               type="button"
-              onClick={() => setSent(true)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--panel-strong)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-dark)]"
+              onClick={handleSendReset}
+              disabled={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--panel-strong)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-dark)] disabled:opacity-70"
             >
-              Send reset link
+              {loading ? "Sending..." : "Send reset link"}
               <ArrowRight className="h-4 w-4" />
             </button>
+
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
           </>
         ) : (
           <div className="rounded-lg border border-[var(--border)] bg-white p-4 text-sm text-[var(--ink-soft)]">

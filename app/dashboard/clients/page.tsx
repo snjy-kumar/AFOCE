@@ -1,53 +1,50 @@
 "use client";
 
 import { Building2, Edit, Mail, MoreHorizontal, Phone, Plus, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const clients = [
-  {
-    id: "CL-001",
-    name: "Nexa Trading Pvt. Ltd.",
-    pan: "609441287",
-    email: "accounts@nexatrading.com",
-    phone: "+977 1-4102034",
-    type: "Client",
-    totalInvoices: 12,
-    totalAmount: "Rs. 1.24M",
-  },
-  {
-    id: "CL-002",
-    name: "Himal Retail Network",
-    pan: "301998144",
-    email: "finance@himalretail.com",
-    phone: "+977 1-5541234",
-    type: "Client",
-    totalInvoices: 8,
-    totalAmount: "Rs. 856K",
-  },
-  {
-    id: "VN-001",
-    name: "Everest Systems",
-    pan: "504000211",
-    email: "billing@everestsys.com",
-    phone: "+977 1-4432109",
-    type: "Vendor",
-    totalInvoices: 5,
-    totalAmount: "Rs. 342K",
-  },
-  {
-    id: "CL-003",
-    name: "Lagankhel Foods",
-    pan: "402199542",
-    email: "accounts@lagankhelfoods.com",
-    phone: "+977 1-5521034",
-    type: "Client",
-    totalInvoices: 3,
-    totalAmount: "Rs. 428K",
-  },
-];
+import { ClientModal } from "@/components/modals/ClientModal";
+
+interface Client {
+  id: string;
+  name: string;
+  pan: string;
+  email: string | null;
+  phone: string | null;
+  type: string;
+  total_invoices?: number;
+  total_amount?: number;
+}
+
+async function fetchClients() {
+  const res = await fetch("/api/clients");
+  const json = await res.json();
+  if (json.error) return [];
+  return json.data?.data || [];
+}
 
 export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [showCreate, setShowCreate] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchClients().then((data) => { if (active) setClients(data); });
+    return () => { active = false; };
+  }, []);
+
+  const handleCreated = () => {
+    setShowCreate(false);
+    fetchClients().then(setClients);
+  };
+
+  const clientCount = clients.filter((c) => c.type === "client").length;
+  const vendorCount = clients.filter((c) => c.type === "vendor").length;
+
   return (
     <div className="space-y-6">
+      {showCreate && <ClientModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />}
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -56,6 +53,7 @@ export default function ClientsPage() {
         </div>
         <button
           type="button"
+          onClick={() => setShowCreate(true)}
           className="inline-flex items-center gap-2 rounded-xl bg-[#111f36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f]"
         >
           <Plus className="h-4 w-4" />
@@ -67,15 +65,15 @@ export default function ClientsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
           <div className="text-sm font-medium text-[var(--ink-soft)]">Total Clients</div>
-          <div className="mt-2 text-2xl font-semibold text-[var(--ink)]">24</div>
+          <div className="mt-2 text-2xl font-semibold text-[var(--ink)]">{clientCount}</div>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
           <div className="text-sm font-medium text-[var(--ink-soft)]">Total Vendors</div>
-          <div className="mt-2 text-2xl font-semibold text-[var(--ink)]">18</div>
+          <div className="mt-2 text-2xl font-semibold text-[var(--ink)]">{vendorCount}</div>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
           <div className="text-sm font-medium text-[var(--ink-soft)]">Active This Month</div>
-          <div className="mt-2 text-2xl font-semibold text-[var(--ink)]">12</div>
+          <div className="mt-2 text-2xl font-semibold text-[var(--ink)]">{clients.length}</div>
         </div>
       </div>
 
@@ -98,10 +96,7 @@ export default function ClientsPage() {
       {/* Contacts Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {clients.map((client) => (
-          <div
-            key={client.id}
-            className="rounded-2xl border border-[var(--border)] bg-white p-5 transition hover:shadow-md"
-          >
+          <div key={client.id} className="rounded-2xl border border-[var(--border)] bg-white p-5 transition hover:shadow-md">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--brand)]/10">
@@ -112,42 +107,28 @@ export default function ClientsPage() {
                   <div className="text-xs text-[var(--ink-soft)]">PAN: {client.pan}</div>
                 </div>
               </div>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                  client.type === "Client"
-                    ? "bg-[var(--brand-2)]/10 text-[var(--brand-2)]"
-                    : "bg-[var(--accent)]/10 text-[var(--accent)]"
-                }`}
-              >
-                {client.type}
-              </span>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                client.type === "client" ? "bg-[var(--brand-2)]/10 text-[var(--brand-2)]" : "bg-[var(--accent)]/10 text-[var(--accent)]"
+              }`}>{client.type === "client" ? "Client" : "Vendor"}</span>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm text-[var(--ink-soft)]">
-                <Mail className="h-4 w-4" />
-                {client.email}
+                <Mail className="h-4 w-4" />{client.email || "—"}
               </div>
               <div className="flex items-center gap-2 text-sm text-[var(--ink-soft)]">
-                <Phone className="h-4 w-4" />
-                {client.phone}
+                <Phone className="h-4 w-4" />{client.phone || "—"}
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-4">
               <div>
-                <div className="text-xs text-[var(--ink-soft)]">{client.totalInvoices} invoices</div>
-                <div className="text-sm font-semibold text-[var(--ink)]">{client.totalAmount}</div>
+                <div className="text-xs text-[var(--ink-soft)]">{client.total_invoices || 0} invoices</div>
+                <div className="text-sm font-semibold text-[var(--ink)]">NPR {client.total_amount?.toLocaleString() || "0"}</div>
               </div>
               <div className="flex gap-1">
-                <button
-                  type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]"
-                >
+                <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]">
                   <Edit className="h-4 w-4" />
                 </button>
-                <button
-                  type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]"
-                >
+                <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]">
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
               </div>

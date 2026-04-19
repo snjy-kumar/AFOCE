@@ -1,55 +1,45 @@
 "use client";
 
 import { BarChart3, Download, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const monthlyData = [
-  { month: "Poush", revenue: 2840000, expenses: 1890000, profit: 950000 },
-  { month: "Magh", revenue: 3120000, expenses: 2010000, profit: 1110000 },
-  { month: "Falgun", revenue: 2980000, expenses: 2150000, profit: 830000 },
-  { month: "Chaitra", revenue: 3450000, expenses: 2280000, profit: 1170000 },
-  { month: "Baisakh", revenue: 3890000, expenses: 2450000, profit: 1440000 },
-];
+interface Metric {
+  label: string;
+  value: string;
+  change: string;
+  trend: "up" | "down";
+  icon: typeof TrendingUp;
+  color: string;
+  bg: string;
+}
 
-const metrics = [
-  {
-    label: "Revenue",
-    value: "Rs. 3.89M",
-    change: "+12.8%",
-    trend: "up" as const,
-    icon: TrendingUp,
-    color: "text-[var(--brand-2)]",
-    bg: "bg-[var(--brand-2)]/10",
-  },
-  {
-    label: "Expenses",
-    value: "Rs. 2.45M",
-    change: "+7.5%",
-    trend: "up" as const,
-    icon: TrendingDown,
-    color: "text-[var(--danger)]",
-    bg: "bg-[var(--danger)]/10",
-  },
-  {
-    label: "Gross Profit",
-    value: "Rs. 1.44M",
-    change: "+23.1%",
-    trend: "up" as const,
-    icon: Wallet,
-    color: "text-[var(--brand)]",
-    bg: "bg-[var(--brand)]/10",
-  },
-  {
-    label: "Profit Margin",
-    value: "37%",
-    change: "+3.2%",
-    trend: "up" as const,
-    icon: BarChart3,
-    color: "text-[var(--accent)]",
-    bg: "bg-[var(--accent)]/10",
-  },
-];
+interface MonthlyData {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+}
+
+async function fetchAnalytics() {
+  const res = await fetch("/api/analytics");
+  const json = await res.json();
+  return json.data as { metrics: Metric[]; monthlyData: MonthlyData[] } | null;
+}
 
 export default function AnalyticsPage() {
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetchAnalytics().then((data) => {
+      if (active && data) {
+        setMetrics(data.metrics);
+        setMonthlyData(data.monthlyData);
+      }
+    });
+    return () => { active = false; };
+  }, []);
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -107,7 +97,7 @@ export default function AnalyticsPage() {
           <h2 className="font-semibold text-[var(--ink)]">Revenue Trend</h2>
           <p className="text-sm text-[var(--ink-soft)]">Monthly revenue for current fiscal year</p>
           <div className="mt-6 space-y-4">
-            {monthlyData.map((data) => (
+            {(monthlyData.length ? monthlyData : [{ month: "—", revenue: 0, expenses: 0, profit: 0 }]).map((data) => (
               <div key={data.month} className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-[var(--ink)]">{data.month}</span>
@@ -116,7 +106,7 @@ export default function AnalyticsPage() {
                 <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--bg-elevated)]">
                   <div
                     className="h-2 rounded-full bg-[var(--brand)]"
-                    style={{ width: `${(data.revenue / 4000000) * 100}%` }}
+                    style={{ width: `${Math.min((data.revenue / 4000000) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -129,11 +119,11 @@ export default function AnalyticsPage() {
           <h2 className="font-semibold text-[var(--ink)]">Profit Margin</h2>
           <p className="text-sm text-[var(--ink-soft)]">Revenue vs Expenses comparison</p>
           <div className="mt-6 space-y-4">
-            {monthlyData.map((data) => (
+            {(monthlyData.length ? monthlyData : [{ month: "—", revenue: 0, expenses: 0, profit: 0 }]).map((data) => (
               <div key={data.month} className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-[var(--ink)]">{data.month}</span>
-                  <span className="text-[var(--brand-2)]">{((data.profit / data.revenue) * 100).toFixed(1)}%</span>
+                  <span className="text-[var(--brand-2)]">{data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : "0"}%</span>
                 </div>
                 <div className="flex gap-1">
                   <div

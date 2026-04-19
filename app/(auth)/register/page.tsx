@@ -3,28 +3,119 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowRight, Building2, Mail, Phone, UserRound } from "lucide-react";
+import { ArrowRight, Building2, Mail, Phone, UserRound, AlertCircle } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+
+const DEMO_EMAIL = "demo@afoce.com";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [form, setForm] = useState({
-    fullName: "Sanjay Malla",
-    company: "AFOCE Advisory Labs",
-    email: "hello@afoce.demo",
-    phone: "+977 9800000000",
-    password: "Afoce!234",
+    fullName: "",
+    company: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
   });
+
+  function updateField(name: keyof typeof form, value: string) {
+    setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function validateForm(): string | null {
+    if (!form.fullName.trim()) return "Please enter your full name";
+    if (!form.company.trim()) return "Please enter your company name";
+    if (!form.email.trim()) return "Please enter your work email";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Please enter a valid email address";
+    if (!form.password) return "Please enter a password";
+    if (form.password.length < 8) return "Password must be at least 8 characters";
+    if (!/[A-Z]/.test(form.password)) return "Password must contain at least one uppercase letter";
+    if (!/[0-9]/.test(form.password)) return "Password must contain at least one number";
+    if (form.password !== form.confirmPassword) return "Passwords do not match";
+    if (form.email.toLowerCase() === DEMO_EMAIL.toLowerCase()) return "This email is reserved for demo. Please use a different email.";
+    return null;
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    router.push("/dashboard");
+    setError(null);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: form.fullName,
+          company: form.company,
+          phone: form.phone || undefined,
+        },
+      },
+    });
+
+    if (signUpError) {
+      if (signUpError.message.includes("already been registered") || signUpError.message.includes("already exists")) {
+        setError("This email is already registered. Please sign in instead.");
+      } else if (signUpError.message.includes("429") || signUpError.message.toLowerCase().includes("too many")) {
+        setError("Too many attempts. Please wait a moment and try again.");
+      } else {
+        setError(signUpError.message);
+      }
+      setLoading(false);
+      return;
+    }
+
+    setSuccess(true);
+    setLoading(false);
   }
 
-  function updateField(name: keyof typeof form, value: string) {
-    setForm((current) => ({ ...current, [name]: value }));
+  function handleDemoMode(e: React.MouseEvent) {
+    e.preventDefault();
+    router.push("/login");
+  }
+
+  if (success) {
+    return (
+      <div className="w-full">
+        <div className="rounded-2xl border border-[var(--brand-2)]/30 bg-[var(--brand-2)]/10 p-6 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-2)]/20">
+            <Mail className="h-6 w-6 text-[var(--brand-2)]" />
+          </div>
+          <h2 className="mt-4 text-xl font-semibold text-[var(--ink)]">Check your email</h2>
+          <p className="mt-2 text-sm text-[var(--ink-soft)]">
+            We've sent a confirmation link to <span className="font-medium text-[var(--ink)]">{form.email}</span>.
+            Click the link to activate your account.
+          </p>
+          <div className="mt-6 rounded-lg border border-[var(--border)] bg-white p-4">
+            <p className="text-sm text-[var(--ink-soft)]">
+              Didn't receive the email? Check your spam folder, or{" "}
+              <button type="button" className="text-[var(--brand)] font-medium hover:underline">
+                resend confirmation
+              </button>
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-6 text-center text-sm text-[var(--ink-soft)]">
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-[var(--brand)]">
+            Sign in
+          </Link>
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -36,33 +127,69 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Full name"
-            icon={<UserRound className="h-4 w-4" />}
-            value={form.fullName}
-            onChange={(value) => updateField("fullName", value)}
-          />
-          <Field
-            label="Company"
-            icon={<Building2 className="h-4 w-4" />}
-            value={form.company}
-            onChange={(value) => updateField("company", value)}
-          />
+          <label className="block">
+            <div className="mb-2 text-sm font-medium text-[var(--ink)]">Full name</div>
+            <div className="relative">
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]">
+                <UserRound className="h-4 w-4" />
+              </div>
+              <input
+                type="text"
+                value={form.fullName}
+                onChange={(event) => updateField("fullName", event.target.value)}
+                placeholder="John Doe"
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
+              />
+            </div>
+          </label>
+          <label className="block">
+            <div className="mb-2 text-sm font-medium text-[var(--ink)]">Company</div>
+            <div className="relative">
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]">
+                <Building2 className="h-4 w-4" />
+              </div>
+              <input
+                type="text"
+                value={form.company}
+                onChange={(event) => updateField("company", event.target.value)}
+                placeholder="Acme Pvt. Ltd."
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
+              />
+            </div>
+          </label>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Work email"
-            icon={<Mail className="h-4 w-4" />}
-            value={form.email}
-            onChange={(value) => updateField("email", value)}
-          />
-          <Field
-            label="Phone"
-            icon={<Phone className="h-4 w-4" />}
-            value={form.phone}
-            onChange={(value) => updateField("phone", value)}
-          />
+          <label className="block">
+            <div className="mb-2 text-sm font-medium text-[var(--ink)]">Work email</div>
+            <div className="relative">
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]">
+                <Mail className="h-4 w-4" />
+              </div>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                placeholder="you@company.com"
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
+              />
+            </div>
+          </label>
+          <label className="block">
+            <div className="mb-2 text-sm font-medium text-[var(--ink)]">Phone (optional)</div>
+            <div className="relative">
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]">
+                <Phone className="h-4 w-4" />
+              </div>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(event) => updateField("phone", event.target.value)}
+                placeholder="+977-98XXXXXXXX"
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
+              />
+            </div>
+          </label>
         </div>
 
         <label className="block">
@@ -71,12 +198,31 @@ export default function RegisterPage() {
             type="password"
             value={form.password}
             onChange={(event) => updateField("password", event.target.value)}
+            placeholder="••••••••"
             className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
           />
           <div className="mt-1.5 text-xs text-[var(--ink-soft)]">
-            8+ characters with a number and special character.
+            8+ characters with uppercase and number
           </div>
         </label>
+
+        <label className="block">
+          <div className="mb-2 text-sm font-medium text-[var(--ink)]">Confirm password</div>
+          <input
+            type="password"
+            value={form.confirmPassword}
+            onChange={(event) => updateField("confirmPassword", event.target.value)}
+            placeholder="••••••••"
+            className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
+          />
+        </label>
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"
@@ -88,6 +234,16 @@ export default function RegisterPage() {
         </button>
       </form>
 
+      <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)]/50 px-4 py-3 text-center">
+        <button
+          type="button"
+          onClick={handleDemoMode}
+          className="text-sm text-[var(--ink-soft)] hover:text-[var(--brand)]"
+        >
+          Prefer to try demo first?
+        </button>
+      </div>
+
       <p className="mt-6 text-center text-sm text-[var(--ink-soft)]">
         Already have an account?{" "}
         <Link href="/login" className="font-medium text-[var(--brand)]">
@@ -95,33 +251,5 @@ export default function RegisterPage() {
         </Link>
       </p>
     </div>
-  );
-}
-
-function Field({
-  label,
-  icon,
-  value,
-  onChange,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="block">
-      <div className="mb-2 text-sm font-medium text-[var(--ink)]">{label}</div>
-      <div className="relative">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]">
-          {icon}
-        </div>
-        <input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
-        />
-      </div>
-    </label>
   );
 }

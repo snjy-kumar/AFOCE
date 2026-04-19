@@ -7,11 +7,12 @@ type LogoProps = {
   className?: string;
   muted?: boolean;
   compact?: boolean;
+  asChild?: boolean;
 };
 
-export default function Logo({ href = "/", className, muted = false, compact = false }: LogoProps) {
-  return (
-    <Link href={href} className={cn("inline-flex items-center gap-3", className)}>
+export default function Logo({ href = "/", className, muted = false, compact = false, asChild = false }: LogoProps) {
+  const content = (
+    <>
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,#15307d_0%,#1f7a68_52%,#c89d53_100%)] shadow-[0_18px_48px_rgba(13,26,44,0.24)]">
         <svg
           aria-hidden="true"
@@ -38,6 +39,16 @@ export default function Logo({ href = "/", className, muted = false, compact = f
           </div>
         </div>
       ) : null}
+    </>
+  );
+
+  if (asChild) {
+    return <>{content}</>;
+  }
+
+  return (
+    <Link href={href} className={cn("inline-flex items-center gap-3", className)}>
+      {content}
     </Link>
   );
 }

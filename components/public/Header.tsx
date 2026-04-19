@@ -53,7 +53,7 @@ export default function Header() {
             </Link>
             <Link
               href="/register"
-              className="rounded-full bg-[#1a3a8f] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#152d73]"
+              className="rounded-full bg-[#5c6676] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-600"
             >
               Start free trial
             </Link>
@@ -95,7 +95,7 @@ export default function Header() {
               <Link
                 href="/register"
                 onClick={() => setOpen(false)}
-                className="rounded-2xl bg-[#1a3a8f] px-4 py-3 text-center text-sm font-semibold text-white"
+                className="rounded-2xl bg-slate-600 px-4 py-3 text-center text-sm font-semibold text-white"
               >
                 Start free trial
               </Link>

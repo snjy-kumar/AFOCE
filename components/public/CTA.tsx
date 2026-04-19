@@ -20,14 +20,14 @@ export default function CTA() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[#1a3a8f] shadow-lg transition hover:bg-slate-100"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c6676] px-6 py-3.5 text-sm font-semibold text-[#1a3a8f] shadow-lg transition hover:bg-slate-800"
               >
                 Start free trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#4a6b96] bg-[#1e3a5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#2a4a6f]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1e3a5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#2a4a6f]"
               >
                 Preview dashboard
               </Link>

@@ -1,10 +1,53 @@
 "use client";
 
 import { Download, FileText, PieChart, Printer, TrendingUp, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import { auditTrail, reportCards, vatSummary } from "@/lib/mock-data";
+interface VATData {
+  month: string;
+  output_tax: number;
+  input_tax: number;
+  net_payable: number;
+}
+
+interface AuditEntry {
+  id: number;
+  actor_id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  created_at: string;
+  actor_email?: string;
+}
+
+async function fetchVAT() {
+  const res = await fetch("/api/reports/vat");
+  const json = await res.json();
+  return json.data as VATData | null;
+}
+
+async function fetchAudit() {
+  const res = await fetch("/api/reports/audit");
+  const json = await res.json();
+  return (json.data || []) as AuditEntry[];
+}
+
+async function fetchReportCards() {
+  const res = await fetch("/api/analytics");
+  const json = await res.json();
+  return json.data;
+}
 
 export default function ReportsPage() {
+  const [vat, setVat] = useState<VATData | null>(null);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
+
+  useEffect(() => {
+    fetchVAT().then(setVat);
+    fetchAudit().then(setAudit);
+  }, []);
+
+  const fmt = (n: number) => `NPR ${n.toLocaleString()}`;
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -33,7 +76,11 @@ export default function ReportsPage() {
 
       {/* Report Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        {reportCards.map((card) => (
+        {[
+          { title: "P&L Statement", value: "View in Analytics", detail: "Profit and loss breakdown" },
+          { title: "Balance Sheet", value: "View in Analytics", detail: "Assets and liabilities" },
+          { title: "Cash Flow", value: "View in Analytics", detail: "Cash movement summary" },
+        ].map((card) => (
           <div
             key={card.title}
             className="rounded-2xl border border-[var(--border)] bg-white p-6 transition hover:shadow-md"
@@ -61,7 +108,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-[var(--ink)]">VAT Summary</h2>
-                <p className="text-sm text-[var(--ink-soft)]">{vatSummary.month}</p>
+                <p className="text-sm text-[var(--ink-soft)]">{vat?.month || "This Month"}</p>
               </div>
               <button
                 type="button"
@@ -82,7 +129,7 @@ export default function ReportsPage() {
                   <div className="text-xs text-[var(--ink-soft)]">Sales VAT collected</div>
                 </div>
               </div>
-              <span className="text-lg font-semibold text-[var(--ink)]">{vatSummary.outputTax}</span>
+              <span className="text-lg font-semibold text-[var(--ink)]">{vat ? fmt(vat.output_tax) : "—"}</span>
             </div>
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex items-center gap-3">
@@ -94,7 +141,7 @@ export default function ReportsPage() {
                   <div className="text-xs text-[var(--ink-soft)]">Purchase VAT paid</div>
                 </div>
               </div>
-              <span className="text-lg font-semibold text-[var(--ink)]">{vatSummary.inputTax}</span>
+              <span className="text-lg font-semibold text-[var(--ink)]">{vat ? fmt(vat.input_tax) : "—"}</span>
             </div>
             <div className="flex items-center justify-between bg-[var(--bg-elevated)] px-6 py-4">
               <div className="flex items-center gap-3">
@@ -106,7 +153,7 @@ export default function ReportsPage() {
                   <div className="text-xs text-[var(--ink-soft)]">Due to IRD</div>
                 </div>
               </div>
-              <span className="text-xl font-semibold text-[var(--ink)]">{vatSummary.netPayable}</span>
+              <span className="text-xl font-semibold text-[var(--ink)]">{vat ? fmt(vat.net_payable) : "—"}</span>
             </div>
           </div>
         </div>
@@ -118,16 +165,16 @@ export default function ReportsPage() {
             <p className="text-sm text-[var(--ink-soft)]">Recent activity log</p>
           </div>
           <div className="divide-y divide-[var(--border)]">
-            {auditTrail.map((entry, index) => (
-              <div key={index} className="px-6 py-4">
+            {audit.slice(0, 10).map((entry) => (
+              <div key={entry.id} className="px-6 py-4">
                 <div className="flex items-start gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-xs font-bold text-[var(--brand)]">
-                    {entry.actor.charAt(0)}
+                    {(entry.actor_email || "U").charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium text-[var(--ink-soft)]">{entry.actor}</div>
-                    <div className="mt-1 text-sm font-medium text-[var(--ink)]">{entry.action}</div>
-                    <div className="mt-1 text-xs text-[var(--ink-soft)]">{entry.detail}</div>
+                    <div className="text-xs font-medium text-[var(--ink-soft)]">{entry.actor_email || "Unknown"}</div>
+                    <div className="mt-1 text-sm font-medium text-[var(--ink)]">{entry.action} {entry.entity_type}</div>
+                    <div className="mt-1 text-xs text-[var(--ink-soft)]">{new Date(entry.created_at).toLocaleDateString()}</div>
                   </div>
                 </div>
               </div>

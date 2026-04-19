@@ -56,7 +56,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1a3a8f] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#152d73]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c6676] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#6a7380]"
               >
                 Start free trial
                 <ArrowRight className="h-4 w-4" />
