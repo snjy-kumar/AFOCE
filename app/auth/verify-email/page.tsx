@@ -7,6 +7,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Mail, ShieldCheck } from "lucide-react";
@@ -27,12 +28,43 @@ function VerifyEmailContent() {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [isUnauthorizedAccess, setIsUnauthorizedAccess] = useState(false);
+
+  // Check if user went through registration flow
+  React.useEffect(() => {
+    const verificationFlow = sessionStorage.getItem("verification_flow_initiated");
+    const pendingEmail = sessionStorage.getItem("pending_email_verification");
+
+    // If no registration flow was initiated, deny access
+    if (!verificationFlow || !pendingEmail) {
+      setIsUnauthorizedAccess(true);
+      setError("Please register first to verify your email.");
+      return;
+    }
+
+    // If email from URL doesn't match registered email, deny access
+    if (initialEmail && initialEmail !== pendingEmail) {
+      setIsUnauthorizedAccess(true);
+      setError("This email doesn't match your registration. Please use the link from your email.");
+      return;
+    }
+
+    // Use the verified email from registration
+    setEmail(pendingEmail);
+  }, [initialEmail]);
 
   // ── Verify OTP ─────────────────────────────────────────────
   async function handleVerify(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setResendMessage(null);
+
+    // Prevent verification if unauthorized access detected
+    if (isUnauthorizedAccess) {
+      setError("Please register first to verify your email. Redirecting...");
+      setTimeout(() => router.push("/register"), 2000);
+      return;
+    }
 
     if (!email.trim()) {
       setError("Please enter your email address.");
@@ -63,6 +95,12 @@ function VerifyEmailContent() {
       return;
     }
 
+    // Clear session storage on successful verification
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("verification_flow_initiated");
+      sessionStorage.removeItem("pending_email_verification");
+    }
+
     router.push("/dashboard");
   }
 
@@ -70,6 +108,12 @@ function VerifyEmailContent() {
   async function handleResend() {
     setError(null);
     setResendMessage(null);
+
+    // Prevent resend if unauthorized access detected
+    if (isUnauthorizedAccess) {
+      setError("Please register first to verify your email.");
+      return;
+    }
 
     if (!email.trim()) {
       setError("Please enter your email address first.");
@@ -106,12 +150,21 @@ function VerifyEmailContent() {
       <h1 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
         Verify your email
       </h1>
-      <p className="mt-2 text-sm leading-relaxed text-[var(--ink-soft)]">
-        Enter the 6-digit code sent to your email address.
-        Codes expire after <span className="font-medium text-[var(--ink)]">1 hour</span>.
-      </p>
+      {isUnauthorizedAccess && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+          <p className="mt-2 text-xs text-red-500">Redirecting to registration...</p>
+        </div>
+      )}
 
-      <form onSubmit={handleVerify} className="mt-6 space-y-4">
+      {!isUnauthorizedAccess && (
+        <>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--ink-soft)]">
+            Enter the 6-digit code sent to your email address.
+            Codes expire after <span className="font-medium text-[var(--ink)]">1 hour</span>.
+          </p>
+
+          <form onSubmit={handleVerify} className="mt-6 space-y-4">
         {/* Email */}
         <label className="block">
           <div className="mb-2 text-sm font-medium text-[var(--ink)]">Email address</div>
@@ -120,12 +173,19 @@ function VerifyEmailContent() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              readOnly={!!email}
+              onChange={(e) => !email && setEmail(e.target.value)}
               placeholder="you@company.com"
               autoComplete="email"
-              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)]"
+              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 pl-11 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--brand)] disabled:bg-[var(--bg)]/50 disabled:text-[var(--ink-soft)]"
+              disabled={!!email}
             />
           </div>
+          {email && (
+            <p className="mt-1.5 text-xs text-[var(--ink-soft)]">
+              ✓ Verified email — a confirmation code was sent here
+            </p>
+          )}
         </label>
 
         {/* OTP */}
@@ -195,6 +255,8 @@ function VerifyEmailContent() {
           Back to sign in
         </Link>
       </div>
+        </>
+      )}
     </div>
   );
 }

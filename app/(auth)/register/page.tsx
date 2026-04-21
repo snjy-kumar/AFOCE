@@ -101,6 +101,33 @@ export default function RegisterPage() {
       return;
     }
 
+    // Send confirmation email via API
+    try {
+      const emailResponse = await fetch("/api/auth/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          fullName: form.fullName,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        console.warn("Failed to send confirmation email:", errorData.error);
+        // Don't fail signup if email fails, but note it
+      }
+    } catch (emailError) {
+      console.warn("Error sending confirmation email:", emailError);
+      // Continue anyway - Supabase will still send its own email
+    }
+
+    // Store the registered email in sessionStorage to track that user went through signup
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("pending_email_verification", form.email);
+      sessionStorage.setItem("verification_flow_initiated", "true");
+    }
+
     setSuccess(true);
     setLoading(false);
   }
@@ -130,10 +157,6 @@ export default function RegisterPage() {
     }
   }
 
-  function handleDemoMode(e: React.MouseEvent) {
-    e.preventDefault();
-    router.push("/login");
-  }
 
   if (success) {
     return (
@@ -349,16 +372,6 @@ export default function RegisterPage() {
           <ArrowRight className="h-4 w-4" />
         </button>
       </form>
-
-      <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)]/50 px-4 py-3 text-center">
-        <button
-          type="button"
-          onClick={handleDemoMode}
-          className="text-sm text-[var(--ink-soft)] hover:text-[var(--brand)]"
-        >
-          Prefer to try demo first?
-        </button>
-      </div>
 
       <p className="mt-6 text-center text-sm text-[var(--ink-soft)]">
         Already have an account?{" "}

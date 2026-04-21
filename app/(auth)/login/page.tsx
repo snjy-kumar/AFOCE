@@ -341,28 +341,6 @@ function LoginContent() {
         )}
       </form>
 
-      {/* Demo login */}
-      <div className="mt-6 rounded-xl border-2 border-dashed border-[var(--brand)]/30 bg-[var(--brand)]/5 p-4">
-        <div className="flex items-center justify-center gap-2">
-          <Sparkles className="h-5 w-5 text-[var(--brand)]" />
-          <span className="font-medium text-[var(--ink)]">
-            Want to try AFOCE first?
-          </span>
-        </div>
-        <p className="mt-1 text-center text-sm text-[var(--ink-soft)]">
-          Experience the full features with sample data
-        </p>
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          disabled={loading}
-          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand)]/90 disabled:opacity-70"
-        >
-          <Sparkles className="h-4 w-4" />
-          Try Demo — No Account Required
-        </button>
-      </div>
-
       <p className="mt-6 text-center text-sm text-[var(--ink-soft)]">
         New to AFOCE?{" "}
         <Link href="/register" className="font-medium text-[var(--brand)]">
