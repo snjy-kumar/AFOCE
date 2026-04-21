@@ -75,6 +75,7 @@ export default function RegisterPage() {
       email: form.email,
       password: form.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm?type=email&next=/dashboard`,
         data: {
           full_name: form.fullName,
           company: form.company,
@@ -99,27 +100,6 @@ export default function RegisterPage() {
       }
       setLoading(false);
       return;
-    }
-
-    // Send confirmation email via API
-    try {
-      const emailResponse = await fetch("/api/auth/send-confirmation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email,
-          fullName: form.fullName,
-        }),
-      });
-
-      if (!emailResponse.ok) {
-        const errorData = await emailResponse.json();
-        console.warn("Failed to send confirmation email:", errorData.error);
-        // Don't fail signup if email fails, but note it
-      }
-    } catch (emailError) {
-      console.warn("Error sending confirmation email:", emailError);
-      // Continue anyway - Supabase will still send its own email
     }
 
     // Store the registered email in sessionStorage to track that user went through signup
