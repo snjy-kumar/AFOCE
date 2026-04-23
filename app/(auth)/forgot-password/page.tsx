@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email,
       {
-        redirectTo: `${window.location.origin}/auth/confirm?token_hash={{.TokenHash}}&type=recovery&next=/reset-password`,
+        redirectTo: `${window.location.origin}/auth/confirm?type=recovery&next=/reset-password`,
       },
     );
 

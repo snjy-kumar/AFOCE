@@ -75,7 +75,6 @@ export default function RegisterPage() {
       email: form.email,
       password: form.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirm?type=email&next=/dashboard`,
         data: {
           full_name: form.fullName,
           company: form.company,
@@ -137,6 +136,10 @@ export default function RegisterPage() {
     }
   }
 
+  function handleDemoMode(e: React.MouseEvent) {
+    e.preventDefault();
+    router.push("/login");
+  }
 
   if (success) {
     return (

@@ -76,11 +76,15 @@ export async function POST(req: NextRequest) {
   // ── Send invite via admin client ───────────────────────────
   const admin = createAdminClient();
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (admin.auth.admin as any).inviteUserByEmail(email, {
     data: {
       full_name,
       role,
       invited_by: user.id,
+    },
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/dashboard`,
     },
   });
 

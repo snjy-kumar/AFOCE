@@ -26,11 +26,15 @@ export async function GET(
     .eq("id", user.id)
     .single();
 
+  if (!profile?.org_id) {
+    return NextResponse.json({ data: null, error: { message: "No workspace found" } }, { status: 403 });
+  }
+
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", id)
-    .eq("org_id", profile?.org_id)
+    .eq("org_id", profile.org_id)
     .single();
 
   if (error || !data) {
@@ -64,11 +68,15 @@ export async function PATCH(
     .eq("id", user.id)
     .single();
 
+  if (!profile?.org_id) {
+    return NextResponse.json({ data: null, error: { message: "No workspace found" } }, { status: 403 });
+  }
+
   const { data, error } = await supabase
     .from("profiles")
     .update(body)
     .eq("id", id)
-    .eq("org_id", profile?.org_id)
+    .eq("org_id", profile.org_id)
     .select()
     .single();
 
@@ -79,7 +87,7 @@ export async function PATCH(
   await auditLog({
     supabase,
     actorId: user.id,
-    orgId: profile?.org_id || "",
+    orgId: profile.org_id,
     action: "update",
     entityType: "team",
     entityId: id,
@@ -112,12 +120,16 @@ export async function DELETE(
     .eq("id", user.id)
     .single();
 
+  if (!profile?.org_id) {
+    return NextResponse.json({ data: null, error: { message: "No workspace found" } }, { status: 403 });
+  }
+
   // Soft-delete: set status to inactive
   const { data, error } = await supabase
     .from("profiles")
     .update({ status: "inactive" })
     .eq("id", id)
-    .eq("org_id", profile?.org_id)
+    .eq("org_id", profile.org_id)
     .select()
     .single();
 
@@ -128,7 +140,7 @@ export async function DELETE(
   await auditLog({
     supabase,
     actorId: user.id,
-    orgId: profile?.org_id || "",
+    orgId: profile.org_id,
     action: "delete",
     entityType: "team",
     entityId: id,

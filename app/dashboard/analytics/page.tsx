@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Download, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Download, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface Metric {
@@ -147,28 +147,6 @@ export default function AnalyticsPage() {
                 Expenses
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Insights */}
-      <div className="rounded-2xl border border-[var(--border)] bg-white p-6">
-        <h2 className="font-semibold text-[var(--ink)]">Key Insights</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-            <div className="text-sm font-medium text-[var(--ink)]">Top Revenue Source</div>
-            <div className="mt-2 text-lg font-semibold text-[var(--brand)]">Consulting Services</div>
-            <div className="mt-1 text-xs text-[var(--ink-soft)]">Rs. 1.89M (48.6%)</div>
-          </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-            <div className="text-sm font-medium text-[var(--ink)]">Highest Expense Category</div>
-            <div className="mt-2 text-lg font-semibold text-[var(--accent)]">Staff Costs</div>
-            <div className="mt-1 text-xs text-[var(--ink-soft)]">Rs. 980K (40%)</div>
-          </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-            <div className="text-sm font-medium text-[var(--ink)]">Collection Rate</div>
-            <div className="mt-2 text-lg font-semibold text-[var(--brand-2)]">94.2%</div>
-            <div className="mt-1 text-xs text-[var(--ink-soft)]">Up from 89.1% last month</div>
           </div>
         </div>
       </div>

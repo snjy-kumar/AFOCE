@@ -9,8 +9,6 @@ import {
   EyeOff,
   Mail,
   ShieldAlert,
-  ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -233,7 +231,7 @@ function LoginContent() {
         </div>
       )}
 
-      {urlError === "email_not_confirmed" && (
+      {(urlError === "email_not_confirmed" || emailNotConfirmed) && (
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/8 px-4 py-3">
           <ShieldAlert className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[var(--accent)]" />
           <div className="text-sm">
@@ -241,14 +239,7 @@ function LoginContent() {
               Email not yet verified
             </p>
             <p className="mt-0.5 text-[var(--ink-soft)]">
-              Check your inbox for the confirmation link, or{" "}
-              <Link
-                href={`/auth/verify-email${email ? `?email=${encodeURIComponent(email)}` : ""}`}
-                className="font-medium text-[var(--brand)] hover:underline"
-              >
-                enter your 6-digit code
-              </Link>
-              .
+              Check your inbox for the confirmation link. Also check your spam folder.
             </p>
           </div>
         </div>
@@ -322,21 +313,9 @@ function LoginContent() {
         </button>
 
         {/* Sign-in error */}
-        {error && (
+        {error && !emailNotConfirmed && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             <p>{error}</p>
-            {/* When email isn't confirmed, offer a shortcut to OTP entry */}
-            {emailNotConfirmed && email && (
-              <p className="mt-1.5">
-                <Link
-                  href={`/auth/verify-email?email=${encodeURIComponent(email)}`}
-                  className="inline-flex items-center gap-1 font-medium text-[var(--brand)] hover:underline"
-                >
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Enter verification code
-                </Link>
-              </p>
-            )}
           </div>
         )}
       </form>

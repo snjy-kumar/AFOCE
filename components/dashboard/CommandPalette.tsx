@@ -21,8 +21,15 @@ export default function CommandPalette() {
       }
     };
 
+    const openHandler = () => setOpen(true);
+
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("afoce:open-command-palette", openHandler);
+
+    return () => {
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener("afoce:open-command-palette", openHandler);
+    };
   }, []);
 
   const filtered = useMemo(() => {

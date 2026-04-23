@@ -108,7 +108,7 @@ export default function QueuesPage() {
             </div>
             <Link
               href={item.href}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111f36] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f]"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#56a77a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#637094]"
             >
               Open
               <ArrowRight className="h-4 w-4" />

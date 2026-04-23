@@ -123,6 +123,20 @@ export async function DELETE(request: Request) {
     return applyCORS(unauthorizedResponse(), request);
   }
 
+  // Get profile with org_id
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) {
+    return applyCORS(
+      NextResponse.json({ error: { message: "No workspace found" } }, { status: 403 }),
+      request
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const url = searchParams.get("url");
 
@@ -135,7 +149,7 @@ export async function DELETE(request: Request) {
 
   // Extract path from URL
   const urlObj = new URL(url);
-  const pathMatch = urlObj.pathname.match(/\/object\/public\/[^/]+\/(.+)/);
+  const pathMatch = urlObj.pathname.match(/\/object\/public\/([^/]+)\/(.+)/);
   if (!pathMatch) {
     return applyCORS(
       NextResponse.json({ error: { message: "Invalid file URL" } }, { status: 400 }),
@@ -143,9 +157,16 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const fullPath = pathMatch[1];
-  const [bucket, ...pathParts] = fullPath.split("/");
-  const path = pathParts.join("/");
+  const bucket = pathMatch[1];
+  const path = decodeURIComponent(pathMatch[2]);
+
+  // Enforce org-level ownership for file deletes.
+  if (!path.startsWith(`${profile.org_id}/`)) {
+    return applyCORS(
+      NextResponse.json({ error: { message: "Forbidden" } }, { status: 403 }),
+      request
+    );
+  }
 
   const { error } = await supabase.storage.from(bucket).remove([path]);
 

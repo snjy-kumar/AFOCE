@@ -1,50 +1,50 @@
 // ============================================================
-// /auth/confirm — PKCE token_hash verification
-// Handles email confirmation, password recovery, and invite links.
+// /auth/confirm — Post-email-verification redirect handler
 //
-// Email template usage:
-//   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/dashboard
-//   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password
-//   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/dashboard
+// HOW IT WORKS:
+// Supabase's edge function at /auth/v1/verify processes the email link,
+// validates the token, sets a session cookie, THEN redirects here.
+// By the time the user lands on this route, Supabase has already:
+//   1. Validated the token_hash
+//   2. Set a session cookie in the browser
+//   3. Created/confirmed the user record
+//
+// Our job is simply to read the session and redirect to the final destination.
+// We do NOT call verifyOtp — the token is already consumed by Supabase's edge function.
+//
+// URL params received from Supabase redirect:
+//   - token_hash (already consumed, not used here)
+//   - type (signup | recovery | invite)
+//   - next (where to redirect after confirmation)
 // ============================================================
 
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { createServerComponentClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const next = searchParams.get("next") ?? "/dashboard";
 
-  // Both params are required — if either is missing, redirect to error
-  if (token_hash && type) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+  const supabase = await createServerComponentClient();
 
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+  // Get the session that Supabase's edge function already set
+  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
 
-    if (!error) {
-      // Build a clean redirect URL — strip the OTP params so they
-      // don't linger in browser history or get accidentally re-used.
-      const redirectTo = request.nextUrl.clone();
-      redirectTo.pathname = next;
-      redirectTo.searchParams.delete("token_hash");
-      redirectTo.searchParams.delete("type");
-      redirectTo.searchParams.delete("next");
-      return NextResponse.redirect(redirectTo);
-    }
+  if (sessionError || !user) {
+    // No valid session — redirect to login with error
+    const errorUrl = request.nextUrl.clone();
+    errorUrl.pathname = "/login";
+    errorUrl.searchParams.set("error", "invalid_token");
+    return NextResponse.redirect(errorUrl);
   }
 
-  // Something went wrong (missing params, expired token, already used, etc.)
-  const errorUrl = request.nextUrl.clone();
-  errorUrl.pathname = "/login";
-  errorUrl.searchParams.set("error", "invalid_token");
-  // Remove any OTP params that might have leaked through
-  errorUrl.searchParams.delete("token_hash");
-  errorUrl.searchParams.delete("type");
-  errorUrl.searchParams.delete("next");
-  return NextResponse.redirect(errorUrl);
+  // Session is valid — redirect to the intended destination
+  const redirectTo = request.nextUrl.clone();
+  redirectTo.pathname = next;
+  redirectTo.searchParams.delete("token_hash");
+  redirectTo.searchParams.delete("type");
+  redirectTo.searchParams.delete("next");
+  return NextResponse.redirect(redirectTo);
 }

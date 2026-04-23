@@ -16,8 +16,7 @@ import {
   BarChart3,
 } from "lucide-react";
 
-import { actionQueues, timelineEvents, vatSummary } from "@/lib/mock-data";
-import { getDashboardSnapshot, getInvoices, getExpenses, type ExpenseStatus } from "@/lib/services/mock-finance-service";
+import type { ExpenseStatus } from "@/lib/services/mock-finance-service";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { MetricChart } from "@/components/dashboard/MetricChart";
@@ -31,6 +30,25 @@ function getGreeting(): string {
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
+}
+
+function formatCurrency(value: number): string {
+  return `Rs. ${Math.round(value).toLocaleString()}`;
+}
+
+function toExpenseStatus(status: string): ExpenseStatus {
+  if (status === "manager_review") return "Manager review";
+  if (status === "blocked") return "Blocked";
+  if (status === "approved") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return "Pending approval";
+}
+
+interface RecentActivityItem {
+  id: string;
+  time: string;
+  title: string;
+  detail: string;
 }
 
 export default function DashboardHomePage() {
@@ -57,28 +75,34 @@ export default function DashboardHomePage() {
       receipt: "Attached" | "Missing";
     }>
   >([]);
+  const [totals, setTotals] = useState({
+    receivables: 0,
+    payables: 0,
+    cashPosition: 0,
+    vatPayable: 0,
+  });
+  const [vatCard, setVatCard] = useState({
+    outputTax: formatCurrency(0),
+    inputTax: formatCurrency(0),
+    netPayable: formatCurrency(0),
+    month: "Current month",
+    dueDays: 4,
+  });
+  const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
+  const [revenueBreakdown, setRevenueBreakdown] = useState<Array<{ label: string; value: number; color: string }>>([]);
 
   useEffect(() => {
     let active = true;
 
-    const loadUser = async () => {
+    const loadDashboard = async () => {
       const supabase = createClient();
       const isDemo =
         typeof window !== "undefined" &&
         localStorage.getItem("demo_session") === "true";
 
       if (isDemo) {
-        const demoData = localStorage.getItem("demo_data");
-        if (demoData) {
-          try {
-            const parsed = JSON.parse(demoData);
-            setUserName("Demo User");
-          } catch {
-            setUserName("Demo User");
-          }
-        } else {
-          setUserName("Demo User");
-        }
+        setUserName("Demo User");
+        setLoading(false);
         return;
       }
 
@@ -86,40 +110,153 @@ export default function DashboardHomePage() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
-          .single();
-
-        if (profile?.full_name) {
-          setUserName(profile.full_name);
-        } else if (user.email) {
-          setUserName(user.email.split("@")[0]);
-        }
-      }
-    };
-
-    const load = async () => {
-      setLoading(true);
-      const [nextSnapshot, nextInvoices, nextExpenses] = await Promise.all([
-        getDashboardSnapshot(),
-        getInvoices(),
-        getExpenses(),
-      ]);
-      if (!active) {
+      if (!user) {
+        setLoading(false);
         return;
       }
 
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.full_name) {
+        setUserName(profile.full_name);
+      } else if (user.email) {
+        setUserName(user.email.split("@")[0]);
+      }
+
+      const [invoiceRes, expenseRes, bankRes] = await Promise.all([
+        fetch("/api/invoices?page=1&pageSize=100&sortBy=created_at&sortOrder=desc", { cache: "no-store" }),
+        fetch("/api/expenses?page=1&pageSize=100&sortBy=created_at&sortOrder=desc", { cache: "no-store" }),
+        fetch("/api/bank-lines?page=1&pageSize=100", { cache: "no-store" }),
+      ]);
+
+      const [invoiceJson, expenseJson, bankJson] = await Promise.all([
+        invoiceRes.json(),
+        expenseRes.json(),
+        bankRes.json(),
+      ]);
+
+      const invoiceRows = ((invoiceJson.data?.data || []) as Array<{
+        id: string;
+        amount: number;
+        vat: number;
+        status: string;
+        created_at: string;
+        created_by?: string;
+        client?: { name?: string };
+      }>).filter((row) => row.created_by === user.id);
+
+      const expenseRows = ((expenseJson.data?.data || []) as Array<{
+        id: string;
+        employee: string;
+        category: string;
+        amount: number;
+        bs_date: string;
+        status: string;
+        created_at: string;
+        created_by?: string;
+        receipt_url: string | null;
+      }>).filter((row) => row.created_by === user.id);
+
+      const bankRows = ((bankJson.data?.data || []) as Array<{
+        id: string;
+        state: string;
+        amount: number;
+        created_at: string;
+        created_by?: string;
+      }>).filter((row) => row.created_by === user.id);
+
+      if (!active) return;
+
+      const nextSnapshot = {
+        overdue: invoiceRows.filter((entry) => entry.status === "overdue").length,
+        pendingApprovals: expenseRows.filter(
+          (entry) => entry.status === "pending_approval" || entry.status === "manager_review",
+        ).length,
+        blocked: expenseRows.filter((entry) => entry.status === "blocked").length,
+        unmatched: bankRows.filter((entry) => entry.state !== "matched").length,
+      };
+
+      const invoiceTotal = invoiceRows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const expenseTotal = expenseRows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const outputTax = invoiceRows.reduce((sum, entry) => sum + Number(entry.vat || 0), 0);
+
+      const monthMap = new Map<string, number>();
+      for (const invoice of invoiceRows) {
+        const label = new Date(invoice.created_at).toLocaleString("en-US", { month: "short" });
+        monthMap.set(label, (monthMap.get(label) || 0) + Number(invoice.amount || 0) + Number(invoice.vat || 0));
+      }
+      const trendBars = Array.from(monthMap.entries())
+        .slice(-3)
+        .map(([label, value]) => ({ label, value, color: "bg-[var(--brand)]" }));
+
+      const activity = [
+        ...invoiceRows.map((row) => ({
+          id: `inv-${row.id}`,
+          createdAt: row.created_at,
+          title: `Invoice ${row.id}`,
+          detail: `${formatCurrency(Number(row.amount || 0) + Number(row.vat || 0))} created`,
+        })),
+        ...expenseRows.map((row) => ({
+          id: `exp-${row.id}`,
+          createdAt: row.created_at,
+          title: `Expense ${row.id}`,
+          detail: `${formatCurrency(Number(row.amount || 0))} in ${row.category}`,
+        })),
+      ]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 4)
+        .map((item) => ({
+          id: item.id,
+          time: new Date(item.createdAt).toLocaleDateString(),
+          title: item.title,
+          detail: item.detail,
+        }));
+
       setSnapshot(nextSnapshot);
-      setInvoices(nextInvoices.slice(0, 5));
-      setExpenses(nextExpenses.slice(0, 3));
+      setInvoices(
+        invoiceRows.slice(0, 5).map((row) => ({
+          id: row.id,
+          client: row.client?.name || "Unknown",
+          amount: formatCurrency(Number(row.amount || 0) + Number(row.vat || 0)),
+          status: row.status,
+        })),
+      );
+      setExpenses(
+        expenseRows.slice(0, 3).map((row) => ({
+          id: row.id,
+          employee: row.employee,
+          category: row.category,
+          amount: formatCurrency(Number(row.amount || 0)),
+          bsDate: row.bs_date,
+          status: toExpenseStatus(row.status),
+          policy: row.status === "blocked" ? "Blocked by policy rule" : "Within allowed policy",
+          receipt: row.receipt_url ? "Attached" : "Missing",
+        })),
+      );
+      setTotals({
+        receivables: invoiceTotal,
+        payables: expenseTotal,
+        cashPosition: invoiceTotal - expenseTotal,
+        vatPayable: outputTax,
+      });
+      setVatCard({
+        outputTax: formatCurrency(outputTax),
+        inputTax: formatCurrency(0),
+        netPayable: formatCurrency(outputTax),
+        month: new Date().toLocaleString("en-US", { month: "long", year: "numeric" }),
+        dueDays: 4,
+      });
+      setRevenueBreakdown(trendBars.length > 0 ? trendBars : [{ label: "Now", value: 0, color: "bg-[var(--brand)]" }]);
+      setRecentActivity(activity);
       setLoading(false);
     };
 
-    loadUser();
-    load();
+    setLoading(true);
+    void loadDashboard();
     return () => {
       active = false;
     };
@@ -130,8 +267,8 @@ export default function DashboardHomePage() {
     : [
         {
           label: "Cash Position",
-          value: "Rs. 8.45M",
-          change: "+8.2%",
+          value: formatCurrency(totals.cashPosition),
+          change: `${snapshot.unmatched} to reconcile`,
           trend: "up" as const,
           icon: Wallet,
           color: "text-[var(--brand-2)]",
@@ -139,8 +276,8 @@ export default function DashboardHomePage() {
         },
         {
           label: "Receivables",
-          value: "Rs. 1.24M",
-          change: "5 overdue",
+          value: formatCurrency(totals.receivables),
+          change: `${snapshot.overdue} overdue`,
           trend: "warning" as const,
           icon: DollarSign,
           color: "text-[var(--accent)]",
@@ -148,8 +285,8 @@ export default function DashboardHomePage() {
         },
         {
           label: "Payables",
-          value: "Rs. 430.5K",
-          change: "Due 4 days",
+          value: formatCurrency(totals.payables),
+          change: `${snapshot.pendingApprovals} awaiting review`,
           trend: "neutral" as const,
           icon: CreditCard,
           color: "text-[var(--brand)]",
@@ -157,8 +294,8 @@ export default function DashboardHomePage() {
         },
         {
           label: "VAT Payable",
-          value: "Rs. 125.7K",
-          change: "This month",
+          value: formatCurrency(totals.vatPayable),
+          change: "Current month",
           trend: "neutral" as const,
           icon: Receipt,
           color: "text-[var(--ink-soft)]",
@@ -166,17 +303,18 @@ export default function DashboardHomePage() {
         },
       ];
 
-  const revenueBreakdown = [
-    { label: "Jan", value: 850000, color: "bg-[var(--brand)]" },
-    { label: "Feb", value: 720000, color: "bg-[var(--brand)]" },
-    { label: "Mar", value: 980000, color: "bg-[var(--brand)]" },
-  ];
-
   const quickActions = [
     { label: "Create Invoice", href: "/dashboard/invoices", icon: Receipt },
     { label: "Log Expense", href: "/dashboard/expenses", icon: CreditCard },
     { label: "Add Client", href: "/dashboard/clients", icon: Building2 },
     { label: "View Reports", href: "/dashboard/reports", icon: BarChart3 },
+  ];
+
+  const quickAccess = [
+    { title: "Overdue", href: "/dashboard/invoices?filter=overdue", count: `${snapshot.overdue} items` },
+    { title: "Approvals", href: "/dashboard/expenses", count: `${snapshot.pendingApprovals} pending` },
+    { title: "Blocked", href: "/dashboard/queues", count: `${snapshot.blocked} blocked` },
+    { title: "Reconcile", href: "/dashboard/reconciliation", count: `${snapshot.unmatched} open` },
   ];
 
   return (
@@ -296,8 +434,11 @@ export default function DashboardHomePage() {
             <p className="text-sm text-[var(--ink-soft)]">Latest transactions</p>
           </div>
           <div className="divide-y divide-[var(--border)]">
-            {timelineEvents.slice(0, 4).map((event, index) => (
-              <div key={index} className="px-6 py-4">
+            {recentActivity.length === 0 && !loading && (
+              <div className="px-6 py-8 text-sm text-[var(--ink-soft)]">No recent activity for this user.</div>
+            )}
+            {recentActivity.map((event) => (
+              <div key={event.id} className="px-6 py-4">
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-[var(--brand-2)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--brand-2)]">
                     {event.time}
@@ -325,9 +466,9 @@ export default function DashboardHomePage() {
         <DashboardCard title="Quick Access" subtitle="Key action areas">
           <div className="p-6">
             <div className="grid grid-cols-2 gap-3">
-              {actionQueues.map((item) => (
+              {quickAccess.map((item) => (
                 <Link
-                  key={item.title}
+                  key={item.title + item.href}
                   href={item.href}
                   className="flex flex-col rounded-xl border border-[var(--border)] p-4 transition hover:border-[var(--brand)] hover:bg-[var(--bg-elevated)]"
                 >
@@ -348,11 +489,11 @@ export default function DashboardHomePage() {
 
         {/* VAT Widget */}
         <VATWidget
-          outputTax={vatSummary.outputTax}
-          inputTax={vatSummary.inputTax}
-          netPayable={vatSummary.netPayable}
-          month={vatSummary.month}
-          dueDays={4}
+          outputTax={vatCard.outputTax}
+          inputTax={vatCard.inputTax}
+          netPayable={vatCard.netPayable}
+          month={vatCard.month}
+          dueDays={vatCard.dueDays}
           loading={loading}
         />
       </div>
