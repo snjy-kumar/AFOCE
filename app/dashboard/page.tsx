@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { adToBsDateWithDay } from "@/lib/utils/date";
 import {
   AlertCircle,
   ArrowRight,
@@ -186,7 +187,8 @@ export default function DashboardHomePage() {
 
       const monthMap = new Map<string, number>();
       for (const invoice of invoiceRows) {
-        const label = new Date(invoice.created_at).toLocaleString("en-US", { month: "short" });
+        const bsDate = adToBsDateWithDay(new Date(invoice.created_at));
+        const label = bsDate.split(",")[0].replace(",", "");
         monthMap.set(label, (monthMap.get(label) || 0) + Number(invoice.amount || 0) + Number(invoice.vat || 0));
       }
       const trendBars = Array.from(monthMap.entries())
@@ -211,7 +213,7 @@ export default function DashboardHomePage() {
         .slice(0, 4)
         .map((item) => ({
           id: item.id,
-          time: new Date(item.createdAt).toLocaleDateString(),
+          time: adToBsDateWithDay(new Date(item.createdAt)),
           title: item.title,
           detail: item.detail,
         }));
@@ -247,7 +249,7 @@ export default function DashboardHomePage() {
         outputTax: formatCurrency(outputTax),
         inputTax: formatCurrency(0),
         netPayable: formatCurrency(outputTax),
-        month: new Date().toLocaleString("en-US", { month: "long", year: "numeric" }),
+        month: adToBsDateWithDay(new Date()).split(",")[0].replace(",", ""),
         dueDays: 4,
       });
       setRevenueBreakdown(trendBars.length > 0 ? trendBars : [{ label: "Now", value: 0, color: "bg-[var(--brand)]" }]);

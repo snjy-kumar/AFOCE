@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getCurrentBsYear, getCurrentBsMonth, getCurrentBsDateWithDay } from "@/lib/utils/date";
 import {
   Building2,
   Calendar,
@@ -125,12 +126,12 @@ export default function SettingsPage() {
             <div className="text-sm text-[var(--ink-soft)]">
               Current Fiscal Year
             </div>
-            <div className="mt-1 font-semibold text-[var(--ink)]">2081/82</div>
+            <div className="mt-1 font-semibold text-[var(--ink)]">FY {getCurrentBsYear()}/{String(getCurrentBsYear() + 1).slice(-2)}</div>
           </div>
           <div>
             <div className="text-sm text-[var(--ink-soft)]">Active Period</div>
             <div className="mt-1 font-semibold text-[var(--ink)]">
-              Baisakh 2081
+              {getCurrentBsDateWithDay()}
             </div>
           </div>
           <div>

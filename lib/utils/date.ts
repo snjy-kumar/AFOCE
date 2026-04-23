@@ -1,7 +1,9 @@
 // ============================================================
 // Date Utilities for Nepali (Bikram Sambat) and AD conversion
-// AFOCE operates in Nepal - BS dates for display, AD for storage
+// Using miti-pariwartan for accurate BS/AD conversion
 // ============================================================
+
+import { convertAdToBs, convertBsToAd } from "miti-pariwartan";
 
 /**
  * Bikram Sambat month names (Nepali)
@@ -12,21 +14,7 @@ export const BS_MONTHS = [
 ] as const;
 
 /**
- * BS month lengths (approx) - leap years differ
- * Standard year: 30/31/32 day months
- */
-export const BS_MONTH_DAYS: Record<number, number[]> = {
-  // Keyed by BS year, stored as fallback
-};
-
-// Default BS year data (BS 2081/82 - approximate)
-export const BS_2081_MONTH_DAYS = [30, 31, 32, 31, 31, 30, 30, 29, 30, 29, 30, 30];
-export const BS_2082_MONTH_DAYS = [30, 31, 32, 31, 32, 30, 30, 30, 29, 30, 29, 30];
-
-/**
  * Convert BS date string (e.g. "Baisakh 2081") to AD Date object.
- * Uses hardcoded BS↔AD offset since no library.
- * BS 2081 starts approx April 2024.
  */
 export function bsToAdDate(bsDateStr: string): Date | null {
   const match = bsDateStr.match(/^(\w+)\s+(\d{4})$/);
@@ -37,53 +25,51 @@ export function bsToAdDate(bsDateStr: string): Date | null {
   if (monthIdx === -1) return null;
 
   const bsYear = parseInt(yearStr, 10);
-  const bsMonth = monthIdx;
+  const bsMonth = monthIdx + 1; // miti-pariwartan uses 1-12
+  const bsDay = 1; // default to first day
 
-  // BS 2081 starts ~April 14, 2024
-  // Each BS year = 365 or 366 days (roughly)
-  const BS_2081_START = new Date("2024-04-14");
+  const result = convertBsToAd({ year: bsYear, month: bsMonth, day: bsDay });
+  return new Date(result.input);
+}
 
-  // Calculate days offset from BS 2081
-  const baseYear = 2081;
-  const baseAdYear = 2024;
+/**
+ * Convert BS date with day (e.g., "Baisakh 14, 2081") to AD Date
+ */
+export function bsToAdDateWithDay(bsDateStr: string): Date | null {
+  // Handle formats like "Baisakh 14, 2081" or "Baisakh 2081"
+  const match = bsDateStr.match(/^(\w+)\s+(\d{1,2}),?\s*(\d{4})$/);
+  if (!match) return bsToAdDate(bsDateStr);
 
-  let totalDays = 0;
-  for (let y = baseYear; y < bsYear; y++) {
-    totalDays += y % 4 === 0 ? 366 : 365;
-  }
+  const [, monthName, dayStr, yearStr] = match;
+  const monthIdx = BS_MONTHS.indexOf(monthName as typeof BS_MONTHS[number]);
+  if (monthIdx === -1) return null;
 
-  const monthDays = bsYear === 2081 ? BS_2081_MONTH_DAYS : BS_2082_MONTH_DAYS;
-  for (let m = 0; m < bsMonth; m++) {
-    totalDays += monthDays[m];
-  }
+  const bsYear = parseInt(yearStr, 10);
+  const bsMonth = monthIdx + 1;
+  const bsDay = parseInt(dayStr, 10);
 
-  const adDate = new Date(BS_2081_START);
-  adDate.setDate(adDate.getDate() + totalDays);
-  return adDate;
+  const result = convertBsToAd({ year: bsYear, month: bsMonth, day: bsDay });
+  return new Date(result.input);
 }
 
 /**
  * Convert AD Date to BS date string (e.g. "Baisakh 2081")
  */
 export function adToBsDate(adDate: Date): string {
-  // Approximate conversion
-  const adYear = adDate.getFullYear();
-  const adMonth = adDate.getMonth(); // 0-indexed
-
-  // Offset: AD 2024-04 = BS 2081 Baisakh
-  let bsYear = adYear - 2024 + 2081;
-  let bsMonth = adMonth - 3; // April (3) = Baisakh (0)
-
-  if (bsMonth < 0) {
-    bsMonth += 12;
-    bsYear -= 1;
-  }
-
-  return `${BS_MONTHS[bsMonth]} ${bsYear}`;
+  const result = convertAdToBs(adDate);
+  return `${result.month.en} ${result.year.en}`;
 }
 
 /**
- * Format BS date for display (e.g. "Baisakh 2081" → "Baishakh 2081" or keep as-is)
+ * Convert AD Date to BS date with day (e.g., "Baisakh 14, 2081")
+ */
+export function adToBsDateWithDay(adDate: Date): string {
+  const result = convertAdToBs(adDate);
+  return `${result.month.en} ${result.day.en}, ${result.year.en}`;
+}
+
+/**
+ * Format BS date for display
  */
 export function formatBsDate(bsDateStr: string): string {
   return bsDateStr;
@@ -108,8 +94,39 @@ export function isOverdue(adDateStr: string, dueDays: number): boolean {
 }
 
 /**
- * Get current BS date string (approximate)
+ * Get current BS date string
  */
 export function getCurrentBsDate(): string {
   return adToBsDate(new Date());
+}
+
+/**
+ * Get current BS date with day
+ */
+export function getCurrentBsDateWithDay(): string {
+  return adToBsDateWithDay(new Date());
+}
+
+/**
+ * Get current BS year
+ */
+export function getCurrentBsYear(): number {
+  const result = convertAdToBs(new Date());
+  return parseInt(result.year.en, 10);
+}
+
+/**
+ * Get current BS month
+ */
+export function getCurrentBsMonth(): string {
+  const result = convertAdToBs(new Date());
+  return result.month.en;
+}
+
+/**
+ * Get current BS day
+ */
+export function getCurrentBsDay(): number {
+  const result = convertAdToBs(new Date());
+  return parseInt(result.day.en, 10);
 }

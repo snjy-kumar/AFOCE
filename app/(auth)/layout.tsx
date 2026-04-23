@@ -1,15 +1,15 @@
-import { ScrollText, ShieldCheck, Sparkles, Zap, CalendarDays, Mountain } from "lucide-react";
+import { ScrollText, ShieldCheck, Sparkles, Zap, CalendarDays, Mountain, Landmark, Coins, FileText, Building2 } from "lucide-react";
 
 import Logo from "@/components/brand/Logo";
+import { getCurrentBsYear, getCurrentBsMonth, getCurrentBsDay } from "@/lib/utils/date";
 
-const bsMonths = [
-  "Baisakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin",
-  "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"
-];
+const currentBsYear = getCurrentBsYear();
+const currentBsMonth = getCurrentBsMonth();
+const currentBsDay = getCurrentBsDay();
 
-const currentBsYear = 2081;
-const currentBsMonth = bsMonths[new Date().getMonth()];
-const currentBsDay = Math.floor(Math.random() * 30) + 1;
+const bsMonths = ["Baisakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin", "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"];
+const currentMonthIdx = bsMonths.indexOf(currentBsMonth);
+const nextMonth = bsMonths[(currentMonthIdx + 1) % 12];
 
 const trustRows = [
   {
@@ -49,6 +49,28 @@ export default function AuthLayout({
         <div className="hero-glow left-[-6rem] top-0 h-72 w-72 bg-[rgba(31,122,104,0.34)]" />
         <div className="hero-glow bottom-[-4rem] right-[-3rem] h-80 w-80 bg-[rgba(200,157,83,0.28)]" />
 
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -left-20 -top-20 h-64 w-64 opacity-[0.02]">
+            <svg width="200" height="200" viewBox="0 0 100 100" fill="none">
+              <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="0.5" />
+              <circle cx="50" cy="50" r="30" stroke="currentColor" strokeWidth="0.3" />
+              <path d="M50 10 L55 45 L90 50 L55 55 L50 90 L45 55 L10 50 L45 45 Z" fill="currentColor" />
+            </svg>
+          </div>
+          
+          <div className="absolute -right-10 -bottom-10 h-48 w-48 opacity-[0.02]">
+            <Mountain className="h-full w-full" />
+          </div>
+          
+          <div className="absolute right-16 top-1/4 opacity-[0.03]">
+            <Landmark className="h-24 w-24" />
+          </div>
+          
+          <div className="absolute left-8 bottom-20 opacity-[0.04]">
+            <Coins className="h-16 w-16" />
+          </div>
+        </div>
+
         <div className="relative z-10">
           <Logo href="/" muted />
         </div>
@@ -81,6 +103,24 @@ export default function AuthLayout({
               </div>
             ))}
           </div>
+
+          <div className="mt-10 flex items-center gap-6 rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10">
+              <Coins className="h-5 w-5 text-[var(--brand-2)]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white/80">Next fiscal: {nextMonth} {currentBsYear + 1}</p>
+              <p className="text-xs text-white/40">Prepare your books for audit</p>
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10">
+              <Building2 className="h-5 w-5 text-[var(--brand-2)]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white/80">IRD Compliant</p>
+              <p className="text-xs text-white/40">VAT & GST ready</p>
+            </div>
+          </div>
         </div>
 
         <div className="relative z-10 flex items-center justify-between text-xs text-white/50">
@@ -98,26 +138,35 @@ export default function AuthLayout({
         </div>
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden lg:absolute">
-          <div className="absolute left-8 top-20 opacity-[0.06]">
-            <svg width="180" height="180" viewBox="0 0 180 180" fill="none">
-              <circle cx="90" cy="90" r="88" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" />
-              <circle cx="90" cy="90" r="70" stroke="currentColor" strokeWidth="0.5" />
-              <circle cx="90" cy="90" r="50" stroke="currentColor" strokeWidth="0.5" />
-              <text x="90" y="50" textAnchor="middle" className="fill-[var(--brand)] text-xs font-medium">{currentBsYear}</text>
-              <text x="90" y="130" textAnchor="middle" className="fill-[var(--brand)] text-xs font-medium">BS</text>
+          <div className="absolute -left-16 top-0 h-40 w-40 opacity-[0.04]">
+            <svg width="160" height="160" viewBox="0 0 160 160" fill="none">
+              <circle cx="80" cy="80" r="75" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3" />
+              <circle cx="80" cy="80" r="55" stroke="currentColor" strokeWidth="0.3" />
+              <circle cx="80" cy="80" r="35" stroke="currentColor" strokeWidth="0.2" />
             </svg>
           </div>
 
-          <div className="absolute bottom-24 right-8 opacity-[0.08]">
-            <Mountain className="h-32 w-32 text-[var(--brand-2)]" />
+          <div className="absolute -right-8 -bottom-8 h-32 w-32 opacity-[0.06]">
+            <Mountain className="h-full w-full" />
           </div>
 
-          <div className="absolute right-16 top-32 opacity-[0.05]">
+          <div className="absolute right-4 top-8 opacity-[0.05]">
+            <Landmark className="h-20 w-20" />
+          </div>
+
+          <div className="absolute left-8 bottom-16 opacity-[0.06]">
+            <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+              <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="0.5" />
+              <path d="M50 15 L58 42 L88 50 L58 58 L50 85 L42 58 L12 50 L42 42 Z" fill="currentColor" />
+            </svg>
+          </div>
+
+          <div className="absolute right-20 top-1/3 opacity-[0.04]">
             <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: 28 }).map((_, i) => (
                 <div
                   key={i}
-                  className={`h-2 w-2 rounded-full ${i < currentBsDay ? 'bg-[var(--brand)]' : 'border border-[var(--brand)]'}`}
+                  className={`h-1.5 w-1.5 rounded-full ${i < currentBsDay ? 'bg-[var(--brand)]' : 'border border-[var(--brand)]'}`}
                 />
               ))}
             </div>
@@ -131,8 +180,7 @@ export default function AuthLayout({
         <div className="relative z-10 hidden border-t border-[var(--border)] bg-white/50 px-6 py-3 lg:block">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-[var(--ink-soft)]">
-              <span>🌏</span>
-              <span>Operating in Bikram Sambat calendar</span>
+              <span>Operating in Nepali calendar</span>
             </div>
             <div className="flex items-center gap-1 rounded-md border border-[var(--border)] bg-white px-2 py-1 text-xs font-medium text-[var(--brand)]">
               <CalendarDays className="h-3 w-3" />

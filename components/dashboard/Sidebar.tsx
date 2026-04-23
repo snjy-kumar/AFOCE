@@ -305,7 +305,7 @@ export default function Sidebar() {
             )}
           >
             <Bell className="h-4 w-4" />
-            {!collapsed && <span className="text-xs font-semibold">3</span>}
+            {!collapsed && <span className="text-xs font-semibold">Notifications</span>}
           </button>
           <button
             type="button"

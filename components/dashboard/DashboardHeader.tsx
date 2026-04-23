@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
+import { adToBsDateWithDay, getCurrentBsYear, getCurrentBsMonth } from "@/lib/utils/date";
 import { InvoiceModal } from "@/components/modals/InvoiceModal";
 import { ExpenseModal } from "@/components/modals/ExpenseModal";
 import { ClientModal } from "@/components/modals/ClientModal";
@@ -128,6 +129,8 @@ export default function DashboardHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const title = pathTitles[pathname] ?? "Dashboard";
+  const currentBsYear = getCurrentBsYear();
+  const currentBsMonth = getCurrentBsMonth();
   const [user, setUser] = useState<UserData | null>(null);
   const [openPanel, setOpenPanel] = useState<HeaderPanel>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -449,11 +452,11 @@ export default function DashboardHeader() {
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-[var(--ink)]">{title}</h1>
             <span className="rounded-full bg-[var(--brand-2)]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--brand-2)]">
-              FY 2081/82
+              FY {currentBsYear}/{String(currentBsYear + 1).slice(-2)}
             </span>
           </div>
           <p className="text-sm text-[var(--ink-soft)]">
-            Baisakh close in progress
+            {currentBsMonth} close in progress
           </p>
         </div>
 
@@ -668,13 +671,15 @@ export default function DashboardHeader() {
                       <p className="text-sm font-semibold text-[var(--ink)]">Notifications</p>
                       <p className="text-xs text-[var(--ink-soft)]">{unreadCount} unread</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={markAllNotificationsRead}
-                      className="text-xs font-medium text-[var(--brand)] transition hover:opacity-80"
-                    >
-                      Mark all read
-                    </button>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={markAllNotificationsRead}
+                        className="text-xs font-medium text-[var(--brand)] transition hover:opacity-80"
+                      >
+                        Mark all read
+                      </button>
+                    )}
                   </div>
 
                   <div className="max-h-80 overflow-y-auto">
@@ -683,28 +688,39 @@ export default function DashboardHeader() {
                     ) : notifications.length === 0 ? (
                       <p className="px-4 py-4 text-sm text-[var(--ink-soft)]">No notifications yet.</p>
                     ) : (
-                      notifications.map((item) => (
-                        <div key={item.id} className="border-b border-[var(--border)] px-4 py-3 last:border-b-0">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-[var(--ink)]">{item.title}</p>
-                              <p className="mt-1 text-xs text-[var(--ink-soft)]">{item.message}</p>
-                              <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
-                                {new Date(item.created_at).toLocaleString()}
-                              </p>
+                      <>
+                        {notifications.slice(0, 5).map((item) => (
+                          <div key={item.id} className="border-b border-[var(--border)] px-4 py-3 last:border-b-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-[var(--ink)]">{item.title}</p>
+                                <p className="mt-1 text-xs text-[var(--ink-soft)]">{item.message}</p>
+                                <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
+                                  {adToBsDateWithDay(new Date(item.created_at))}
+                                </p>
+                              </div>
+                              {!item.read && (
+                                <button
+                                  type="button"
+                                  onClick={() => void markNotificationRead(item.id)}
+                                  className="shrink-0 rounded-lg border border-[var(--border)] px-2 py-1 text-xs text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             </div>
-                            {!item.read && (
-                              <button
-                                type="button"
-                                onClick={() => void markNotificationRead(item.id)}
-                                className="shrink-0 rounded-lg border border-[var(--border)] px-2 py-1 text-xs text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]"
-                              >
-                                <Check className="h-3.5 w-3.5" />
-                              </button>
-                            )}
                           </div>
-                        </div>
-                      ))
+                        ))}
+                        {notifications.length > 5 && (
+                          <Link
+                            href="/dashboard/notifications"
+                            onClick={() => setOpenPanel(null)}
+                            className="flex items-center justify-center px-4 py-3 text-sm font-medium text-[var(--brand)] transition hover:opacity-80"
+                          >
+                            See all {notifications.length} notifications
+                          </Link>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

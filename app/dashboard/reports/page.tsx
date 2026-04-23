@@ -2,6 +2,7 @@
 
 import { Download, FileText, PieChart, Printer, TrendingUp, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { adToBsDateWithDay } from "@/lib/utils/date";
 
 interface VATData {
   month: string;
@@ -174,7 +175,7 @@ export default function ReportsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-medium text-[var(--ink-soft)]">{entry.actor_email || "Unknown"}</div>
                     <div className="mt-1 text-sm font-medium text-[var(--ink)]">{entry.action} {entry.entity_type}</div>
-                    <div className="mt-1 text-xs text-[var(--ink-soft)]">{new Date(entry.created_at).toLocaleDateString()}</div>
+                    <div className="mt-1 text-xs text-[var(--ink-soft)]">{adToBsDateWithDay(new Date(entry.created_at))}</div>
                   </div>
                 </div>
               </div>

@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Camera, User, Save, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
+import { adToBsDateWithDay } from "@/lib/utils/date"
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import Image from 'next/image'
 
@@ -358,10 +359,7 @@ export default function ProfileSettingsPage() {
                 </span>
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] px-4 py-2.5 text-sm text-[var(--ink-soft)] opacity-70">
                   {user?.created_at
-                    ? new Date(user.created_at).toLocaleDateString('en-US', {
-                        month: 'long',
-                        year: 'numeric',
-                      })
+                    ? adToBsDateWithDay(new Date(user.created_at)).split(",")[0].replace(",", "")
                     : '—'}
                 </div>
               </div>
