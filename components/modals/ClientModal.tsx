@@ -2,21 +2,23 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import type { ClientRecord } from "@/lib/types";
 
 interface Props {
   onClose: () => void;
   onCreated: (client: unknown) => void;
+  initialData?: ClientRecord;
 }
 
-export function ClientModal({ onClose, onCreated }: Props) {
+export function ClientModal({ onClose, onCreated, initialData }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    name: "",
-    pan: "",
-    email: "",
-    phone: "",
-    type: "client",
+    name: initialData?.name || "",
+    pan: initialData?.pan || "",
+    email: initialData?.email || "",
+    phone: initialData?.phone || "",
+    type: initialData?.type || "client",
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -26,8 +28,11 @@ export function ClientModal({ onClose, onCreated }: Props) {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/clients", {
-      method: "POST",
+    const url = initialData ? `/api/clients/${initialData.id}` : "/api/clients";
+    const method = initialData ? "PATCH" : "POST";
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: form.name,
@@ -59,16 +64,17 @@ export function ClientModal({ onClose, onCreated }: Props) {
           <X className="h-4 w-4" />
         </button>
 
-        <h2 className="text-lg font-semibold text-[var(--ink)]">Add Contact</h2>
-        <p className="mt-1 text-sm text-[var(--ink-soft)]">Add a new client or vendor to your workspace</p>
+        <h2 className="text-lg font-semibold text-[var(--ink)]">{initialData ? "Edit Contact" : "Add Contact"}</h2>
+        <p className="mt-1 text-sm text-[var(--ink-soft)]">{initialData ? "Update client or vendor details" : "Add a new client or vendor to your workspace"}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Contact Type</label>
             <select
               value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+              onChange={(e) => setForm({ ...form, type: e.target.value as "client" | "vendor" })}
+              disabled={!!initialData}
+              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)] disabled:opacity-50"
             >
               <option value="client">Client</option>
               <option value="vendor">Vendor</option>
@@ -136,7 +142,7 @@ export function ClientModal({ onClose, onCreated }: Props) {
               disabled={loading}
               className="rounded-xl bg-[#111f36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f] disabled:opacity-50"
             >
-              {loading ? "Adding..." : "Add Contact"}
+              {loading ? (initialData ? "Updating..." : "Adding...") : initialData ? "Update Contact" : "Add Contact"}
             </button>
           </div>
         </form>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { getCurrentBsDate } from "@/lib/utils/date";
+import type { InvoiceRecord } from "@/lib/types";
 
 interface Client {
   id: string;
@@ -13,17 +14,18 @@ interface Client {
 interface Props {
   onClose: () => void;
   onCreated: (invoice: unknown) => void;
+  initialData?: InvoiceRecord;
 }
 
-export function InvoiceModal({ onClose, onCreated }: Props) {
+export function InvoiceModal({ onClose, onCreated, initialData }: Props) {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    client_id: "",
-    bs_date: getCurrentBsDate(),
-    amount: "",
-    due_days: "30",
+    client_id: initialData?.client_id || "",
+    bs_date: initialData?.bs_date || getCurrentBsDate(),
+    amount: initialData?.amount?.toString() || "",
+    due_days: initialData?.due_days?.toString() || "30",
   });
 
   useEffect(() => {
@@ -56,8 +58,11 @@ export function InvoiceModal({ onClose, onCreated }: Props) {
     adDate.setDate(adDate.getDate() + totalDays);
     const ad_date = adDate.toISOString().split("T")[0];
 
-    const res = await fetch("/api/invoices", {
-      method: "POST",
+    const url = initialData ? `/api/invoices/${initialData.id}` : "/api/invoices";
+    const method = initialData ? "PATCH" : "POST";
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         client_id: form.client_id,
@@ -89,8 +94,8 @@ export function InvoiceModal({ onClose, onCreated }: Props) {
           <X className="h-4 w-4" />
         </button>
 
-        <h2 className="text-lg font-semibold text-[var(--ink)]">Create Invoice</h2>
-        <p className="mt-1 text-sm text-[var(--ink-soft)]">Issue a new VAT invoice to a client</p>
+        <h2 className="text-lg font-semibold text-[var(--ink)]">{initialData ? "Edit Invoice" : "Create Invoice"}</h2>
+        <p className="mt-1 text-sm text-[var(--ink-soft)]">{initialData ? "Update invoice details" : "Issue a new VAT invoice to a client"}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
@@ -98,7 +103,8 @@ export function InvoiceModal({ onClose, onCreated }: Props) {
             <select
               value={form.client_id}
               onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+              disabled={!!initialData}
+              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)] disabled:opacity-50"
               required
             >
               <option value="">Select client...</option>
@@ -182,7 +188,7 @@ export function InvoiceModal({ onClose, onCreated }: Props) {
               disabled={loading}
               className="rounded-xl bg-[#111f36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f] disabled:opacity-50"
             >
-              {loading ? "Creating..." : "Create Invoice"}
+              {loading ? (initialData ? "Updating..." : "Creating...") : initialData ? "Update Invoice" : "Create Invoice"}
             </button>
           </div>
         </form>

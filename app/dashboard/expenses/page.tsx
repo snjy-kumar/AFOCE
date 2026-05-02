@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -8,15 +8,22 @@ import {
   Download,
   Eye,
   FileWarning,
-  MoreHorizontal,
   Plus,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
 
 import { expensePolicies } from "@/lib/mock-data";
 import type { ExpenseRecord, ExpenseStatus } from "@/lib/types";
 import { ExpenseModal } from "@/components/modals/ExpenseModal";
+
+interface ConfirmDialogState {
+  isOpen: boolean;
+  expenseId: string | null;
+  expenseAmount: number | null;
+  action: "delete" | null;
+}
 
 async function fetchExpenses() {
   const res = await fetch("/api/expenses");
@@ -25,50 +32,200 @@ async function fetchExpenses() {
   return json.data?.data || [];
 }
 
-async function patchExpense(id: string, status: string) {
-  const res = await fetch(`/api/expenses/${id}`, {
+async function updateExpenseStatus(id: string, status: ExpenseStatus) {
+  const res = await fetch(`/api/expenses/${id}/approve`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ action: status }),
   });
   const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
   return json.data;
 }
 
+async function deleteExpense(id: string) {
+  const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return json.data;
+}
+
+const statusColors = {
+  pending_approval: { bg: "bg-[var(--accent)]/10", text: "text-[var(--accent)]", icon: Clock },
+  manager_review: { bg: "bg-blue-100", text: "text-blue-600", icon: Clock },
+  blocked: { bg: "bg-[var(--danger)]/10", text: "text-[var(--danger)]", icon: FileWarning },
+  approved: { bg: "bg-[var(--brand-2)]/10", text: "text-[var(--brand-2)]", icon: Check },
+  rejected: { bg: "bg-red-100", text: "text-red-600", icon: X },
+};
+
 export default function ExpensesPage() {
   const [items, setItems] = useState<ExpenseRecord[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ExpenseStatus | "All">("All");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseRecord | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    isOpen: false,
+    expenseId: null,
+    expenseAmount: null,
+    action: null,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    fetchExpenses().then((records) => { if (active) setItems(records); });
-    return () => { active = false; };
+  const loadExpenses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const records = await fetchExpenses();
+      setItems(records);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load expenses");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const setStatus = async (id: string, status: ExpenseStatus) => {
-    setBusy(id);
-    await patchExpense(id, status);
-    const updated = await fetchExpenses();
-    setItems(updated);
-    setBusy(null);
+  useEffect(() => {
+    loadExpenses();
+  }, [loadExpenses]);
+
+  const filtered = useMemo(() => {
+    return items.filter((item) => {
+      const typeMatch = statusFilter === "All" || item.status === statusFilter;
+      const searchLower = searchQuery.toLowerCase();
+      const searchMatch =
+        item.employee.toLowerCase().includes(searchLower) ||
+        item.category.toLowerCase().includes(searchLower) ||
+        item.id.toLowerCase().includes(searchLower);
+      return typeMatch && searchMatch;
+    });
+  }, [items, statusFilter, searchQuery]);
+
+  const handleDeleteClick = (expense: ExpenseRecord) => {
+    setConfirmDialog({
+      isOpen: true,
+      expenseId: expense.id,
+      expenseAmount: expense.amount,
+      action: "delete",
+    });
   };
 
-  const handleCreated = () => {
-    setShowCreate(false);
-    fetchExpenses().then(setItems);
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.expenseId || confirmDialog.action !== "delete") return;
+
+    setActionLoading(true);
+    try {
+      await deleteExpense(confirmDialog.expenseId);
+      await loadExpenses();
+      setConfirmDialog({ isOpen: false, expenseId: null, expenseAmount: null, action: null });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete expense");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (expenseId: string, newStatus: ExpenseStatus) => {
+    try {
+      setActionLoading(true);
+      await updateExpenseStatus(expenseId, newStatus);
+      await loadExpenses();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleExport = () => {
+    const csv = [
+      ["ID", "Employee", "Category", "Amount", "Date", "Status"],
+      ...filtered.map((e) => [e.id, e.employee, e.category, e.amount, e.bs_date, e.status]),
+    ]
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "expenses.csv";
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const stats = [
-    { label: "Pending", value: items.filter((i) => i.status === "pending_approval").length, amount: "Rs. 0", color: "text-[var(--accent)]", bg: "bg-[var(--accent)]/10" },
-    { label: "Blocked", value: items.filter((i) => i.status === "blocked").length, amount: "Rs. 0", color: "text-[var(--danger)]", bg: "bg-[var(--danger)]/10" },
-    { label: "Approved", value: items.filter((i) => i.status === "approved").length, amount: "Rs. 0", color: "text-[var(--brand-2)]", bg: "bg-[var(--brand-2)]/10" },
-    { label: "This Month", value: items.length, amount: "Rs. 0", color: "text-[var(--brand)]", bg: "bg-[var(--brand)]/10" },
+    { label: "Pending", value: items.filter((i) => i.status === "pending_approval").length, color: "text-[var(--accent)]", bg: "bg-[var(--accent)]/10" },
+    { label: "Blocked", value: items.filter((i) => i.status === "blocked").length, color: "text-[var(--danger)]", bg: "bg-[var(--danger)]/10" },
+    { label: "Approved", value: items.filter((i) => i.status === "approved").length, color: "text-[var(--brand-2)]", bg: "bg-[var(--brand-2)]/10" },
+    { label: "Total", value: items.length, color: "text-[var(--brand)]", bg: "bg-[var(--brand)]/10" },
   ];
 
   return (
     <div className="space-y-6">
-      {showCreate && <ExpenseModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />}
+      {showCreateModal && (
+        <ExpenseModal
+          onClose={() => {
+            setShowCreateModal(false);
+            setSelectedExpense(null);
+          }}
+          onCreated={() => {
+            setShowCreateModal(false);
+            setSelectedExpense(null);
+            loadExpenses();
+          }}
+          initialData={selectedExpense || undefined}
+        />
+      )}
+
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm rounded-2xl border border-[var(--border)] bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-[var(--ink)]">Delete Expense</h3>
+            <p className="mt-2 text-sm text-[var(--ink-soft)]">
+              Are you sure you want to delete this expense for NPR {confirmDialog.expenseAmount?.toLocaleString()}? This action cannot be undone.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDialog({ isOpen: false, expenseId: null, expenseAmount: null, action: null })}
+                className="flex-1 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--bg-elevated)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={actionLoading}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--ink)]">Expenses</h1>
+          <p className="mt-1 text-sm text-[var(--ink-soft)]">Review and approve employee expenses</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedExpense(null);
+            setShowCreateModal(true);
+          }}
+          className="inline-flex items-center gap-2 rounded-xl bg-[#111f36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f]"
+        >
+          <Plus className="h-4 w-4" />
+          Log Expense
+        </button>
+      </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -78,10 +235,16 @@ export default function ExpensesPage() {
               <span className="text-sm font-medium text-[var(--ink-soft)]">{stat.label}</span>
               <span className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${stat.bg} ${stat.color}`}>{stat.value}</span>
             </div>
-            <div className="mt-3 text-2xl font-semibold text-[var(--ink)]">{stat.amount}</div>
           </div>
         ))}
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Active Policies */}
@@ -116,25 +279,34 @@ export default function ExpensesPage() {
                 <div className="flex flex-1 gap-3">
                   <div className="relative flex-1 lg:max-w-xs">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-soft)]" />
-                    <input placeholder="Search expenses..." className="w-full rounded-xl border border-[var(--border)] bg-white py-2.5 pl-10 pr-4 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-soft)] focus:border-[var(--brand)]" />
+                    <input
+                      placeholder="Search expenses..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full rounded-xl border border-[var(--border)] bg-white py-2.5 pl-10 pr-4 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-soft)] focus:border-[var(--brand)]"
+                    />
                   </div>
-                  <select className="rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]">
-                    <option>All Status</option>
-                    <option>Pending</option>
-                    <option>Blocked</option>
-                    <option>Approved</option>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as ExpenseStatus | "All")}
+                    className="rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="pending_approval">Pending</option>
+                    <option value="manager_review">Manager Review</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--bg-elevated)]">
-                    <Download className="h-4 w-4" />Export
-                  </button>
                   <button
                     type="button"
-                    onClick={() => setShowCreate(true)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#111f36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f]"
+                    onClick={handleExport}
+                    className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--bg-elevated)]"
                   >
-                    <Plus className="h-4 w-4" />Log Expense
+                    <Download className="h-4 w-4" />
+                    Export
                   </button>
                 </div>
               </div>
@@ -142,56 +314,86 @@ export default function ExpensesPage() {
 
             {/* Items */}
             <div className="divide-y divide-[var(--border)]">
-              {items.map((expense) => {
-                const blocked = expense.status === "blocked";
-                const approving = busy === expense.id;
+              {loading ? (
+                <div className="px-4 py-12 text-center text-[var(--ink-soft)]">
+                  Loading expenses...
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="px-4 py-12 text-center text-[var(--ink-soft)]">
+                  No expenses found
+                </div>
+              ) : (
+                filtered.map((expense) => {
+                  const StatusIcon = statusColors[expense.status as keyof typeof statusColors]?.icon || Clock;
+                  return (
+                    <div key={expense.id} className="p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-[var(--ink-soft)]">{expense.id}</span>
+                            <span className="text-xs text-[var(--ink-soft)]">•</span>
+                            <span className="text-xs text-[var(--ink-soft)]">{expense.bs_date} BS</span>
+                          </div>
+                          <div className="mt-1 font-semibold text-[var(--ink)]">{expense.employee} • {expense.category}</div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <StatusIcon className="h-4 w-4" style={{ color: statusColors[expense.status as keyof typeof statusColors]?.text.split("-")[2] }} />
+                            <span
+                              className={`text-sm font-medium ${statusColors[expense.status as keyof typeof statusColors]?.text || "text-[var(--ink-soft)]"}`}
+                            >
+                              {expense.status.replace(/_/g, " ")}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-semibold text-[var(--ink)]">NPR {Number(expense.amount).toLocaleString()}</div>
+                          <div className={`mt-1 text-xs font-medium ${expense.receipt_url ? "text-[var(--brand-2)]" : "text-[var(--danger)]"}`}>
+                            Receipt: {expense.receipt_url ? "Attached" : "Missing"}
+                          </div>
+                        </div>
+                      </div>
 
-                return (
-                  <div key={expense.id} className="p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-[var(--ink-soft)]">{expense.id}</span>
-                          <span className="text-xs text-[var(--ink-soft)]">•</span>
-                          <span className="text-xs text-[var(--ink-soft)]">{expense.bs_date} BS</span>
+                          <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]" title="View details">
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(expense)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-red-100 hover:text-red-600"
+                            title="Delete expense"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                        <div className="mt-1 font-semibold text-[var(--ink)]">{expense.employee} • {expense.category}</div>
-                        <div className="mt-2 flex items-center gap-2">
-                          {blocked ? <FileWarning className="h-4 w-4 text-[var(--danger)]" /> : <Clock className="h-4 w-4 text-[var(--accent)]" />}
-                          <span className={`text-sm font-medium ${blocked ? "text-[var(--danger)]" : "text-[var(--accent)]"}`}>{expense.status}</span>
-                        </div>
-                        <div className="mt-1 text-sm text-[var(--ink-soft)]">{(expense as unknown as Record<string, unknown>).policy_title as string || expense.policy_id || ""}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-semibold text-[var(--ink)]">NPR {Number(expense.amount).toLocaleString()}</div>
-                        <div className={`mt-1 text-xs font-medium ${expense.receipt_url ? "text-[var(--brand-2)]" : "text-[var(--danger)]"}`}>
-                          Receipt: {expense.receipt_url ? "Attached" : "Missing"}
+
+                        <div className="flex gap-2">
+                          {(expense.status === "pending_approval" || expense.status === "manager_review") && (
+                            <>
+                              <button
+                                disabled={actionLoading}
+                                onClick={() => handleStatusChange(expense.id, "approved")}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--brand-2)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-2)]/90 disabled:opacity-50"
+                              >
+                                <Check className="h-4 w-4" />
+                                Approve
+                              </button>
+                              <button
+                                disabled={actionLoading}
+                                onClick={() => handleStatusChange(expense.id, "blocked")}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--bg-elevated)] disabled:opacity-50"
+                              >
+                                <X className="h-4 w-4" />
+                                Block
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
-
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
-                      <div className="flex items-center gap-2">
-                        <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-soft)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--ink)]">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button disabled={approving} onClick={() => setStatus(expense.id, "approved")} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--brand-2)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-2)]/90 disabled:opacity-50">
-                          <Check className="h-4 w-4" />Approve
-                        </button>
-                        <button disabled={approving} onClick={() => setStatus(expense.id, blocked ? "rejected" : "blocked")} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--bg-elevated)] disabled:opacity-50">
-                          <X className="h-4 w-4" />{blocked ? "Reject" : "Block"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

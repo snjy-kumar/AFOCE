@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { getCurrentBsDate } from "@/lib/utils/date";
+import type { ExpenseRecord } from "@/lib/types";
 
 interface Props {
   onClose: () => void;
   onCreated: (expense: unknown) => void;
+  initialData?: ExpenseRecord;
 }
 
 const CATEGORIES = [
@@ -14,15 +16,15 @@ const CATEGORIES = [
   "Utilities", "Rent", "Equipment", "Professional Services", "Marketing", "Other",
 ];
 
-export function ExpenseModal({ onClose, onCreated }: Props) {
+export function ExpenseModal({ onClose, onCreated, initialData }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    employee: "",
-    category: CATEGORIES[0],
-    amount: "",
-    bs_date: getCurrentBsDate(),
-    receipt_url: "",
+    employee: initialData?.employee || "",
+    category: initialData?.category || CATEGORIES[0],
+    amount: initialData?.amount?.toString() || "",
+    bs_date: initialData?.bs_date || getCurrentBsDate(),
+    receipt_url: initialData?.receipt_url || "",
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -47,8 +49,11 @@ export function ExpenseModal({ onClose, onCreated }: Props) {
     adDate.setDate(adDate.getDate() + totalDays);
     const ad_date = adDate.toISOString().split("T")[0];
 
-    const res = await fetch("/api/expenses", {
-      method: "POST",
+    const url = initialData ? `/api/expenses/${initialData.id}` : "/api/expenses";
+    const method = initialData ? "PATCH" : "POST";
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         employee: form.employee,
@@ -81,8 +86,8 @@ export function ExpenseModal({ onClose, onCreated }: Props) {
           <X className="h-4 w-4" />
         </button>
 
-        <h2 className="text-lg font-semibold text-[var(--ink)]">Log Expense</h2>
-        <p className="mt-1 text-sm text-[var(--ink-soft)]">Record a new business expense for approval</p>
+        <h2 className="text-lg font-semibold text-[var(--ink)]">{initialData ? "Edit Expense" : "Log Expense"}</h2>
+        <p className="mt-1 text-sm text-[var(--ink-soft)]">{initialData ? "Update expense details" : "Record a new business expense for approval"}</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
@@ -166,7 +171,7 @@ export function ExpenseModal({ onClose, onCreated }: Props) {
               disabled={loading}
               className="rounded-xl bg-[#111f36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a3a8f] disabled:opacity-50"
             >
-              {loading ? "Submitting..." : "Log Expense"}
+              {loading ? "Submitting..." : initialData ? "Update Expense" : "Log Expense"}
             </button>
           </div>
         </form>
