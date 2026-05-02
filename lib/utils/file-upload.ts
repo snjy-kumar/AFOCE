@@ -98,7 +98,7 @@ export async function processImage(
       break;
   }
 
-  return pipeline.toBuffer();
+  return await pipeline.toBuffer();
 }
 
 // Upload file to Supabase Storage
@@ -122,18 +122,18 @@ export async function uploadFile({
     const path = folder ? `${orgId}/${folder}/${fileName}` : `${orgId}/${fileName}`;
 
     const arrayBuffer = await file.arrayBuffer();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let buffer = Buffer.from(arrayBuffer) as any;
+    const buffer = Buffer.from(new Uint8Array(arrayBuffer));
 
     // Process image if needed
+    let finalBuffer: Buffer = buffer;
     if (shouldProcess && file.type.startsWith("image/")) {
-      buffer = await processImage(buffer);
+      finalBuffer = (await processImage(buffer)) as Buffer;
     }
 
     // Upload to Supabase
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(path, buffer, {
+      .upload(path, finalBuffer, {
         contentType: file.type,
         upsert: false,
       });
