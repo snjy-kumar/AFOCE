@@ -178,26 +178,57 @@ function LoginContent() {
       return;
     }
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      if (signInError.message.includes("Invalid login")) {
-        setError("Invalid email or password.");
-      } else if (signInError.message.includes("Email not confirmed")) {
-        setEmailNotConfirmed(true);
-        setError("Please verify your email before signing in.");
-      } else {
-        setError(signInError.message);
+    try {
+      const supabase = createClient();
+      
+      // Verify Supabase is accessible
+      if (!supabase) {
+        setError(
+          "Unable to connect to authentication service. Please try again."
+        );
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-      return;
-    }
 
-    router.push(urlRedirectTo ?? "/dashboard");
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        // Network/connection errors
+        if (
+          signInError.message.includes("Failed to fetch") ||
+          signInError.message.includes("fetch")
+        ) {
+          setError(
+            "Network error. Please check your connection and try again."
+          );
+        } else if (signInError.message.includes("Invalid login")) {
+          setError("Invalid email or password.");
+        } else if (signInError.message.includes("Email not confirmed")) {
+          setEmailNotConfirmed(true);
+          setError("Please verify your email before signing in.");
+        } else {
+          setError(signInError.message || "Authentication failed. Try again.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      router.push(urlRedirectTo ?? "/dashboard");
+    } catch (err) {
+      // Catch any unexpected errors
+      const errorMessage =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      console.error("Login error:", err);
+      setError(
+        errorMessage.includes("fetch")
+          ? "Connection error. Please check your internet and try again."
+          : errorMessage
+      );
+      setLoading(false);
+    }
   }
 
   return (
