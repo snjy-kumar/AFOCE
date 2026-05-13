@@ -1,18 +1,25 @@
-# AFOCE Accounting - Project Overview
+# AFOCE - Project Overview
 
 ## 🎯 Mission
 
-Build a production-ready, secure, and scalable accounting platform for Nepali businesses with modern UX, real-time collaboration, and automated financial workflows.
+Build an Adaptive Finance Operations and Compliance Engine for Nepali businesses. AFOCE should observe finance events, evaluate executable policies, make explainable decisions, run approved actions automatically, and route only exceptions to humans.
+
+The product is not a generic accounting dashboard. The dashboard is an operating console for an autonomous engine whose primary job is to reduce manual finance work while preserving compliance, auditability, and tenant isolation.
 
 ## 📋 Core Requirements
 
 ### Functional Requirements
 - **Multi-tenant architecture** with workspace isolation
+- **Autonomous finance event processing** for expenses, invoices, bank lines, VAT, and compliance deadlines
+- **Executable policy engine** with versioned rules, conditions, actions, priorities, and effective dates
+- **Explainable decision engine** that records matched policies, confidence, rationale, and chosen action
+- **Action executor** that applies safe decisions automatically and writes decision/audit trails
+- **Exception-only human queues** for blocked, low-confidence, or legally sensitive decisions
 - **Client/Vendor management** with PAN validation (Nepal)
-- **Invoicing system** with PDF generation, status workflows, recurring invoices
-- **Expense tracking** with approval workflows and policy enforcement
-- **Bank reconciliation** with auto-matching
-- **VAT calculation** (13% Nepal) and filing reports
+- **Invoicing system** with policy-driven status actions, PDF generation, recurring invoices
+- **Expense tracking** with autonomous policy enforcement
+- **Bank reconciliation** with confidence-based auto-matching and exception routing
+- **VAT calculation** (13% Nepal), filing reports, and compliance decision logs
 - **Team management** with role-based access control
 - **Audit logging** for compliance
 - **Notifications** (email + in-app)
@@ -41,10 +48,10 @@ Build a production-ready, secure, and scalable accounting platform for Nepali bu
 ├─────────────────────────────────────────────────────────────┤
 │  API Routes (/app/api)                                        │
 │  ├── /api/clients      - CRUD + search + pagination          │
-│  ├── /api/invoices     - CRUD + workflow + PDF export        │
-│  ├── /api/expenses     - CRUD + approval workflow            │
-│  ├── /api/bank-lines   - reconciliation + matching           │
-│  ├── /api/policies     - expense rules + auto-approval       │
+│  ├── /api/invoices     - Records + policy-driven actions     │
+│  ├── /api/expenses     - Records + autonomous decisions      │
+│  ├── /api/bank-lines   - reconciliation + confidence scores  │
+│  ├── /api/policies     - executable rules + versioning       │
 │  ├── /api/team         - user management + invites           │
 │  ├── /api/analytics    - dashboard metrics                   │
 │  ├── /api/reports      - VAT reports + exports               │
@@ -65,6 +72,7 @@ Build a production-ready, secure, and scalable accounting platform for Nepali bu
 │  └── api/              - API routes (see above)              │
 ├─────────────────────────────────────────────────────────────┤
 │  Utilities (/lib)                                             │
+│  ├── afoce/            - autonomous policy + decision core   │
 │  ├── auth/             - Auth helpers, session management    │
 │  ├── services/         - Business logic layer                │
 │  ├── supabase/         - Supabase client config              │
@@ -84,7 +92,9 @@ Build a production-ready, secure, and scalable accounting platform for Nepali bu
 │  Database (Supabase PostgreSQL)                               │
 │  ├── RLS policies      - Row-level security                  │
 │  ├── Triggers          - Auto-ID generation, updated_at      │
-│  ├── Functions         - Business logic in DB                │
+│  ├── Decision logs     - explainable autonomous decisions    │
+│  ├── Finance events    - normalized event stream             │
+│  ├── Functions         - database invariants                 │
 │  └── Indexes           - Query optimization                  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -101,7 +111,6 @@ AFOCE/
 │   ├── (public)/         - Public pages (grouped)
 │   ├── api/              - API routes
 │   ├── dashboard/        - Dashboard pages
-│   ├── todos/            - Todo pages
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── layout.tsx
@@ -123,6 +132,7 @@ AFOCE/
 │   ├── services/         - Business logic services
 │   ├── supabase/         - Supabase configuration
 │   ├── utils/            - Shared utilities
+│   ├── afoce/            - Autonomous engine modules
 │   ├── types.ts          - Type definitions
 │   ├── demo-data.ts      - Demo data
 │   └── mock-data.ts      - Mock data for testing
@@ -144,32 +154,38 @@ AFOCE/
 
 ## 🎯 Design Principles
 
-### 1. Security First
+### 1. Autonomous First
+- Every finance event should be evaluated by policies before becoming manual work
+- Human review is reserved for exceptions, blocked actions, or low-confidence outcomes
+- Every autonomous decision must be explainable and replayable
+- Policy behavior is data-driven, not hardcoded inside API routes
+
+### 2. Security First
 - Every API endpoint validates input with Zod
 - RLS policies on all database tables
 - Rate limiting on all public endpoints
 - Security headers on all responses
 - Audit logging for all mutations
 
-### 2. Type Safety
+### 3. Type Safety
 - TypeScript strict mode enabled
 - Zod schemas for runtime validation
 - Generated types from Supabase schema
 - No `any` types allowed
 
-### 3. Error Handling
+### 4. Error Handling
 - Consistent error response format
 - User-friendly error messages
 - Detailed server logs for debugging
 - Graceful degradation on failures
 
-### 4. Modularity
+### 5. Modularity
 - Single responsibility per file
 - Clear separation: UI / API / Business Logic / Data
 - Reusable utilities in `/lib/utils`
 - Feature-based organization in API routes
 
-### 5. Testing Strategy
+### 6. Testing Strategy
 - Unit tests for utilities (vitest)
 - Integration tests for API routes
 - E2E tests for critical flows
@@ -186,7 +202,7 @@ AFOCE/
 - Email notifications (Resend)
 - File upload (Supabase Storage)
 - VAT calculation utilities
-- Workflow state machines
+- Workflow state machines for legacy/manual flows
 - Audit logging
 - Export utilities (CSV, PDF, Excel)
 - TypeScript type definitions
@@ -194,7 +210,10 @@ AFOCE/
 - Security utilities
 
 ### 🚧 In Progress / Needs Attention
-- Frontend UI components (dashboard pages)
+- Autonomous policy and decision engine
+- Executable policy schema and decision logs
+- Finance event stream and action executor
+- Exception-first dashboard language
 - Comprehensive test coverage
 - API documentation endpoint
 - Performance optimization
@@ -208,6 +227,7 @@ AFOCE/
 - Advanced reporting and analytics
 - Multi-currency support
 - Automated bank feeds (API integrations)
+- Adaptive policy recommendations from historical decisions
 - Mobile app (React Native)
 - Offline mode
 - Advanced search (full-text)
@@ -240,6 +260,10 @@ AFOCE/
 
 ## 📈 Success Metrics
 
+- **Automation**: > 80% of low-risk finance events decided without manual intervention
+- **Explainability**: 100% of automated actions have a decision log with policy, rationale, and confidence
+- **Exception Rate**: Human queues contain only blocked, low-confidence, or sensitive cases
+- **Compliance**: VAT and audit reports reconcile to source decisions and source records
 - **Performance**: < 200ms API response time (p95)
 - **Reliability**: 99.9% uptime
 - **Security**: Zero critical vulnerabilities

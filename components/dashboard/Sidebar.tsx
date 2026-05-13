@@ -214,21 +214,7 @@ export default function Sidebar() {
           )}
         </Link>
       </div>
-
-      <div className="shrink-0 border-b border-[var(--border)] p-3">
-        <button
-          type="button"
-          title="Search"
-          className={clsx(
-            "flex h-10 w-full items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 text-sm text-[var(--ink-soft)] transition hover:border-[var(--brand)]",
-            collapsed && "justify-center px-0",
-          )}
-        >
-          <Search className="h-4 w-4 shrink-0" />
-          {!collapsed && <span className="truncate">Search...</span>}
-        </button>
-      </div>
-
+      
       <nav className="flex-1 overflow-y-auto p-3">
         <div className={clsx("mb-2", collapsed && "hidden")}>
           <span className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-soft)]">

@@ -1,9 +1,7 @@
-import { createClient } from '@/utils/supabase/server'
-import { cookies } from 'next/headers'
+import { createServerComponentClient } from '@/lib/supabase/server'
 
 export default async function Page() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await createServerComponentClient()
 
   const { data: todos } = await supabase.from('todos').select()
 

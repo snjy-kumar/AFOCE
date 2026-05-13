@@ -9,6 +9,7 @@ interface Props {
 }
 
 const CATEGORIES = ["expenses", "approvals", "invoicing"];
+const ACTIONS = ["approve", "require_review", "block", "record_only"];
 
 export function PolicyModal({ onClose, onCreated }: Props) {
   const [loading, setLoading] = useState(false);
@@ -17,6 +18,13 @@ export function PolicyModal({ onClose, onCreated }: Props) {
     name: "",
     description: "",
     category: CATEGORIES[0],
+    triggerType: "expense.created",
+    fact: "amount",
+    operator: "gte",
+    value: "5000",
+    action: "require_review",
+    reason: "Expense requires policy review.",
+    priority: "50",
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -33,6 +41,22 @@ export function PolicyModal({ onClose, onCreated }: Props) {
         name: form.name,
         description: form.description || null,
         category: form.category,
+        trigger_type: form.triggerType,
+        priority: Number(form.priority),
+        conditions: [
+          {
+            fact: form.fact,
+            operator: form.operator,
+            value: Number.isNaN(Number(form.value)) ? form.value : Number(form.value),
+          },
+        ],
+        actions: [
+          {
+            type: form.action,
+            reason: form.reason,
+            confidence: form.action === "block" ? 95 : 80,
+          },
+        ],
       }),
     });
 
@@ -92,6 +116,74 @@ export function PolicyModal({ onClose, onCreated }: Props) {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Describe what this policy does..."
               rows={3}
+              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Condition Fact</label>
+              <input
+                value={form.fact}
+                onChange={(e) => setForm({ ...form, fact: e.target.value })}
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Operator</label>
+              <select
+                value={form.operator}
+                onChange={(e) => setForm({ ...form, operator: e.target.value })}
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+              >
+                {["eq", "neq", "gt", "gte", "lt", "lte", "exists", "missing"].map((operator) => (
+                  <option key={operator} value={operator}>{operator}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Condition Value</label>
+              <input
+                value={form.value}
+                onChange={(e) => setForm({ ...form, value: e.target.value })}
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Priority</label>
+              <input
+                type="number"
+                min={0}
+                max={1000}
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Autonomous Action</label>
+            <select
+              value={form.action}
+              onChange={(e) => setForm({ ...form, action: e.target.value })}
+              className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
+            >
+              {ACTIONS.map((action) => (
+                <option key={action} value={action}>{action}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Decision Rationale</label>
+            <textarea
+              value={form.reason}
+              onChange={(e) => setForm({ ...form, reason: e.target.value })}
+              rows={2}
               className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)]"
             />
           </div>

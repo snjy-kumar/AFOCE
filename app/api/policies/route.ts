@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import type { PaginatedResponse, PolicyRecord } from "@/lib/types";
 import { auditLog } from "@/lib/utils/audit";
+import { errorResponse, validationErrorResponse } from "@/lib/utils/error-handler";
+import { createPolicySchema } from "@/lib/utils/validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return errorResponse(401, "Unauthorized");
   }
 
   const { data: profile } = await supabase
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
     .single();
 
   if (!profile?.org_id) {
-    return NextResponse.json({ data: null, error: { message: "No workspace found" } }, { status: 403 });
+    return errorResponse(403, "No workspace found");
   }
 
   let query = supabase
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
   const { data, error } = await query;
 
   if (error) {
-    return NextResponse.json({ data: null, error: { message: error.message } }, { status: 500 });
+    return errorResponse(500, error.message);
   }
 
   return NextResponse.json({ data, error: null });
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return errorResponse(401, "Unauthorized");
   }
 
   const { data: profile } = await supabase
@@ -72,32 +73,38 @@ export async function POST(request: Request) {
     .single();
 
   if (!profile?.org_id) {
-    return NextResponse.json({ data: null, error: { message: "No workspace found" } }, { status: 403 });
+    return errorResponse(403, "No workspace found");
   }
 
   const body = await request.json();
-  const { name, description, category, status = "active" } = body;
-
-  if (!name || !category) {
-    return NextResponse.json({ data: null, error: { message: "Name and category are required" } }, { status: 400 });
+  const validation = createPolicySchema.safeParse(body);
+  if (!validation.success) {
+    return validationErrorResponse(validation.error);
   }
+  const policy = validation.data;
+  const executable = normalizePolicyDefinition(policy);
 
   const { data, error } = await supabase
     .from("policies")
     .insert({
       org_id: profile.org_id,
       id: `POL-${Date.now()}`,
-      name,
-      description: description || null,
-      category,
-      status,
+      name: policy.name,
+      description: policy.description || null,
+      category: policy.category,
+      status: policy.status,
+      trigger_type: policy.trigger_type,
+      conditions: executable.conditions,
+      actions: executable.actions,
+      priority: policy.priority,
+      version: policy.version,
       created_by: user.id,
     })
     .select()
     .single();
 
   if (error) {
-    return NextResponse.json({ data: null, error: { message: error.message } }, { status: 500 });
+    return errorResponse(500, error.message);
   }
 
   await auditLog({
@@ -107,8 +114,37 @@ export async function POST(request: Request) {
     action: "create",
     entityType: "policies",
     entityId: data.id,
-    detail: { name, category },
+    detail: {
+      name: policy.name,
+      category: policy.category,
+      trigger_type: policy.trigger_type,
+      conditions: executable.conditions,
+      actions: executable.actions,
+    },
   });
 
   return NextResponse.json({ data, error: null }, { status: 201 });
+}
+
+function normalizePolicyDefinition(policy: ReturnType<typeof createPolicySchema.parse>) {
+  if (policy.conditions.length > 0 || policy.actions.length > 0) {
+    return {
+      conditions: policy.conditions,
+      actions: policy.actions,
+    };
+  }
+
+  const rules = policy.rules || [];
+  return {
+    conditions: rules.map((rule) => ({
+      fact: rule.field,
+      operator: rule.operator === "contains" ? "in" : rule.operator,
+      value: rule.value,
+    })),
+    actions: rules.map((rule) => ({
+      type: rule.action === "auto_approve" ? "approve" : rule.action,
+      reason: `Legacy rule requested ${rule.action}.`,
+      confidence: rule.action === "block" ? 95 : 75,
+    })),
+  };
 }

@@ -11,6 +11,11 @@ interface Policy {
   description: string | null;
   category: string;
   status: string;
+  trigger_type?: string;
+  priority?: number;
+  version?: number;
+  conditions?: Array<Record<string, unknown>>;
+  actions?: Array<Record<string, unknown>>;
   triggers_count?: number;
 }
 
@@ -129,8 +134,13 @@ export default function PoliciesPage() {
                   }`}>{policy.status === "active" ? "Active" : "Inactive"}</span>
                 </div>
                 <div className="mt-1 text-sm text-[var(--ink-soft)]">{policy.description}</div>
-                <div className="mt-2 flex items-center gap-3 text-xs text-[var(--ink-soft)]">
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[var(--ink-soft)]">
                   <span className="rounded-full bg-[var(--bg-elevated)] px-2.5 py-0.5 font-medium">{policy.category}</span>
+                  <span>{policy.trigger_type || "expense.created"}</span>
+                  <span>priority {policy.priority ?? 0}</span>
+                  <span>v{policy.version ?? 1}</span>
+                  <span>{policy.conditions?.length ?? 0} conditions</span>
+                  <span>{policy.actions?.length ?? 0} actions</span>
                   <span>{(policy.triggers_count || 0).toLocaleString()} triggers</span>
                 </div>
               </div>

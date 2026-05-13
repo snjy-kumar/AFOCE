@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
-import { cookies } from 'next/headers'
+import { createAuthClient } from '@/lib/supabase/server'
 import {
   errorResponse,
   validationErrorResponse,
@@ -15,8 +14,7 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/utils/rate-limit'
  */
 export async function GET() {
   try {
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+    const supabase = await createAuthClient()
 
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -59,8 +57,7 @@ export async function PUT(req: NextRequest) {
     const rl = await checkRateLimit(req, 'api')
     if (!rl.success) return rateLimitResponse(rl.remaining, rl.reset)
 
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
+    const supabase = await createAuthClient()
 
     const { data: { user } } = await supabase.auth.getUser()
 

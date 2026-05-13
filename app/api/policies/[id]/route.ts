@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { auditLog } from "@/lib/utils/audit";
+import { errorResponse, validationErrorResponse } from "@/lib/utils/error-handler";
+import { updatePolicySchema } from "@/lib/utils/validation";
 
 export async function GET(
   _request: Request,
@@ -17,7 +19,7 @@ export async function GET(
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return errorResponse(401, "Unauthorized");
   }
 
   const { data: profile } = await supabase
@@ -26,15 +28,19 @@ export async function GET(
     .eq("id", user.id)
     .single();
 
+  if (!profile?.org_id) {
+    return errorResponse(403, "No workspace found");
+  }
+
   const { data, error } = await supabase
     .from("policies")
     .select("*")
     .eq("id", id)
-    .eq("org_id", profile?.org_id)
+    .eq("org_id", profile.org_id)
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ data: null, error: { message: "Policy not found" } }, { status: 404 });
+    return errorResponse(404, "Policy not found");
   }
 
   return NextResponse.json({ data, error: null });
@@ -55,7 +61,7 @@ export async function PATCH(
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return errorResponse(401, "Unauthorized");
   }
 
   const { data: profile } = await supabase
@@ -64,26 +70,37 @@ export async function PATCH(
     .eq("id", user.id)
     .single();
 
+  if (!profile?.org_id) {
+    return errorResponse(403, "No workspace found");
+  }
+
+  const validation = updatePolicySchema.safeParse({ id, ...body });
+  if (!validation.success) {
+    return validationErrorResponse(validation.error);
+  }
+
+  const { id: _validatedId, rules: _rules, ...updateData } = validation.data;
+
   const { data, error } = await supabase
     .from("policies")
-    .update(body)
+    .update(updateData)
     .eq("id", id)
-    .eq("org_id", profile?.org_id)
+    .eq("org_id", profile.org_id)
     .select()
     .single();
 
   if (error) {
-    return NextResponse.json({ data: null, error: { message: error.message } }, { status: 500 });
+    return errorResponse(500, error.message);
   }
 
   await auditLog({
     supabase,
     actorId: user.id,
-    orgId: profile?.org_id || "",
+    orgId: profile.org_id,
     action: "update",
     entityType: "policies",
     entityId: id,
-    detail: body,
+    detail: updateData,
   });
 
   return NextResponse.json({ data, error: null });
@@ -103,7 +120,7 @@ export async function DELETE(
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ data: null, error: { message: "Unauthorized" } }, { status: 401 });
+    return errorResponse(401, "Unauthorized");
   }
 
   const { data: profile } = await supabase
@@ -112,20 +129,24 @@ export async function DELETE(
     .eq("id", user.id)
     .single();
 
+  if (!profile?.org_id) {
+    return errorResponse(403, "No workspace found");
+  }
+
   const { error } = await supabase
     .from("policies")
     .delete()
     .eq("id", id)
-    .eq("org_id", profile?.org_id);
+    .eq("org_id", profile.org_id);
 
   if (error) {
-    return NextResponse.json({ data: null, error: { message: error.message } }, { status: 500 });
+    return errorResponse(500, error.message);
   }
 
   await auditLog({
     supabase,
     actorId: user.id,
-    orgId: profile?.org_id || "",
+    orgId: profile.org_id,
     action: "delete",
     entityType: "policies",
     entityId: id,

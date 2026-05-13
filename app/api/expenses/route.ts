@@ -14,9 +14,13 @@ import {
 import { auditLog } from "@/lib/utils/audit";
 import { sendNotification } from "@/lib/utils/notifications";
 import {
-  determineApprovalStep,
-  shouldAutoApprove,
-} from "@/lib/utils/workflow";
+  attachComplianceFindings,
+  createDecisionLogInsert,
+  decideExpense,
+  evaluateExpenseCompliance,
+  planExpenseExecution,
+  summarizeDecision,
+} from "@/lib/afoce";
 import {
   createExpenseSchema,
   paginationSchema,
@@ -222,11 +226,29 @@ export async function POST(request: Request) {
       description,
     } = validation.data;
 
-    // Determine initial status based on amount and policies
-    let initialStatus: ExpenseStatus = "pending_approval";
-    if (shouldAutoApprove(amount)) {
-      initialStatus = "approved";
-    }
+    let decision = decideExpense({
+      employee,
+      category,
+      amount,
+      bs_date,
+      ad_date,
+      receipt_url,
+      description,
+    });
+    decision = attachComplianceFindings(
+      decision,
+      evaluateExpenseCompliance({
+        employee,
+        category,
+        amount,
+        bs_date,
+        ad_date,
+        receipt_url,
+        description,
+      })
+    );
+    const executionPlan = planExpenseExecution(decision);
+    const initialStatus = (executionPlan.status || "pending_approval") as ExpenseStatus;
 
     if (demoCookie) {
       const mock: ExpenseRecord = {
@@ -238,7 +260,7 @@ export async function POST(request: Request) {
         bs_date,
         ad_date,
         status: initialStatus,
-        policy_id: null,
+        policy_id: firstPersistedPolicyId(decision.matchedPolicyIds),
         receipt_url: receipt_url || null,
         created_by: "demo",
         created_at: new Date().toISOString(),
@@ -263,14 +285,41 @@ export async function POST(request: Request) {
       .single();
     if (!profile?.org_id) return errorResponse(403, "No workspace found");
 
-    // Find matching policy
+    // Evaluate executable policies before creating the source record.
     const { data: policies } = await supabase
       .from("policies")
-      .select("id")
+      .select("*")
       .eq("org_id", profile.org_id)
       .eq("category", "expenses")
       .eq("status", "active")
-      .limit(1);
+      .order("priority", { ascending: false });
+
+    decision = decideExpense(
+      {
+        employee,
+        category,
+        amount,
+        bs_date,
+        ad_date,
+        receipt_url,
+        description,
+      },
+      policies || []
+    );
+    decision = attachComplianceFindings(
+      decision,
+      evaluateExpenseCompliance({
+        employee,
+        category,
+        amount,
+        bs_date,
+        ad_date,
+        receipt_url,
+        description,
+      })
+    );
+    const persistedExecutionPlan = planExpenseExecution(decision);
+    const persistedStatus = (persistedExecutionPlan.status || "pending_approval") as ExpenseStatus;
 
     const { data, error } = await supabase
       .from("expenses")
@@ -281,8 +330,8 @@ export async function POST(request: Request) {
         amount,
         bs_date,
         ad_date,
-        status: initialStatus,
-        policy_id: policies?.[0]?.id || null,
+        status: persistedStatus,
+        policy_id: firstPersistedPolicyId(decision.matchedPolicyIds),
         receipt_url: receipt_url || null,
         created_by: user.id,
       })
@@ -307,11 +356,25 @@ export async function POST(request: Request) {
       action: "create",
       entityType: "expenses",
       entityId: data.id,
-      detail: { employee, category, amount, status: initialStatus },
+      detail: {
+        employee,
+        category,
+        amount,
+        status: persistedStatus,
+        decision: summarizeDecision(decision),
+      },
     });
 
-    // Send notification if needs approval
-    if (initialStatus === "pending_approval") {
+    await recordAutonomousTrace({
+      supabase,
+      orgId: profile.org_id,
+      actorId: user.id,
+      expenseId: data.id,
+      decision,
+    });
+
+    // Send notification only for exceptions that need human attention.
+    if (persistedExecutionPlan.shouldNotifyHumans) {
       const { data: managers } = await supabase
         .from("profiles")
         .select("id")
@@ -331,6 +394,7 @@ export async function POST(request: Request) {
                 employee,
                 amount,
                 category,
+                reason: persistedExecutionPlan.notificationReason,
               },
             },
           });
@@ -343,4 +407,78 @@ export async function POST(request: Request) {
     logError(error, { method: "POST", path: "/api/expenses" });
     return errorResponse(500, "Internal server error");
   }
+}
+
+async function recordAutonomousTrace({
+  supabase,
+  orgId,
+  actorId,
+  expenseId,
+  decision,
+}: {
+  supabase: Awaited<ReturnType<typeof createServerClient>>;
+  orgId: string;
+  actorId: string;
+  expenseId: string;
+  decision: ReturnType<typeof decideExpense>;
+}) {
+  const financeEventInsert = {
+    org_id: orgId,
+    event_type: decision.eventType,
+    entity_type: decision.entityType,
+    entity_id: expenseId,
+    payload: decision.facts,
+    source: "api",
+    created_by: actorId,
+  };
+
+  const decisionLogInsert = createDecisionLogInsert({
+    decision,
+    orgId,
+    actorId,
+    entityId: expenseId,
+  });
+
+  const [{ error: eventError }, { data: decisionLog, error: decisionError }] = await Promise.all([
+    supabase.from("finance_events").insert(financeEventInsert),
+    supabase.from("decision_logs").insert(decisionLogInsert).select("id").single(),
+  ]);
+
+  if (eventError) {
+    logError(eventError, {
+      method: "POST",
+      path: "/api/expenses finance_events",
+      userId: actorId,
+      orgId,
+    });
+  }
+
+  if (decisionError) {
+    logError(decisionError, {
+      method: "POST",
+      path: "/api/expenses decision_logs",
+      userId: actorId,
+      orgId,
+    });
+    return;
+  }
+
+  await supabase.from("automation_actions").insert({
+    org_id: orgId,
+    decision_log_id: decisionLog?.id || null,
+    entity_type: decision.entityType,
+    entity_id: expenseId,
+    action_type: decision.outcome,
+    status: "executed",
+    detail: {
+      confidence: decision.confidence,
+      matched_policy_ids: decision.matchedPolicyIds,
+    },
+    created_by: actorId,
+    executed_at: new Date().toISOString(),
+  });
+}
+
+function firstPersistedPolicyId(policyIds: string[]): string | null {
+  return policyIds.find((id) => !id.startsWith("DEFAULT-")) || null;
 }

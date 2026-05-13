@@ -33,8 +33,8 @@ export default function QueuesPage() {
       bg: "bg-[var(--danger)]/10",
     },
     {
-      title: "Pending Approvals",
-      count: `${snapshot?.pendingApprovals || 0} waiting`,
+      title: "Policy Review Exceptions",
+      count: `${snapshot?.pendingApprovals || 0} exceptions`,
       owner: "Finance Controller",
       href: "/dashboard/expenses",
       icon: Clock,
@@ -42,7 +42,7 @@ export default function QueuesPage() {
       bg: "bg-[var(--accent)]/10",
     },
     {
-      title: "Blocked Entries",
+      title: "Blocked Policy Decisions",
       count: `${snapshot?.blocked || 0} items`,
       owner: "Operations",
       href: "/dashboard/expenses",
@@ -71,8 +71,8 @@ export default function QueuesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-[var(--ink)]">Approval Queues</h1>
-        <p className="mt-1 text-sm text-[var(--ink-soft)]">Items requiring your attention</p>
+        <h1 className="text-2xl font-semibold text-[var(--ink)]">Exception Queues</h1>
+        <p className="mt-1 text-sm text-[var(--ink-soft)]">Only blocked or low-confidence decisions should need human review</p>
       </div>
 
       {/* Summary */}
@@ -83,7 +83,7 @@ export default function QueuesPage() {
           </div>
           <div>
             <div className="text-3xl font-semibold">{total}</div>
-            <div className="text-white/70">Total items across all queues</div>
+            <div className="text-white/70">Total exceptions routed out of automation</div>
           </div>
         </div>
       </div>

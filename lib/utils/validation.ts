@@ -127,19 +127,43 @@ export const updateClientSchema = createClientSchema.partial().extend({
 // ============================================================
 
 export const policyCategorySchema = z.enum(["expenses", "approvals", "invoicing"]);
+export const financeEventTypeSchema = z.enum([
+  "expense.created",
+  "invoice.created",
+  "bank_line.imported",
+  "vat.period_due",
+]);
+
+export const policyConditionSchema = z.object({
+  fact: z.string().min(1),
+  operator: z.enum(["eq", "neq", "gt", "gte", "lt", "lte", "in", "not_in", "exists", "missing"]),
+  value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.array(z.number())]).optional(),
+});
+
+export const policyActionSchema = z.object({
+  type: z.enum(["approve", "require_review", "block", "record_only"]),
+  reason: z.string().min(1).max(500),
+  confidence: z.number().min(0).max(100).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
 
 export const createPolicySchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   description: z.string().max(500).optional(),
   category: policyCategorySchema,
   status: z.enum(["active", "inactive"]).default("active"),
+  trigger_type: financeEventTypeSchema.default("expense.created"),
+  conditions: z.array(policyConditionSchema).default([]),
+  actions: z.array(policyActionSchema).default([]),
+  priority: z.number().int().min(0).max(1000).default(0),
+  version: z.number().int().min(1).default(1),
   rules: z
     .array(
       z.object({
         field: z.string(),
         operator: z.enum(["gt", "gte", "lt", "lte", "eq", "neq", "in", "contains"]),
         value: z.union([z.string(), z.number(), z.array(z.string())]),
-        action: z.enum(["auto_approve", "require_review", "block"]),
+        action: z.enum(["auto_approve", "approve", "require_review", "block"]),
       })
     )
     .optional(),

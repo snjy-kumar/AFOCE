@@ -89,11 +89,64 @@
 ```typescript
 // GET /api/expenses?status=pending_approval
 // GET /api/expenses/:id
-// POST /api/expenses
+// POST /api/expenses            // creates expense, evaluates policy, executes first decision
 // PATCH /api/expenses/:id
-// PATCH /api/expenses/:id/approve  // Approval action
+// PATCH /api/expenses/:id/approve  // Exception review action
 // DELETE /api/expenses/:id
 ```
+
+## Autonomous Engine Design
+
+AFOCE backend behavior should center on an autonomous decision loop, not manual CRUD workflows.
+
+```mermaid
+flowchart TD
+  financeEvent[Finance Event] --> policyEngine[Policy Engine]
+  policyEngine --> decisionEngine[Decision Engine]
+  decisionEngine --> actionExecutor[Action Executor]
+  decisionEngine --> decisionLogs[Decision Logs]
+  actionExecutor --> sourceRecords[Source Records]
+  actionExecutor --> exceptionQueue[Exception Queue]
+```
+
+### Engine Tables
+
+| Table | Purpose |
+| --- | --- |
+| `policies` | Versioned executable policies with `trigger_type`, `conditions`, `actions`, `priority`, and effective dates. |
+| `finance_events` | Normalized event stream for expenses, invoices, bank lines, and compliance deadlines. |
+| `decision_logs` | Explainable autonomous outcomes with confidence, matched policies, facts, and rationale. |
+| `automation_actions` | Planned/executed/failed action records tied back to decisions. |
+
+### Policy Shape
+
+Policies are data, not hardcoded route logic.
+
+```json
+{
+  "trigger_type": "expense.created",
+  "conditions": [
+    { "fact": "amount", "operator": "gte", "value": 5000 },
+    { "fact": "receiptAttached", "operator": "eq", "value": false }
+  ],
+  "actions": [
+    {
+      "type": "block",
+      "reason": "Receipt is required for material expenses.",
+      "confidence": 95
+    }
+  ],
+  "priority": 100,
+  "version": 1
+}
+```
+
+### Decision Rules
+
+- Safe outcomes execute automatically.
+- `block` and `require_review` outcomes become exceptions.
+- Every decision must persist enough facts and rationale to replay why it happened.
+- Audit logs still record mutations, but decision logs explain autonomous reasoning.
 
 ### Request Validation
 

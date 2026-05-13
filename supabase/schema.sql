@@ -67,6 +67,14 @@ CREATE TABLE public.policies (
                 CHECK (category IN ('expenses', 'approvals', 'invoicing')),
   status      TEXT NOT NULL DEFAULT 'active'
                 CHECK (status IN ('active', 'inactive')),
+  trigger_type TEXT NOT NULL DEFAULT 'expense.created'
+                CHECK (trigger_type IN ('expense.created', 'invoice.created', 'bank_line.imported', 'vat.period_due')),
+  conditions  JSONB NOT NULL DEFAULT '[]'::JSONB,
+  actions     JSONB NOT NULL DEFAULT '[]'::JSONB,
+  priority    INTEGER NOT NULL DEFAULT 0,
+  version     INTEGER NOT NULL DEFAULT 1,
+  effective_from TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  effective_to   TIMESTAMPTZ,
   created_by  UUID REFERENCES auth.users(id),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -144,6 +152,62 @@ CREATE TABLE public.audit_log (
   entity_id   TEXT,
   detail      JSONB,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- FINANCE EVENTS (normalized autonomous engine inputs)
+-- ============================================================
+CREATE TABLE public.finance_events (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  org_id      UUID NOT NULL REFERENCES public.workspaces(id),
+  event_type  TEXT NOT NULL
+                CHECK (event_type IN ('expense.created', 'invoice.created', 'bank_line.imported', 'vat.period_due')),
+  entity_type TEXT NOT NULL,
+  entity_id   TEXT NOT NULL,
+  payload     JSONB NOT NULL DEFAULT '{}'::JSONB,
+  source      TEXT NOT NULL DEFAULT 'api',
+  created_by  UUID REFERENCES auth.users(id),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- DECISION LOGS (explainable autonomous outcomes)
+-- ============================================================
+CREATE TABLE public.decision_logs (
+  id                 UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  org_id             UUID NOT NULL REFERENCES public.workspaces(id),
+  actor_id           UUID REFERENCES auth.users(id),
+  event_type         TEXT NOT NULL
+                       CHECK (event_type IN ('expense.created', 'invoice.created', 'bank_line.imported', 'vat.period_due')),
+  entity_type        TEXT NOT NULL,
+  entity_id          TEXT NOT NULL,
+  outcome            TEXT NOT NULL
+                       CHECK (outcome IN ('approve', 'require_review', 'block', 'record_only')),
+  confidence         NUMERIC(5,2) NOT NULL CHECK (confidence >= 0 AND confidence <= 100),
+  matched_policy_ids TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  rationale          TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  facts              JSONB NOT NULL DEFAULT '{}'::JSONB,
+  actions            JSONB NOT NULL DEFAULT '[]'::JSONB,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- AUTOMATION ACTIONS (actions proposed or executed by decisions)
+-- ============================================================
+CREATE TABLE public.automation_actions (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  org_id          UUID NOT NULL REFERENCES public.workspaces(id),
+  decision_log_id UUID REFERENCES public.decision_logs(id) ON DELETE SET NULL,
+  entity_type     TEXT NOT NULL,
+  entity_id       TEXT NOT NULL,
+  action_type     TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'planned'
+                    CHECK (status IN ('planned', 'executed', 'failed', 'skipped')),
+  detail          JSONB NOT NULL DEFAULT '{}'::JSONB,
+  error_message   TEXT,
+  created_by      UUID REFERENCES auth.users(id),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  executed_at     TIMESTAMPTZ
 );
 
 -- ============================================================
@@ -239,6 +303,9 @@ ALTER TABLE expenses      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE policies     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bank_lines   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE finance_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE decision_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE automation_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE id_sequences ENABLE ROW LEVEL SECURITY;
 
 -- Profiles
@@ -274,6 +341,34 @@ CREATE POLICY "bank_lines_all_org_member" ON bank_lines FOR ALL
 CREATE POLICY "audit_log_select_org_member" ON audit_log FOR SELECT
   USING (org_id = public.get_user_org_id(auth.uid()));
 CREATE POLICY "audit_log_insert_org_member" ON audit_log FOR INSERT
+  WITH CHECK (org_id = public.get_user_org_id(auth.uid()));
+
+-- Finance Events
+CREATE POLICY "finance_events_select_org_member" ON finance_events FOR SELECT
+  TO authenticated
+  USING (org_id = public.get_user_org_id(auth.uid()));
+CREATE POLICY "finance_events_insert_org_member" ON finance_events FOR INSERT
+  TO authenticated
+  WITH CHECK (org_id = public.get_user_org_id(auth.uid()));
+
+-- Decision Logs
+CREATE POLICY "decision_logs_select_org_member" ON decision_logs FOR SELECT
+  TO authenticated
+  USING (org_id = public.get_user_org_id(auth.uid()));
+CREATE POLICY "decision_logs_insert_org_member" ON decision_logs FOR INSERT
+  TO authenticated
+  WITH CHECK (org_id = public.get_user_org_id(auth.uid()));
+
+-- Automation Actions
+CREATE POLICY "automation_actions_select_org_member" ON automation_actions FOR SELECT
+  TO authenticated
+  USING (org_id = public.get_user_org_id(auth.uid()));
+CREATE POLICY "automation_actions_insert_org_member" ON automation_actions FOR INSERT
+  TO authenticated
+  WITH CHECK (org_id = public.get_user_org_id(auth.uid()));
+CREATE POLICY "automation_actions_update_org_member" ON automation_actions FOR UPDATE
+  TO authenticated
+  USING (org_id = public.get_user_org_id(auth.uid()))
   WITH CHECK (org_id = public.get_user_org_id(auth.uid()));
 
 -- ID Sequences
@@ -387,6 +482,12 @@ CREATE INDEX idx_invoices_org_status ON invoices(org_id, status);
 CREATE INDEX idx_expenses_org_status ON expenses(org_id, status);
 CREATE INDEX idx_bank_lines_org_state ON bank_lines(org_id, state);
 CREATE INDEX idx_audit_log_org_created ON audit_log(org_id, created_at DESC);
+CREATE INDEX idx_policies_org_trigger ON policies(org_id, trigger_type, status, priority DESC);
+CREATE INDEX idx_finance_events_org_created ON finance_events(org_id, created_at DESC);
+CREATE INDEX idx_finance_events_entity ON finance_events(org_id, entity_type, entity_id);
+CREATE INDEX idx_decision_logs_org_created ON decision_logs(org_id, created_at DESC);
+CREATE INDEX idx_decision_logs_entity ON decision_logs(org_id, entity_type, entity_id);
+CREATE INDEX idx_automation_actions_entity ON automation_actions(org_id, entity_type, entity_id);
 
 -- RLS Policies for notifications
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;

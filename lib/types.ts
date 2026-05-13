@@ -9,6 +9,12 @@ export type PolicyCategory = "expenses" | "approvals" | "invoicing";
 export type BankLineState = "matched" | "needs_review" | "unmatched";
 export type UserRole = "finance_admin" | "manager" | "team_member";
 export type UserStatus = "active" | "inactive" | "pending";
+export type FinanceEventType =
+  | "expense.created"
+  | "invoice.created"
+  | "bank_line.imported"
+  | "vat.period_due";
+export type DecisionOutcome = "approve" | "require_review" | "block" | "record_only";
 
 // ============================================================
 // Invoice
@@ -107,11 +113,65 @@ export interface PolicyRecord {
   description: string | null;
   category: PolicyCategory;
   status: "active" | "inactive";
+  trigger_type: FinanceEventType;
+  conditions: Record<string, unknown>[];
+  actions: Record<string, unknown>[];
+  priority: number;
+  version: number;
+  effective_from: string;
+  effective_to: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
   // Computed
   triggers_count?: number;
+}
+
+// ============================================================
+// Autonomous Engine
+// ============================================================
+
+export interface FinanceEventRecord {
+  id: string;
+  org_id: string;
+  event_type: FinanceEventType;
+  entity_type: string;
+  entity_id: string;
+  payload: Record<string, unknown>;
+  source: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface DecisionLogRecord {
+  id: string;
+  org_id: string;
+  actor_id: string | null;
+  event_type: FinanceEventType;
+  entity_type: string;
+  entity_id: string;
+  outcome: DecisionOutcome;
+  confidence: number;
+  matched_policy_ids: string[];
+  rationale: string[];
+  facts: Record<string, unknown>;
+  actions: Record<string, unknown>[];
+  created_at: string;
+}
+
+export interface AutomationActionRecord {
+  id: string;
+  org_id: string;
+  decision_log_id: string | null;
+  entity_type: string;
+  entity_id: string;
+  action_type: string;
+  status: "planned" | "executed" | "failed" | "skipped";
+  detail: Record<string, unknown>;
+  error_message: string | null;
+  created_by: string | null;
+  created_at: string;
+  executed_at: string | null;
 }
 
 // ============================================================

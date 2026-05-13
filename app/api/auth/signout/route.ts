@@ -3,14 +3,12 @@
 // Clears the Supabase session and redirects to /login.
 // ============================================================
 
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { createAuthClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createAuthClient();
 
   // Only call signOut if there is an active session — avoids a
   // redundant network round-trip for already-logged-out visitors.

@@ -25,6 +25,64 @@ This document provides guidelines for AI agents (Claude, Codex, Qoder, etc.) wor
 - **Readable code** - Descriptive names, clear structure
 - **Performance** - Efficient queries, pagination, caching
 
+## 🗺️ Codebase Knowledge Graph (graphify)
+
+> **Start here before exploring raw files.** A pre-built knowledge graph of this entire codebase lives in `graphify-out/`. Use it to answer architecture questions in seconds instead of reading dozens of files.
+
+### What's available
+
+| File | Use for |
+|---|---|
+| `graphify-out/graph.html` | Visual interactive graph — open in browser |
+| `graphify-out/GRAPH_REPORT.md` | God nodes, surprising connections, suggested questions |
+| `graphify-out/graph.json` | Raw graph data for programmatic queries |
+
+### Key facts already extracted
+
+- **God nodes** (most connected — touch these carefully): `createAuthClient()`, `errorResponse()`, `logError()`, `auditLog()`, `unauthorizedResponse()`, `applyCORS()`, `checkRateLimit()`
+- **569 nodes · 858 edges · 15 named communities** (Core API Routes, Dashboard UI Layer, Auth & Notification Routes, Utility & Service Layer, etc.)
+- **19.6x token reduction** vs reading raw files for every query
+
+### How to query the graph
+
+```bash
+# Broad context — "what is X connected to?"
+graphify query "how does the invoice approval flow work"
+
+# Trace a specific path
+graphify query "how does auth flow from login to dashboard" --dfs
+
+# Shortest path between two concepts
+graphify path "VATWidget" "reports_vat_route_handler"
+
+# Plain-language explanation of a node
+graphify explain "auditLog"
+```
+
+### How to rebuild the graph
+
+Run after significant code changes (new files, refactors):
+
+```bash
+# Incremental — only re-extracts changed files (fast, no LLM needed for code-only changes)
+/graphify . --update
+
+# Full rebuild
+/graphify .
+```
+
+### When to use graphify vs reading files directly
+
+| Situation | Action |
+|---|---|
+| "How does X work?" | `graphify query "..."` first |
+| Tracing a bug across multiple files | `graphify path "A" "B"` |
+| Touching a god node | Check graph first — understand all dependents |
+| Adding a new file | No need to rebuild until you need graph queries again |
+| Major refactor complete | Run `/graphify . --update` |
+
+---
+
 ## 🔧 Agent Workflows
 
 ### Code Review Checklist
@@ -100,8 +158,7 @@ Before submitting code changes:
 // app/api/{resource}/route.ts
 
 // 1. Imports (organized)
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createAuthClient } from '@/lib/supabase/server';  // ← always use this
 import { NextResponse } from 'next/server';
 import type { ResourceType } from '@/lib/types';
 import { auditLog } from '@/lib/utils/audit';
@@ -112,9 +169,8 @@ const DEMO_ORG = 'demo-org';
 
 // 3. GET handler
 export async function GET(request: Request) {
-  // Auth check
-  const cookieStore = await cookies();
-  const supabase = createServerClient(/*...*/);
+  // Auth check — createAuthClient() handles cookies() internally
+  const supabase = await createAuthClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json(
@@ -245,28 +301,28 @@ export function canDeleteResource(resource: ResourceRecord): boolean {
 ### Authentication Pattern
 ```typescript
 // Always check authentication in API routes
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+// Use createAuthClient() from lib/supabase/server — never instantiate Supabase directly
+import { createAuthClient, unauthorizedResponse } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  );
-  
+  const supabase = await createAuthClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json(
-      { data: null, error: { message: 'Unauthorized' } },
-      { status: 401 }
-    );
-  }
-  
+
+  if (!user) return unauthorizedResponse(); // ← use the shared helper
+
   // Proceed with authenticated user
 }
+```
+
+> **Never** import from `@supabase/ssr` directly or use `utils/supabase/server`.
+> The canonical server client is **`@/lib/supabase/server`**.
+>
+> | Context | Helper to use |
+> |---|---|
+> | API routes | `createAuthClient()` |
+> | Server Components | `createServerComponentClient()` |
+> | Admin/privileged ops | `createAdminClient()` |
+> | Browser (client components) | `utils/supabase/client.ts` → `createClient()` |
 ```
 
 ### Authorization Pattern
@@ -550,6 +606,6 @@ return NextResponse.json({ data, error: null });
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2026-05-02  
+**Version**: 1.1.0  
+**Last Updated**: 2026-05-05  
 **Maintained By**: Engineering Team
