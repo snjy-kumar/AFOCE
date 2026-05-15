@@ -117,6 +117,7 @@ const roleLabels: Record<string, string> = {
 };
 
 const STORAGE_KEY = "afoce-sidebar-collapsed";
+const DEMO_SESSION_KEY = "demo_session";
 
 interface UserProfile {
   full_name?: string | null;
@@ -125,44 +126,55 @@ interface UserProfile {
   avatar_url?: string | null;
 }
 
+const DEMO_PROFILE: UserProfile = {
+  full_name: "Demo User",
+  email: "demo@afoce.com",
+  role: "finance_admin",
+  avatar_url: null,
+};
+
 export default function Sidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const supabase = createClient();
+  const [collapsed, setCollapsed] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem(STORAGE_KEY) === "true",
+  );
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem(DEMO_SESSION_KEY) === "true"
+        ? DEMO_PROFILE
+        : null,
+  );
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setCollapsed(stored === "true");
-    }
-  }, []);
+    document.documentElement.classList.toggle("sidebar-collapsed", collapsed);
+  }, [collapsed]);
 
   useEffect(() => {
     const isDemo =
       typeof window !== "undefined" &&
-      localStorage.getItem("demo_session") === "true";
+      localStorage.getItem(DEMO_SESSION_KEY) === "true";
 
     if (isDemo) {
-      setUserProfile({
-        full_name: "Demo User",
-        email: "demo@afoce.com",
-        role: "finance_admin",
-        avatar_url: null,
-      });
       return;
     }
 
+    let active = true;
+
     async function loadUser() {
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !active) return;
       const { data } = await supabase
         .from("profiles")
         .select("full_name, role, avatar_url")
         .eq("id", user.id)
         .single();
+      if (!active) return;
       setUserProfile({
         full_name: data?.full_name ?? null,
         email: user.email,
@@ -170,14 +182,17 @@ export default function Sidebar() {
         avatar_url: data?.avatar_url ?? null,
       });
     }
-    loadUser();
-  }, [supabase]);
+    void loadUser();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const toggle = () => {
     const next = !collapsed;
     setCollapsed(next);
     localStorage.setItem(STORAGE_KEY, String(next));
-    document.documentElement.classList.toggle("sidebar-collapsed", next);
   };
 
   const displayName =

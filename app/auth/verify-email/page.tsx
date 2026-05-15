@@ -234,7 +234,7 @@ function VerifyEmailContent() {
 
       {/* Resend section */}
       <div className="mt-4 rounded-xl border border-[var(--border)] bg-white/60 px-4 py-3 text-center text-sm text-[var(--ink-soft)]">
-        Didn't receive a code?{" "}
+        Didn&apos;t receive a code?{" "}
         <button
           type="button"
           onClick={handleResend}

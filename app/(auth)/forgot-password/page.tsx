@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
         Forgot password
       </h1>
       <p className="mt-2 text-sm text-[var(--ink-soft)]">
-        Enter your email and we'll send you a link to reset your password.
+        Enter your email and we&apos;ll send you a link to reset your password.
       </p>
 
       <div className="mt-6 space-y-4">
@@ -109,11 +109,11 @@ export default function ForgotPasswordPage() {
                     Reset link sent
                   </p>
                   <p className="mt-1 text-sm text-[var(--ink-soft)]">
-                    We've emailed a password reset link to{" "}
+                    We&apos;ve emailed a password reset link to{" "}
                     <span className="font-medium text-[var(--ink)]">
                       {email}
                     </span>
-                    . Check your inbox — and your spam folder if you don't see
+                    . Check your inbox — and your spam folder if you don&apos;t see
                     it within a minute.
                   </p>
                 </div>

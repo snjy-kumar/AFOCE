@@ -257,7 +257,6 @@ export default function DashboardHomePage() {
       setLoading(false);
     };
 
-    setLoading(true);
     void loadDashboard();
     return () => {
       active = false;

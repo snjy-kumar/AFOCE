@@ -154,7 +154,7 @@ export default function RegisterPage() {
               Check your email
             </h2>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">
-              We've sent a confirmation link to{" "}
+              We&apos;ve sent a confirmation link to{" "}
               <span className="font-medium text-[var(--ink)]">
                 {form.email}
               </span>
@@ -180,7 +180,7 @@ export default function RegisterPage() {
               </p>
             ) : (
               <p className="text-center text-sm text-[var(--ink-soft)]">
-                Didn't receive it? Check spam, or{" "}
+                Didn&apos;t receive it? Check spam, or{" "}
                 <button
                   type="button"
                   onClick={handleResend}

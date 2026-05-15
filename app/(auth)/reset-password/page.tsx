@@ -199,7 +199,7 @@ export default function ResetPasswordPage() {
                     Password updated successfully
                   </p>
                   <p className="mt-1 text-sm text-[var(--ink-soft)]">
-                    Your password has been changed. You'll be redirected to sign
+                    Your password has been changed. You&apos;ll be redirected to sign
                     in automatically in{" "}
                     <span className="font-medium tabular-nums text-[var(--ink)]">
                       {countdown}s

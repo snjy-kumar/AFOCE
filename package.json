@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "type-check": "tsc --noEmit",
     "db:types": "supabase gen types typescript --project-id ${SUPABASE_PROJECT_ID} > lib/database.types.ts",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
@@ -49,6 +52,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
+    "husky": "^9.1.7",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^1.1.0"

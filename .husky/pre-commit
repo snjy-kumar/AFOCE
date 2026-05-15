@@ -1,0 +1,8 @@
+if git diff --cached --name-only | grep -q "^supabase/schema.sql$"; then
+  echo "Direct edits to supabase/schema.sql are blocked. Create and commit a migration file instead."
+  exit 1
+fi
+
+npm run lint
+npm run type-check
+npm run test:run

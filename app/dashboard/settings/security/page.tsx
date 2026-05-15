@@ -19,6 +19,30 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   return { score, label: 'Strong', color: 'var(--success)' }
 }
 
+type SecurityStatus = { type: 'success' | 'error'; message: string; section: string }
+
+interface StatusAlertProps {
+  status: SecurityStatus | null
+  section: string
+}
+
+function StatusAlert({ status, section }: StatusAlertProps) {
+  if (status?.section !== section) return null
+
+  return (
+    <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
+      status.type === 'success'
+        ? 'border border-[var(--brand-2)]/30 bg-[var(--brand-2)]/10 text-[var(--brand-2)]'
+        : 'border border-[var(--danger)]/30 bg-[var(--danger)]/10 text-[var(--danger)]'
+    }`}>
+      {status.type === 'success'
+        ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+        : <AlertCircle className="h-4 w-4 shrink-0" />}
+      {status.message}
+    </div>
+  )
+}
+
 export default function SecuritySettingsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -27,7 +51,7 @@ export default function SecuritySettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [signOutLoading, setSignOutLoading] = useState(false)
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string; section: string } | null>(null)
+  const [status, setStatus] = useState<SecurityStatus | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -77,20 +101,6 @@ export default function SecuritySettingsPage() {
     router.push('/login')
   }
 
-  const StatusAlert = ({ section }: { section: string }) =>
-    status?.section === section ? (
-      <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
-        status.type === 'success'
-          ? 'border border-[var(--brand-2)]/30 bg-[var(--brand-2)]/10 text-[var(--brand-2)]'
-          : 'border border-[var(--danger)]/30 bg-[var(--danger)]/10 text-[var(--danger)]'
-      }`}>
-        {status.type === 'success'
-          ? <CheckCircle2 className="h-4 w-4 shrink-0" />
-          : <AlertCircle className="h-4 w-4 shrink-0" />}
-        {status.message}
-      </div>
-    ) : null
-
   return (
     <div className="space-y-6">
       <div>
@@ -110,7 +120,7 @@ export default function SecuritySettingsPage() {
           </div>
         </div>
 
-        <StatusAlert section="password" />
+        <StatusAlert status={status} section="password" />
 
         <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
           <label className="block">
@@ -196,7 +206,7 @@ export default function SecuritySettingsPage() {
             </button>
           </div>
 
-          <StatusAlert section="reset" />
+          <StatusAlert status={status} section="reset" />
         </form>
       </div>
 

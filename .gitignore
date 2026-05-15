@@ -45,6 +45,7 @@ next-env.d.ts
 #ignore agents folder and skills
 .agents/
 .claude/
+.husky/_
 
 
 /graphify-out
