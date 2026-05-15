@@ -10,6 +10,12 @@ import {
 } from "@/lib/supabase/server";
 import { auditLog } from "@/lib/utils/audit";
 
+const TEAM_ROLES = ["finance_admin", "manager", "team_member"] as const;
+
+function isTeamRole(value: unknown): value is (typeof TEAM_ROLES)[number] {
+  return typeof value === "string" && TEAM_ROLES.includes(value as (typeof TEAM_ROLES)[number]);
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1", 10);
@@ -75,6 +81,20 @@ export async function POST(request: Request) {
     return forbiddenResponse(orgError || "No workspace found");
   }
 
+  const { data: actorProfile, error: actorProfileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (actorProfileError || !actorProfile) {
+    return forbiddenResponse("Profile not found");
+  }
+
+  if (actorProfile.role !== "finance_admin") {
+    return forbiddenResponse("Only finance_admin can invite team members");
+  }
+
   const body = await request.json();
   const {
     email,
@@ -91,17 +111,47 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!isTeamRole(role)) {
+    return NextResponse.json(
+      { data: null, error: { message: "Invalid role" } },
+      { status: 400 },
+    );
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const inviteFullName = typeof full_name === "string" ? full_name.trim() : "";
+  const inviteDepartment =
+    typeof department === "string" ? department.trim() : "";
   const adminSupabase = createAdminClient();
+  const { error: pendingInviteError } = await adminSupabase
+    .from("pending_invites")
+    .upsert(
+      {
+        email: normalizedEmail,
+        org_id: orgId,
+        role,
+        full_name: inviteFullName || null,
+        department: inviteDepartment || null,
+        invited_by: user.id,
+      },
+      { onConflict: "email" },
+    );
+
+  if (pendingInviteError) {
+    return NextResponse.json(
+      { data: null, error: { message: pendingInviteError.message } },
+      { status: 500 },
+    );
+  }
 
   const inviteOptions: {
     data: Record<string, string>;
     redirectTo?: string;
   } = {
     data: {
-      full_name: typeof full_name === "string" ? full_name : "",
-      org_id: orgId,
-      role: typeof role === "string" ? role : "team_member",
-      department: typeof department === "string" ? department : "",
+      full_name: inviteFullName,
+      department: inviteDepartment,
+      invited_by: user.id,
     },
   };
 
@@ -110,9 +160,10 @@ export async function POST(request: Request) {
   }
 
   const { data: inviteData, error: inviteError } =
-    await adminSupabase.auth.admin.inviteUserByEmail(email, inviteOptions);
+    await adminSupabase.auth.admin.inviteUserByEmail(normalizedEmail, inviteOptions);
 
   if (inviteError) {
+    await adminSupabase.from("pending_invites").delete().eq("email", normalizedEmail);
     return NextResponse.json(
       { data: null, error: { message: inviteError.message } },
       { status: 500 },
@@ -125,9 +176,9 @@ export async function POST(request: Request) {
     orgId,
     action: "create",
     entityType: "team",
-    entityId: email,
+    entityId: normalizedEmail,
     detail: {
-      email,
+      email: normalizedEmail,
       role,
       department: department || null,
       invited_user_id: inviteData.user?.id ?? null,

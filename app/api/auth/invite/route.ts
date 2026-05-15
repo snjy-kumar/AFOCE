@@ -12,6 +12,12 @@ import {
 } from "@/lib/supabase/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 
+const TEAM_ROLES = ["finance_admin", "manager", "team_member"] as const;
+
+function isTeamRole(value: unknown): value is (typeof TEAM_ROLES)[number] {
+  return typeof value === "string" && TEAM_ROLES.includes(value as (typeof TEAM_ROLES)[number]);
+}
+
 export async function POST(req: NextRequest) {
   // ── Rate limiting ──────────────────────────────────────────
   const rl = await checkRateLimit(req, "auth");
@@ -31,7 +37,7 @@ export async function POST(req: NextRequest) {
   // ── Role check — must be finance_admin ────────────────────
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, org_id")
     .eq("id", user.id)
     .single();
 
@@ -45,6 +51,13 @@ export async function POST(req: NextRequest) {
   if (profile.role !== "finance_admin") {
     return NextResponse.json(
       { data: null, error: { message: "Forbidden: finance_admin role required" } },
+      { status: 403 },
+    );
+  }
+
+  if (!profile.org_id) {
+    return NextResponse.json(
+      { data: null, error: { message: "No workspace found" } },
       { status: 403 },
     );
   }
@@ -73,19 +86,49 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!isTeamRole(role)) {
+    return NextResponse.json(
+      { data: null, error: { message: "Invalid role" } },
+      { status: 400 },
+    );
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const inviteFullName = typeof full_name === "string" ? full_name.trim() : "";
+
   // ── Send invite via admin client ───────────────────────────
   const admin = createAdminClient();
+  const { error: pendingInviteError } = await admin
+    .from("pending_invites")
+    .upsert(
+      {
+        email: normalizedEmail,
+        org_id: profile.org_id,
+        role,
+        full_name: inviteFullName || null,
+        invited_by: user.id,
+      },
+      { onConflict: "email" },
+    );
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+  if (pendingInviteError) {
+    return NextResponse.json(
+      { data: null, error: { message: pendingInviteError.message } },
+      { status: 500 },
+    );
+  }
+
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(normalizedEmail, {
     data: {
-      full_name,
-      role,
+      full_name: inviteFullName,
+      requested_role: role,
       invited_by: user.id,
     },
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/dashboard`,
   });
 
   if (error) {
+    await admin.from("pending_invites").delete().eq("email", normalizedEmail);
     return NextResponse.json(
       { data: null, error: { message: error.message } },
       { status: 400 },

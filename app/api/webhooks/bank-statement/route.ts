@@ -22,12 +22,24 @@ interface WebhookBody {
 }
 
 export async function POST(request: Request) {
+  const configuredWebhookKey = process.env.WEBHOOK_API_KEY;
   const apiKey = request.headers.get("x-api-key");
 
-  if (process.env.WEBHOOK_API_KEY && apiKey !== process.env.WEBHOOK_API_KEY) {
-    return NextResponse.json(
-      { error: { message: "Invalid API key" } },
-      { status: 401 },
+  if (!configuredWebhookKey) {
+    return applySecurityHeaders(
+      NextResponse.json(
+        { error: { message: "Webhook is not configured" } },
+        { status: 503 },
+      ),
+    );
+  }
+
+  if (!apiKey || apiKey !== configuredWebhookKey) {
+    return applySecurityHeaders(
+      NextResponse.json(
+        { error: { message: "Invalid API key" } },
+        { status: 401 },
+      ),
     );
   }
 
@@ -160,7 +172,7 @@ export async function GET() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-Key": "Your API key (if configured)",
+      "X-API-Key": "Required. Must match WEBHOOK_API_KEY.",
     },
     body: {
       orgId: "Organization UUID",

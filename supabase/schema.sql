@@ -39,6 +39,21 @@ CREATE TABLE public.profiles (
 );
 
 -- ============================================================
+-- PENDING INVITES (private invite claims for secure onboarding)
+-- ============================================================
+CREATE TABLE public.pending_invites (
+  email       TEXT PRIMARY KEY,
+  org_id      UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  role        TEXT NOT NULL DEFAULT 'team_member'
+                CHECK (role IN ('finance_admin', 'manager', 'team_member')),
+  full_name   TEXT,
+  department  TEXT,
+  invited_by  UUID REFERENCES auth.users(id),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '14 days')
+);
+
+-- ============================================================
 -- CLIENTS / CONTACTS
 -- ============================================================
 CREATE TABLE public.clients (
@@ -307,6 +322,7 @@ ALTER TABLE finance_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE decision_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE automation_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE id_sequences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pending_invites ENABLE ROW LEVEL SECURITY;
 
 -- Profiles
 CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (auth.uid() = id);
@@ -385,12 +401,23 @@ RETURNS TRIGGER AS $$
 DECLARE
   workspace_id UUID;
   org_name TEXT;
-  invited_org_id UUID;
+  pending_org_id UUID;
+  pending_role TEXT;
+  pending_full_name TEXT;
+  pending_department TEXT;
+  has_pending_invite BOOLEAN := FALSE;
 BEGIN
-  invited_org_id := NULLIF(NEW.raw_user_meta_data->>'org_id', '')::UUID;
+  SELECT org_id, role, full_name, department
+  INTO pending_org_id, pending_role, pending_full_name, pending_department
+  FROM public.pending_invites
+  WHERE email = lower(NEW.email)
+    AND expires_at > NOW()
+  LIMIT 1;
 
-  IF invited_org_id IS NOT NULL THEN
-    workspace_id := invited_org_id;
+  has_pending_invite := pending_org_id IS NOT NULL;
+
+  IF has_pending_invite THEN
+    workspace_id := pending_org_id;
   ELSE
     -- Create workspace for new user
     org_name := COALESCE(
@@ -412,15 +439,23 @@ BEGIN
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    COALESCE(NULLIF(NEW.raw_user_meta_data->>'role', ''), 'team_member'),
-    NULLIF(NEW.raw_user_meta_data->>'department', ''),
+    COALESCE(NULLIF(pending_full_name, ''), NEW.raw_user_meta_data->>'full_name', NEW.email),
     CASE
-      WHEN invited_org_id IS NOT NULL THEN 'pending'
+      WHEN has_pending_invite THEN pending_role
+      ELSE 'finance_admin'
+    END,
+    COALESCE(NULLIF(pending_department, ''), NULLIF(NEW.raw_user_meta_data->>'department', '')),
+    CASE
+      WHEN has_pending_invite THEN 'pending'
       ELSE 'active'
     END,
     workspace_id
   );
+
+  IF has_pending_invite THEN
+    DELETE FROM public.pending_invites
+    WHERE email = lower(NEW.email);
+  END IF;
 
   RETURN NEW;
 END;
@@ -476,6 +511,7 @@ CREATE TRIGGER set_recurring_invoices_updated_at BEFORE UPDATE ON recurring_invo
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- Indexes for performance
+CREATE INDEX idx_pending_invites_org_expires ON pending_invites(org_id, expires_at);
 CREATE INDEX idx_notifications_user_unread ON notifications(user_id, read);
 CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
 CREATE INDEX idx_invoices_org_status ON invoices(org_id, status);
@@ -506,3 +542,6 @@ ALTER TABLE recurring_invoices ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "recurring_invoices_all_org_member" ON recurring_invoices FOR ALL
   USING (org_id = public.get_user_org_id(auth.uid()));
+
+-- pending_invites intentionally has no authenticated policies.
+-- Only service_role should read/write invitation claims.
