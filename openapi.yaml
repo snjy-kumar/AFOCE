@@ -313,6 +313,18 @@ paths:
             application/pdf:
               schema:
                 type: string
+    post:
+      summary: Export data with payload
+      operationId: exportDataWithPayload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Exported file
 
   /api/upload:
     post:
@@ -333,6 +345,485 @@ paths:
       responses:
         "200":
           description: File uploaded
+    delete:
+      summary: Delete uploaded file
+      operationId: deleteUploadedFile
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File deleted
+
+  /api/auth/invite:
+    post:
+      summary: Invite a user
+      operationId: inviteUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum: [finance_admin, manager, team_member]
+                full_name:
+                  type: string
+      responses:
+        "200":
+          description: User invited
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /api/auth/session:
+    get:
+      summary: Get current session
+      operationId: getAuthSession
+      responses:
+        "200":
+          description: Session details
+        "401":
+          description: Unauthorized
+
+  /api/auth/signout:
+    post:
+      summary: Sign out current session
+      operationId: signOut
+      responses:
+        "200":
+          description: Signed out
+
+  /api/profile:
+    get:
+      summary: Get current profile
+      operationId: getProfile
+      responses:
+        "200":
+          description: Profile details
+        "401":
+          description: Unauthorized
+    put:
+      summary: Update current profile
+      operationId: updateProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Profile updated
+        "400":
+          description: Validation error
+
+  /api/team:
+    get:
+      summary: List team members
+      operationId: listTeamMembers
+      responses:
+        "200":
+          description: Team members
+        "401":
+          description: Unauthorized
+    post:
+      summary: Invite team member
+      operationId: createTeamMemberInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Team invitation created
+        "403":
+          description: Forbidden
+
+  /api/team/{id}:
+    get:
+      summary: Get team member
+      operationId: getTeamMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Team member details
+    patch:
+      summary: Update team member
+      operationId: updateTeamMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Team member updated
+    delete:
+      summary: Remove team member
+      operationId: deleteTeamMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Team member removed
+
+  /api/policies:
+    get:
+      summary: List policies
+      operationId: listPolicies
+      responses:
+        "200":
+          description: Policies list
+    post:
+      summary: Create policy
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Policy created
+
+  /api/policies/{id}:
+    get:
+      summary: Get policy
+      operationId: getPolicy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Policy details
+    patch:
+      summary: Update policy
+      operationId: updatePolicy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Policy updated
+    delete:
+      summary: Delete policy
+      operationId: deletePolicy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Policy deleted
+
+  /api/analytics:
+    get:
+      summary: Analytics summary
+      operationId: getAnalytics
+      responses:
+        "200":
+          description: Analytics payload
+
+  /api/reports/audit:
+    get:
+      summary: Audit report
+      operationId: getAuditReport
+      responses:
+        "200":
+          description: Audit report data
+
+  /api/reports/vat:
+    get:
+      summary: VAT report
+      operationId: getVatReport
+      responses:
+        "200":
+          description: VAT report data
+
+  /api/search:
+    get:
+      summary: Unified search
+      operationId: searchEntities
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+
+  /api/notifications:
+    get:
+      summary: List notifications
+      operationId: listNotifications
+      responses:
+        "200":
+          description: Notifications list
+    patch:
+      summary: Update notifications state
+      operationId: updateNotifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Notifications updated
+    delete:
+      summary: Delete notifications
+      operationId: deleteNotifications
+      responses:
+        "200":
+          description: Notifications deleted
+
+  /api/bank-lines:
+    get:
+      summary: List bank statement lines
+      operationId: listBankLines
+      responses:
+        "200":
+          description: Bank statement lines
+    post:
+      summary: Create bank statement line
+      operationId: createBankLine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Bank statement line created
+
+  /api/bank-lines/{id}:
+    get:
+      summary: Get bank statement line
+      operationId: getBankLine
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bank line details
+    patch:
+      summary: Update bank statement line
+      operationId: updateBankLine
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Bank line updated
+    delete:
+      summary: Delete bank statement line
+      operationId: deleteBankLine
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bank line deleted
+
+  /api/expenses/{id}:
+    get:
+      summary: Get expense
+      operationId: getExpense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expense details
+    patch:
+      summary: Update expense
+      operationId: updateExpense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Expense updated
+    delete:
+      summary: Delete expense
+      operationId: deleteExpense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expense deleted
+
+  /api/invoices/{id}:
+    get:
+      summary: Get invoice
+      operationId: getInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice details
+    patch:
+      summary: Update invoice
+      operationId: updateInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Invoice updated
+    delete:
+      summary: Delete invoice
+      operationId: deleteInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice deleted
+
+  /api/webhooks/bank-statement:
+    get:
+      summary: Webhook metadata
+      operationId: getBankStatementWebhookInfo
+      security:
+        - apiKeyAuth: []
+      responses:
+        "200":
+          description: Webhook contract
+    post:
+      summary: Receive bank statement webhook
+      operationId: processBankStatementWebhook
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orgId
+                - lines
+              properties:
+                orgId:
+                  type: string
+                source:
+                  type: string
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                      description:
+                        type: string
+                      amount:
+                        type: number
+                      reference:
+                        type: string
+      responses:
+        "200":
+          description: Webhook processed
+        "401":
+          description: Invalid API key
+        "503":
+          description: Webhook key not configured
 
 components:
   securitySchemes:
@@ -340,6 +831,10 @@ components:
       type: apiKey
       in: cookie
       name: supabase-auth-token
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
 
   schemas:
     HealthResponse:

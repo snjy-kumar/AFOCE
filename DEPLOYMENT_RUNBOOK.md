@@ -1,15 +1,12 @@
-/**
- * Deployment runbook
- * Step-by-step guide for deploying to production
- */
-
 # Production Deployment Runbook
 
 ## Pre-deployment checklist
 
 ### 1. Code quality gates
 - [ ] All CI checks passing (lint, type, test, build, secrets)
+- [ ] OpenAPI coverage check passing (`npm run openapi:check`)
 - [ ] All tests passing with >70% coverage
+- [ ] E2E integration test run on staging (`npm run test:e2e` with `.env.test`)
 - [ ] No warnings in build output
 - [ ] No security vulnerabilities in dependencies (`npm audit`)
 
@@ -48,7 +45,7 @@ SENTRY_DSN=https://xxx@sentry.io/xxx
 - [ ] Restore from backup has been tested (document: date, duration, success)
 
 ### 4. RLS audit
-Run this in Supabase SQL editor to verify RLS coverage:
+Run `supabase/rls_audit.sql` in Supabase SQL editor to verify RLS coverage:
 
 ```sql
 SELECT 
@@ -96,6 +93,11 @@ Tables that require RLS:
   - [ ] Verify schema matches production
   - [ ] Verify data integrity (spot-check a few records)
   - [ ] Document restore time and any issues
+
+### 9. Monitoring checks
+- [ ] Run `supabase/monitoring_alert_queries.sql` in Supabase SQL editor
+- [ ] Confirm alert channels are configured in Supabase dashboard
+- [ ] Verify on-call recipients receive a test alert
 
 ---
 

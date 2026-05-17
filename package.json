@@ -11,7 +11,9 @@
     "db:types": "supabase gen types typescript --project-id ${SUPABASE_PROJECT_ID} > lib/database.types.ts",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:e2e": "vitest run app/api/__tests__/e2e.test.ts",
     "test:ui": "vitest --ui",
+    "openapi:check": "node scripts/check-openapi-coverage.mjs",
     "prepare": "husky"
   },
   "dependencies": {

@@ -33,6 +33,16 @@ jobs:
       - name: Test
         run: npm run test:run
 
+      - name: E2E security tests (optional env-based)
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY_TEST: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+        run: npm run test:e2e
+
+      - name: OpenAPI coverage check
+        run: npm run openapi:check
+
       - name: Build
         run: npm run build
 

@@ -1,92 +1,150 @@
-/**
- * Error tracking and Sentry configuration
- * Captures errors with context for observability
- */
+type ErrorContext = {
+  userId?: string;
+  orgId?: string;
+  endpoint?: string;
+  operation?: string;
+  tags?: Record<string, string>;
+  extra?: Record<string, unknown>;
+};
+
+type MessageContext = {
+  userId?: string;
+  orgId?: string;
+  tags?: Record<string, string>;
+};
+
+type BreadcrumbContext = {
+  category?: string;
+  data?: Record<string, unknown>;
+};
+
+type SentryLike = {
+  init?: (options: Record<string, unknown>) => void;
+  captureException?: (error: Error, payload?: Record<string, unknown>) => void;
+  captureMessage?: (
+    message: string,
+    levelOrPayload?: "info" | "warning" | "error" | Record<string, unknown>,
+  ) => void;
+  setUser?: (user: { id?: string; email?: string | null } | null) => void;
+  setTag?: (key: string, value: string) => void;
+  addBreadcrumb?: (crumb: {
+    message: string;
+    category?: string;
+    data?: Record<string, unknown>;
+    level?: "info" | "warning" | "error";
+  }) => void;
+};
 
 function writeStdout(payload: unknown) {
   process.stdout.write(`${JSON.stringify(payload)}\n`);
 }
 
-/**
- * Initialize Sentry for production error tracking
- * Call this in app.tsx or main entry point
- */
-export function initializeErrorTracking() {
-  // Import Sentry if available
-  if (typeof window === 'undefined') {
-    // Server-side error tracking setup
-    // Uncomment when Sentry is installed:
-    // import * as Sentry from '@sentry/node';
-    // Sentry.init({
-    //   dsn: process.env.SENTRY_DSN,
-    //   environment: process.env.NODE_ENV,
-    //   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    // });
-  } else {
-    // Client-side error tracking setup
-    // Uncomment when Sentry is installed:
-    // import * as Sentry from '@sentry/react';
-    // Sentry.init({
-    //   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-    //   environment: process.env.NODE_ENV,
-    //   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    // });
-  }
+function getServerDsn() {
+  return process.env.SENTRY_DSN || "";
 }
 
-/**
- * Capture an exception with context
- * DO NOT include sensitive data (passwords, tokens, PII)
- */
-export function captureException(
-  error: Error,
-  context?: {
-    userId?: string;
-    orgId?: string;
-    endpoint?: string;
-    operation?: string;
-    tags?: Record<string, string>;
-    extra?: Record<string, unknown>;
-  },
-) {
-  // Uncomment when Sentry is installed:
-  // import * as Sentry from '@sentry/node';
-  // Sentry.captureException(error, {
-  //   user: context?.userId ? { id: context.userId } : undefined,
-  //   tags: {
-  //     org_id: context?.orgId,
-  //     endpoint: context?.endpoint,
-  //     operation: context?.operation,
-  //     ...context?.tags,
-  //   },
-  //   extra: context?.extra,
-  // });
+function getClientDsn() {
+  return process.env.NEXT_PUBLIC_SENTRY_DSN || "";
+}
 
-  // For now, just log to console
-  console.error('Exception captured:', {
+let serverSdkPromise: Promise<SentryLike | null> | null = null;
+let clientSdkPromise: Promise<SentryLike | null> | null = null;
+let initialized = false;
+
+async function loadServerSdk(): Promise<SentryLike | null> {
+  if (serverSdkPromise) return serverSdkPromise;
+  serverSdkPromise = (async () => {
+    try {
+      const pkg = "@sentry/node";
+      const mod = (await import(pkg)) as unknown;
+      if (typeof mod === "object" && mod !== null) {
+        return mod as SentryLike;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  })();
+  return serverSdkPromise;
+}
+
+async function loadClientSdk(): Promise<SentryLike | null> {
+  if (clientSdkPromise) return clientSdkPromise;
+  clientSdkPromise = (async () => {
+    try {
+      const pkg = "@sentry/react";
+      const mod = (await import(pkg)) as unknown;
+      if (typeof mod === "object" && mod !== null) {
+        return mod as SentryLike;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  })();
+  return clientSdkPromise;
+}
+
+async function loadSdk(): Promise<SentryLike | null> {
+  if (typeof window === "undefined") {
+    return loadServerSdk();
+  }
+  return loadClientSdk();
+}
+
+function withSentry(action: (sdk: SentryLike) => void) {
+  void loadSdk().then((sdk) => {
+    if (sdk) action(sdk);
+  });
+}
+
+export function initializeErrorTracking() {
+  if (initialized) return;
+  initialized = true;
+
+  const dsn = typeof window === "undefined" ? getServerDsn() : getClientDsn();
+  if (!dsn) return;
+
+  withSentry((sdk) => {
+    sdk.init?.({
+      dsn,
+      environment: process.env.SENTRY_ENV || process.env.NODE_ENV || "production",
+      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+    });
+  });
+}
+
+export function captureException(error: Error, context?: ErrorContext) {
+  withSentry((sdk) => {
+    sdk.captureException?.(error, {
+      user: context?.userId ? { id: context.userId } : undefined,
+      tags: {
+        org_id: context?.orgId,
+        endpoint: context?.endpoint,
+        operation: context?.operation,
+        ...context?.tags,
+      },
+      extra: context?.extra,
+    });
+  });
+
+  console.error("Exception captured:", {
     message: error.message,
     stack: error.stack,
     context,
   });
 }
 
-/**
- * Capture a message (info, warning, debug)
- */
 export function captureMessage(
   message: string,
-  level: 'info' | 'warning' | 'error' = 'info',
-  context?: {
-    userId?: string;
-    orgId?: string;
-    tags?: Record<string, string>;
-  },
+  level: "info" | "warning" | "error" = "info",
+  context?: MessageContext,
 ) {
-  // Uncomment when Sentry is installed:
-  // import * as Sentry from '@sentry/node';
-  // Sentry.captureMessage(message, level);
+  withSentry((sdk) => {
+    sdk.captureMessage?.(message, level);
+  });
 
-  if (level === 'error' || level === 'warning') {
+  if (level === "error" || level === "warning") {
     console.warn(`[${level.toUpperCase()}] ${message}`, context);
     return;
   }
@@ -99,38 +157,35 @@ export function captureMessage(
   });
 }
 
-/**
- * Set user context for error tracking
- */
 export function setUserContext(userId: string, email?: string) {
-  // Uncomment when Sentry is installed:
-  // import * as Sentry from '@sentry/node';
-  // Sentry.setUser({ id: userId, email });
+  withSentry((sdk) => {
+    sdk.setUser?.({ id: userId, email: email ?? null });
+  });
 }
 
-/**
- * Set organization context for error tracking
- */
 export function setOrgContext(orgId: string) {
-  // Uncomment when Sentry is installed:
-  // import * as Sentry from '@sentry/node';
-  // Sentry.setTag('org_id', orgId);
+  withSentry((sdk) => {
+    sdk.setTag?.("org_id", orgId);
+  });
 }
 
-/**
- * Breadcrumb for tracking user actions leading to error
- */
 export function recordBreadcrumb(
   message: string,
-  category: string = 'user-action',
+  category: string = "user-action",
   data?: Record<string, unknown>,
 ) {
-  // Uncomment when Sentry is installed:
-  // import * as Sentry from '@sentry/node';
-  // Sentry.captureMessage(message, { breadcrumbs: [{ message, category, data }] });
+  const breadcrumb: BreadcrumbContext = { category, data };
+  withSentry((sdk) => {
+    sdk.addBreadcrumb?.({
+      message,
+      category: breadcrumb.category,
+      data: breadcrumb.data,
+      level: "info",
+    });
+  });
 
   writeStdout({
-    level: 'debug',
+    level: "debug",
     category,
     message,
     data,
@@ -138,33 +193,28 @@ export function recordBreadcrumb(
   });
 }
 
-/**
- * Start a performance transaction
- */
 export function startTransaction(
   name: string,
-  op: string = 'http.request',
+  op: string = "http.request",
 ): { finish: () => void; setTag: (key: string, value: string) => void } {
-  // Uncomment when Sentry is installed:
-  // import * as Sentry from '@sentry/node';
-  // const transaction = Sentry.startTransaction({ name, op });
-  // return {
-  //   finish: () => transaction.finish(),
-  //   setTag: (key, value) => transaction.setTag(key, value),
-  // };
-
   const startTime = Date.now();
+  const tags: Record<string, string> = {};
+
   return {
     finish: () => {
       const duration = Date.now() - startTime;
       writeStdout({
-        level: 'debug',
+        level: "debug",
         operation: op,
         name,
         duration,
+        tags,
         timestamp: new Date().toISOString(),
       });
     },
-    setTag: () => {},
+    setTag: (key: string, value: string) => {
+      tags[key] = value;
+    },
   };
 }
+

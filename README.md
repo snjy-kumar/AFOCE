@@ -32,7 +32,9 @@ Open `http://localhost:3000`.
 | `npm run lint` | Run ESLint checks |
 | `npm run type-check` | Run TypeScript checks |
 | `npm run test:run` | Run Vitest once (non-watch) |
+| `npm run test:e2e` | Run real Supabase E2E tests (requires `.env.test`) |
 | `npm run build` | Build for production |
+| `npm run openapi:check` | Verify every API route is documented in `openapi.yaml` |
 
 ## Quality gates
 
@@ -41,8 +43,10 @@ This project enforces production gates in CI:
 1. Lint
 2. Type check
 3. Tests
-4. Build
-5. Secret scanning (Gitleaks)
+4. E2E security tests (env-gated)
+5. OpenAPI coverage check
+6. Build
+7. Secret scanning (Gitleaks)
 
 Local commits also run pre-commit hooks (`lint`, `type-check`, `test:run`) via Husky.
 
